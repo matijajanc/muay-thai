@@ -1,0 +1,127 @@
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, radius, fontSize, spacing } from '../constants/theme';
+import TimerBar from './TimerBar';
+
+const HEART_UNFAVORITED = '#444444';
+
+export default function ComboCard({
+  combo,
+  index,
+  isFavorite,
+  isExpanded = false,
+  timerPercent = 100,
+  expandable = true,
+  onToggleFavorite,
+  onExpand,
+}) {
+  const handleNamePress = () => {
+    if (expandable && onExpand) onExpand(combo.id);
+  };
+
+  return (
+    <View style={[styles.card, isExpanded && styles.cardExpanded]}>
+      <View style={styles.headerRow}>
+        <Pressable
+          style={styles.namePress}
+          onPress={handleNamePress}
+          disabled={!expandable}
+          hitSlop={4}
+        >
+          <Text style={styles.number}>{index}</Text>
+          <Text style={styles.name}>{combo.name}</Text>
+        </Pressable>
+
+        <Pressable
+          onPress={() => onToggleFavorite && onToggleFavorite(combo.id)}
+          hitSlop={10}
+          style={styles.heartPress}
+        >
+          <Ionicons
+            name={isFavorite ? 'heart' : 'heart-outline'}
+            size={fontSize.xl}
+            color={isFavorite ? colors.accent : HEART_UNFAVORITED}
+          />
+        </Pressable>
+      </View>
+
+      {isExpanded && (
+        <View style={styles.expandedBody}>
+          {combo.steps.map((step, i) => (
+            <View key={i} style={styles.stepRow}>
+              <Text style={styles.stepNumber}>{i + 1}</Text>
+              <Text style={styles.stepText}>{step}</Text>
+            </View>
+          ))}
+          <View style={styles.timerWrap}>
+            <TimerBar percent={timerPercent} />
+          </View>
+        </View>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: colors.surface,
+    borderWidth: 0.5,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingVertical: 11,
+    paddingHorizontal: spacing.md,
+    marginBottom: 6,
+  },
+  cardExpanded: {
+    backgroundColor: colors.surfaceActive,
+    borderColor: colors.borderActive,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  namePress: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  number: {
+    color: colors.comboNumber,
+    fontSize: fontSize.base,
+    fontWeight: '500',
+    minWidth: 18,
+  },
+  name: {
+    flex: 1,
+    color: colors.textPrimary,
+    fontSize: fontSize.base,
+    fontWeight: '500',
+    lineHeight: fontSize.base * 1.35,
+  },
+  heartPress: {
+    paddingLeft: spacing.sm,
+  },
+  expandedBody: {
+    marginTop: spacing.md,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    marginBottom: spacing.xs,
+  },
+  stepNumber: {
+    color: colors.textMuted,
+    fontSize: fontSize.md,
+    fontWeight: '500',
+    width: 18,
+    lineHeight: fontSize.md * 1.5,
+  },
+  stepText: {
+    flex: 1,
+    color: colors.textSecondary,
+    fontSize: fontSize.md,
+    lineHeight: fontSize.md * 1.5,
+  },
+  timerWrap: {
+    marginTop: spacing.sm,
+  },
+});
