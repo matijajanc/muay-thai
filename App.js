@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import * as Linking from 'expo-linking';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -14,9 +14,10 @@ import { Ionicons } from '@expo/vector-icons';
 import TrainingScreen from './screens/TrainingScreen';
 import FavoritesScreen from './screens/FavoritesScreen';
 import SettingsScreen from './screens/SettingsScreen';
-import { SessionContext, FavoritesContext } from './contexts/AppContext';
+import { SessionContext, FavoritesContext, VoiceContext } from './contexts/AppContext';
 import { useSession } from './hooks/useSession';
 import { useFavorites } from './hooks/useFavorites';
+import { useVoiceCommands } from './hooks/useVoiceCommands';
 import { colors } from './constants/theme';
 
 const Tab = createBottomTabNavigator();
@@ -48,10 +49,17 @@ export default function App() {
   const session = useSession();
   const favorites = useFavorites();
 
-  // Keep the latest session API reachable from the URL listener, which is
-  // registered once and would otherwise capture a stale, empty session.
+  // Keep the latest session API reachable from listeners that are registered
+  // once and would otherwise capture a stale, empty session.
   const sessionRef = useRef(session);
   sessionRef.current = session;
+
+  // In-app voice: heard "combo N" → jump to the Training tab and open that slot.
+  const onCombo = useCallback((slotIndex) => {
+    if (navigationRef.isReady()) navigationRef.navigate('Training');
+    sessionRef.current.expandBySlot(slotIndex);
+  }, [navigationRef]);
+  const voice = useVoiceCommands(onCombo);
 
   useEffect(() => {
     const handleUrl = ({ url }) => {
@@ -75,6 +83,7 @@ export default function App() {
       <StatusBar style="light" />
       <SessionContext.Provider value={session}>
         <FavoritesContext.Provider value={favorites}>
+          <VoiceContext.Provider value={voice}>
           <NavigationContainer ref={navigationRef} theme={navTheme}>
             <Tab.Navigator
               screenOptions={{
@@ -106,6 +115,7 @@ export default function App() {
               />
             </Tab.Navigator>
           </NavigationContainer>
+          </VoiceContext.Provider>
         </FavoritesContext.Provider>
       </SessionContext.Provider>
     </SafeAreaProvider>

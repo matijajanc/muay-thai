@@ -1,34 +1,16 @@
-import { useState, useRef, useEffect } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import * as Clipboard from 'expo-clipboard';
 import { colors, radius, fontSize, spacing } from '../constants/theme';
-import { useSetupDone } from '../hooks/useSetupDone';
 
-const SETUP_STEPS = [
-  'Open Google Assistant → Routines',
-  'Create a routine. Set trigger phrase to "combo 1"',
-  'Add action — Open app — paste the deep link below',
-  'Repeat for combos 2–10. One-time setup only.',
+const HOW_IT_WORKS = [
+  'In the Training tab, generate a session.',
+  'Tap "Tap to listen for voice commands" and allow the microphone the first time.',
+  'Say "combo" + a number, e.g. "combo three", to expand that combo for 60 seconds.',
+  'It keeps listening until you tap to stop or leave the app. Say another number anytime.',
 ];
 
-const SLOTS = Array.from({ length: 10 }, (_, i) => i + 1);
-
 export default function SettingsScreen({ navigation }) {
-  const { done, markDone } = useSetupDone();
-  const [copiedSlot, setCopiedSlot] = useState(null);
-  const copyTimeout = useRef(null);
-
-  useEffect(() => () => { if (copyTimeout.current) clearTimeout(copyTimeout.current); }, []);
-
-  const copyLink = async (slot) => {
-    await Clipboard.setStringAsync(`muaythai://combo/${slot}`);
-    setCopiedSlot(slot);
-    if (copyTimeout.current) clearTimeout(copyTimeout.current);
-    copyTimeout.current = setTimeout(() => setCopiedSlot(null), 1500);
-  };
-
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.headerRow}>
@@ -45,18 +27,18 @@ export default function SettingsScreen({ navigation }) {
         <View style={styles.infoCard}>
           <View style={styles.infoTitleRow}>
             <Ionicons name="mic" size={fontSize.lg} color={colors.voiceTitle} />
-            <Text style={styles.infoTitle}>How it works</Text>
+            <Text style={styles.infoTitle}>Hands-free, fully on-device</Text>
           </View>
           <Text style={styles.infoBody}>
-            Say "Hey Google, combo 3" to expand that combo during training. Steps show for 1 minute
-            then auto-hide.
+            Voice commands run inside the app — no Google Assistant or Google Home setup needed.
+            The mic only listens while you have it switched on in the Training tab.
           </Text>
         </View>
 
-        {/* Setup steps */}
+        {/* How it works steps */}
         <View style={styles.card}>
-          {SETUP_STEPS.map((step, i) => (
-            <View key={i} style={[styles.stepRow, i === SETUP_STEPS.length - 1 && styles.stepRowLast]}>
+          {HOW_IT_WORKS.map((step, i) => (
+            <View key={i} style={[styles.stepRow, i === HOW_IT_WORKS.length - 1 && styles.stepRowLast]}>
               <View style={styles.stepCircle}>
                 <Text style={styles.stepCircleText}>{i + 1}</Text>
               </View>
@@ -65,41 +47,10 @@ export default function SettingsScreen({ navigation }) {
           ))}
         </View>
 
-        {/* Deep links */}
-        <View style={styles.card}>
-          {SLOTS.map((slot, i) => {
-            const copied = copiedSlot === slot;
-            return (
-              <View key={slot} style={[styles.linkRow, i === SLOTS.length - 1 && styles.linkRowLast]}>
-                <Text style={styles.linkLabel}>combo {slot}</Text>
-                <Text style={styles.linkUrl} numberOfLines={1}>muaythai://combo/{slot}</Text>
-                <Pressable onPress={() => copyLink(slot)} style={[styles.copyBtn, copied && styles.copyBtnActive]}>
-                  <Text style={[styles.copyText, copied && styles.copyTextActive]}>
-                    {copied ? 'Copied' : 'Copy'}
-                  </Text>
-                </Pressable>
-              </View>
-            );
-          })}
-        </View>
-
-        {/* Setup complete */}
-        <View style={styles.completeRow}>
-          <View style={styles.completeTextWrap}>
-            <Text style={styles.completeLabel}>Setup complete</Text>
-            <Text style={styles.completeSub}>Mark when routines are configured</Text>
-          </View>
-          {done ? (
-            <View style={styles.doneBadge}>
-              <Ionicons name="checkmark" size={fontSize.lg} color={colors.begText} />
-              <Text style={styles.doneBadgeText}>Done</Text>
-            </View>
-          ) : (
-            <Pressable onPress={markDone} style={styles.markBtn}>
-              <Text style={styles.markBtnText}>Mark done</Text>
-            </Pressable>
-          )}
-        </View>
+        <Text style={styles.tip}>
+          Tip: numbers refer to the slot in your current session (1–10), so the same commands keep
+          working after you generate a new session.
+        </Text>
 
         {/* Session preferences */}
         <Text style={[styles.sectionLabel, styles.sectionLabelSpaced]}>SESSION PREFERENCES</Text>
@@ -182,62 +133,7 @@ const styles = StyleSheet.create({
   stepCircleText: { color: colors.voiceStepText, fontSize: fontSize.xs, fontWeight: '700' },
   stepText: { flex: 1, color: colors.textSecondary, fontSize: fontSize.md, lineHeight: fontSize.md * 1.4 },
 
-  linkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.sm + 2,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.border,
-    gap: spacing.sm,
-  },
-  linkRowLast: { borderBottomWidth: 0 },
-  linkLabel: { color: colors.textPrimary, fontSize: fontSize.md, fontWeight: '500', width: 58 },
-  linkUrl: { flex: 1, color: colors.textMuted, fontSize: fontSize.sm, fontFamily: 'monospace' },
-  copyBtn: {
-    borderWidth: 1,
-    borderColor: colors.borderActive,
-    borderRadius: radius.sm,
-    paddingVertical: 4,
-    paddingHorizontal: spacing.sm,
-  },
-  copyBtnActive: { borderColor: colors.begBorder, backgroundColor: colors.begBg },
-  copyText: { color: colors.textSecondary, fontSize: fontSize.sm, fontWeight: '500' },
-  copyTextActive: { color: colors.begText },
-
-  completeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.surface,
-    borderWidth: 0.5,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    padding: spacing.md,
-  },
-  completeTextWrap: { flex: 1, paddingRight: spacing.md },
-  completeLabel: { color: colors.textPrimary, fontSize: fontSize.base, fontWeight: '500' },
-  completeSub: { color: colors.textMuted, fontSize: fontSize.sm, marginTop: 2 },
-  markBtn: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.borderActive,
-    borderRadius: radius.sm,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-  },
-  markBtnText: { color: colors.textSecondary, fontSize: fontSize.base, fontWeight: '500' },
-  doneBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    backgroundColor: colors.begBg,
-    borderWidth: 1,
-    borderColor: colors.begBorder,
-    borderRadius: radius.sm,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-  },
-  doneBadgeText: { color: colors.begText, fontSize: fontSize.base, fontWeight: '600' },
+  tip: { color: colors.textMuted, fontSize: fontSize.sm, lineHeight: fontSize.sm * 1.5, marginBottom: spacing.md },
 
   prefRow: {
     flexDirection: 'row',

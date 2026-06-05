@@ -5,14 +5,11 @@ import { colors, radius, fontSize, spacing } from '../constants/theme';
 import { COMBOS } from '../data/combos';
 import ComboCard from '../components/ComboCard';
 import { useFavoritesContext } from '../contexts/AppContext';
-import { useSetupDone } from '../hooks/useSetupDone';
 
 export default function FavoritesScreen({ navigation }) {
   const { favorites, toggleFavorite } = useFavoritesContext();
-  const { done, loaded } = useSetupDone();
 
   const favoriteCombos = COMBOS.filter(c => favorites.has(c.id));
-  const showBanner = loaded && !done;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -25,13 +22,6 @@ export default function FavoritesScreen({ navigation }) {
           <Ionicons name="settings-outline" size={22} color={colors.textSecondary} />
         </Pressable>
       </View>
-
-      {showBanner && (
-        <Pressable style={styles.banner} onPress={() => navigation.navigate('Settings')}>
-          <Text style={styles.bannerText}>Set up voice commands to use hands-free training</Text>
-          <Ionicons name="arrow-forward" size={fontSize.lg} color={colors.voiceTitle} />
-        </Pressable>
-      )}
 
       {favoriteCombos.length === 0 ? (
         <View style={styles.empty}>
@@ -73,22 +63,6 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: fontSize.xl, fontWeight: '500', color: colors.title },
   subtitle: { fontSize: fontSize.sm, color: colors.subtitle, marginTop: 2 },
-
-  banner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginHorizontal: spacing.md,
-    marginBottom: spacing.sm,
-    backgroundColor: colors.voiceBg,
-    borderWidth: 1,
-    borderColor: colors.voiceBorder,
-    borderRadius: radius.md,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    gap: spacing.sm,
-  },
-  bannerText: { flex: 1, color: colors.voiceTitle, fontSize: fontSize.md, fontWeight: '500' },
 
   list: { paddingHorizontal: spacing.md, paddingBottom: spacing.xl },
 

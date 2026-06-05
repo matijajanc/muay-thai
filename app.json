@@ -37,7 +37,23 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
-    ]
+      "expo-font",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Muay Thai listens for \"combo\" voice commands during training.",
+          "speechRecognitionPermission": "Muay Thai uses speech recognition to detect \"combo\" voice commands.",
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox",
+            "com.samsung.android.bixby.agent"
+          ]
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "bbd10dd3-fa2b-4e45-9fc0-09d26d6643ab"
+      }
+    }
   }
 }

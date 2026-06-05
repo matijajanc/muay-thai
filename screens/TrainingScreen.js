@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, fontSize, spacing } from '../constants/theme';
 import FilterChips from '../components/FilterChips';
 import ComboCard from '../components/ComboCard';
+import MicButton from '../components/MicButton';
 import { useSessionContext, useFavoritesContext } from '../contexts/AppContext';
 
 function toggleInSet(setState, key) {
@@ -64,6 +65,7 @@ export default function TrainingScreen() {
         ListHeaderComponent={
           <View>
             {header}
+            <MicButton />
             <Pressable style={styles.newSessionBtn} onPress={reset}>
               <Text style={styles.newSessionText}>New session</Text>
             </Pressable>
