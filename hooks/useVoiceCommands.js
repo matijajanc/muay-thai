@@ -96,6 +96,10 @@ const START_OPTIONS = {
 
 // onCombo(slotIndex0Based) is called when a valid "combo N" is heard.
 const EN_LOCALE = 'en-US';
+// Google's on-device speech service (Android System Intelligence) — this is
+// where the downloaded offline models actually live. The default recognizer on
+// Samsung is often Samsung's own, which reports no Google offline locales.
+const GOOGLE_ON_DEVICE = 'com.google.android.as';
 
 export function useVoiceCommands(onCombo) {
   const [listening, setListening] = useState(false);
@@ -108,16 +112,22 @@ export function useVoiceCommands(onCombo) {
   const shouldListenRef = useRef(false);
   const lastActedRef = useRef({ slot: null, at: 0 });
   const onDeviceRef = useRef(false);
+  const onDeviceServiceRef = useRef(undefined); // which service has the model
   const fellBackRef = useRef(false); // guard against on-device→online loop
   const onComboRef = useRef(onCombo);
   onComboRef.current = onCombo;
 
   const startRecognition = () => {
     try {
-      ExpoSpeechRecognitionModule.start({
+      const opts = {
         ...START_OPTIONS,
         requiresOnDeviceRecognition: onDeviceRef.current,
-      });
+      };
+      // Pin recognition to the service that actually holds the offline model.
+      if (onDeviceRef.current && onDeviceServiceRef.current) {
+        opts.androidRecognitionServicePackage = onDeviceServiceRef.current;
+      }
+      ExpoSpeechRecognitionModule.start(opts);
     } catch (e) {
       setError(String(e?.message ?? e));
       setListening(false);
@@ -125,18 +135,28 @@ export function useVoiceCommands(onCombo) {
     }
   };
 
-  // Decide whether to use offline recognition. If the device supports it but the
-  // English model isn't installed yet, kick off the system download and use
-  // online recognition until it's ready.
+  // Decide whether to use offline recognition. Look for the installed English
+  // model under Google's on-device service first (then the default), because the
+  // default recognizer on Samsung often can't see Google's offline models. Only
+  // trigger a download if it's genuinely not installed anywhere we can see.
   const prepareOnDevice = async () => {
     try {
       if (!ExpoSpeechRecognitionModule.supportsOnDeviceRecognition()) return false;
-      const { installedLocales = [] } = await ExpoSpeechRecognitionModule
-        .getSupportedLocales()
-        .catch(() => ({ installedLocales: [] }));
-      const hasEnglish = installedLocales.some(l => l.toLowerCase().startsWith('en'));
-      if (hasEnglish) return true;
-      // Not installed — trigger the one-time download (opens a system dialog).
+
+      for (const pkg of [GOOGLE_ON_DEVICE, undefined]) {
+        const opts = pkg ? { androidRecognitionServicePackage: pkg } : undefined;
+        const { installedLocales = [] } = await ExpoSpeechRecognitionModule
+          .getSupportedLocales(opts)
+          .catch(() => ({ installedLocales: [] }));
+        if (installedLocales.some(l => l.toLowerCase().startsWith('en'))) {
+          onDeviceServiceRef.current = pkg; // undefined = device default
+          return true;
+        }
+      }
+
+      // Genuinely not installed — trigger the one-time system download and use
+      // online recognition in the meantime.
+      onDeviceServiceRef.current = undefined;
       ExpoSpeechRecognitionModule.androidTriggerOfflineModelDownload({ locale: EN_LOCALE })
         .catch(() => {});
       setNotice('Downloading offline voice model — using online recognition until it finishes.');
