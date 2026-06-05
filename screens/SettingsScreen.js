@@ -5,7 +5,7 @@ import { colors, radius, fontSize, spacing } from '../constants/theme';
 
 const HOW_IT_WORKS = [
   'In the Training tab, generate a session.',
-  'Tap "Tap to listen for voice commands" and allow the microphone the first time.',
+  'Tap "Tap to listen for voice commands" and allow the microphone the first time. Android may also prompt once to download the small offline voice model.',
   'Say "combo" + a number, e.g. "combo three", to expand that combo for 60 seconds.',
   'It keeps listening until you tap to stop or leave the app. Say another number anytime.',
 ];
@@ -31,6 +31,7 @@ export default function SettingsScreen({ navigation }) {
           </View>
           <Text style={styles.infoBody}>
             Voice commands run inside the app — no Google Assistant or Google Home setup needed.
+            Recognition runs on-device (offline) when available, so it keeps working without Wi-Fi.
             The mic only listens while you have it switched on in the Training tab.
           </Text>
         </View>

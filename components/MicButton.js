@@ -4,7 +4,7 @@ import { colors, radius, fontSize, spacing } from '../constants/theme';
 import { useVoiceContext } from '../contexts/AppContext';
 
 export default function MicButton() {
-  const { listening, lastHeard, error, toggle } = useVoiceContext();
+  const { listening, lastHeard, error, notice, onDevice, toggle } = useVoiceContext();
 
   return (
     <View style={styles.wrap}>
@@ -20,10 +20,13 @@ export default function MicButton() {
         <Text style={[styles.label, { color: listening ? '#ffffff' : colors.accent }]}>
           {listening ? 'Listening — say "combo 3"' : 'Tap to listen for voice commands'}
         </Text>
+        {listening && onDevice && <Text style={styles.offline}>offline</Text>}
       </Pressable>
 
       {error ? (
         <Text style={styles.error}>{error}</Text>
+      ) : notice ? (
+        <Text style={styles.notice}>{notice}</Text>
       ) : listening && lastHeard ? (
         <Text style={styles.heard} numberOfLines={1}>heard: {lastHeard}</Text>
       ) : null}
@@ -51,6 +54,18 @@ const styles = StyleSheet.create({
     borderColor: colors.accent,
   },
   label: { fontSize: fontSize.base, fontWeight: '500' },
+  offline: {
+    color: '#ffffff',
+    opacity: 0.8,
+    fontSize: fontSize.xs,
+    fontWeight: '600',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.5)',
+    borderRadius: radius.sm,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
   error: { color: colors.advText, fontSize: fontSize.sm, marginTop: spacing.xs, textAlign: 'center' },
+  notice: { color: colors.voiceTitle, fontSize: fontSize.sm, marginTop: spacing.xs, textAlign: 'center' },
   heard: { color: colors.textMuted, fontSize: fontSize.sm, marginTop: spacing.xs, textAlign: 'center' },
 });
