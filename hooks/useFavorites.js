@@ -22,5 +22,15 @@ export function useFavorites() {
     });
   };
 
-  return { favorites, toggleFavorite };
+  // Voice "combo favorite": only ever adds, so a repeated command can't undo it.
+  const addFavorite = (id) => {
+    setFavorites(prev => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev).add(id);
+      AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify([...next]));
+      return next;
+    });
+  };
+
+  return { favorites, toggleFavorite, addFavorite };
 }

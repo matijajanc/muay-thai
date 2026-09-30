@@ -49,17 +49,44 @@ export default function App() {
   const session = useSession();
   const favorites = useFavorites();
 
-  // Keep the latest session API reachable from listeners that are registered
-  // once and would otherwise capture a stale, empty session.
+  // Keep the latest session/favorites API reachable from listeners that are
+  // registered once and would otherwise capture a stale, empty session.
   const sessionRef = useRef(session);
   sessionRef.current = session;
+  const favoritesRef = useRef(favorites);
+  favoritesRef.current = favorites;
 
-  // In-app voice: heard "combo N" → jump to the Training tab and open that slot.
-  const onCombo = useCallback((slotIndex) => {
+  // In-app voice: run the heard command on the Training tab. The returned text
+  // is flashed under the mic button as confirmation.
+  const onCommand = useCallback((command) => {
+    const s = sessionRef.current;
+    if (!s.generated) return 'Generate a session first';
     if (navigationRef.isReady()) navigationRef.navigate('Training');
-    sessionRef.current.expandBySlot(slotIndex);
+
+    switch (command.type) {
+      case 'slot': {
+        const slot = s.expandBySlot(command.slot - 1); // 1-based phrase → 0-based index
+        return slot == null ? `No combo ${command.slot} in this session` : `Combo ${command.slot}`;
+      }
+      case 'next':
+      case 'previous': {
+        const slot = command.type === 'next' ? s.expandNext() : s.expandPrevious();
+        return slot == null ? null : `Combo ${slot + 1}`;
+      }
+      case 'favorite': {
+        const slot = s.activeSlot();
+        const combo = slot == null ? null : s.session[slot];
+        if (!combo) return 'Open a combo first';
+        const { favorites: favs, addFavorite } = favoritesRef.current;
+        if (favs.has(combo.id)) return `Combo ${slot + 1} is already a favorite`;
+        addFavorite(combo.id);
+        return `♥ Combo ${slot + 1} saved to favorites`;
+      }
+      default:
+        return null;
+    }
   }, [navigationRef]);
-  const voice = useVoiceCommands(onCombo);
+  const voice = useVoiceCommands(onCommand);
 
   useEffect(() => {
     const handleUrl = ({ url }) => {

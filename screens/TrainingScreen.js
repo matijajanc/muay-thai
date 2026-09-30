@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { View, Text, Pressable, FlatList, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, fontSize, spacing } from '../constants/theme';
@@ -17,8 +17,21 @@ function toggleInSet(setState, key) {
 }
 
 export default function TrainingScreen() {
-  const { session, generated, expandedId, timerPercent, generate, reset, expandCombo } = useSessionContext();
+  const {
+    session, generated, expandedId, timerPercent, jumpTarget, generate, reset, expandCombo,
+  } = useSessionContext();
   const { favorites, toggleFavorite } = useFavoritesContext();
+  const listRef = useRef(null);
+
+  // A combo opened hands-free may be off-screen: bring it to the top of the list.
+  // Wait a beat so a card collapsing above it has re-laid out first.
+  useEffect(() => {
+    if (!jumpTarget) return;
+    const t = setTimeout(() => {
+      listRef.current?.scrollToIndex({ index: jumpTarget.index, animated: true });
+    }, 100);
+    return () => clearTimeout(t);
+  }, [jumpTarget]);
 
   // Chip selection lives here so it is preserved across "New session".
   const [selectedDiffs, setSelectedDiffs] = useState(new Set());
@@ -57,19 +70,24 @@ export default function TrainingScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      {/* Pinned so voice status/feedback stays visible while the list scrolls. */}
+      <View style={styles.pinned}>
+        {header}
+        <MicButton />
+      </View>
       <FlatList
+        ref={listRef}
         data={session}
         keyExtractor={item => String(item.id)}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
+        onScrollToIndexFailed={({ index, averageItemLength }) =>
+          listRef.current?.scrollToOffset({ offset: index * averageItemLength, animated: true })
+        }
         ListHeaderComponent={
-          <View>
-            {header}
-            <MicButton />
-            <Pressable style={styles.newSessionBtn} onPress={reset}>
-              <Text style={styles.newSessionText}>New session</Text>
-            </Pressable>
-          </View>
+          <Pressable style={styles.newSessionBtn} onPress={reset}>
+            <Text style={styles.newSessionText}>New session</Text>
+          </Pressable>
         }
         renderItem={({ item, index }) => (
           <ComboCard
@@ -90,6 +108,7 @@ export default function TrainingScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   body: { flex: 1, paddingHorizontal: spacing.md },
+  pinned: { paddingHorizontal: spacing.md },
   list: { paddingHorizontal: spacing.md, paddingBottom: spacing.xl },
 
   header: { paddingTop: spacing.sm, paddingBottom: spacing.lg },

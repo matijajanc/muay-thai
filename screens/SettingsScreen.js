@@ -7,7 +7,9 @@ const HOW_IT_WORKS = [
   'In the Training tab, generate a session.',
   'Tap "Tap to listen for voice commands" and allow the microphone the first time. Android may also prompt once to download the small offline voice model.',
   'Say "combo" + a number, e.g. "combo three", to expand that combo for 60 seconds.',
-  'It keeps listening until you tap to stop or leave the app. Say another number anytime.',
+  'Say "combo next" (or "combo back") to step through the session, starting at combo 1.',
+  'Say "combo favorite" to save the combo you last opened to your favorites.',
+  'It keeps listening — and keeps the screen on — until you tap to stop. It pauses while the app is in the background.',
 ];
 
 export default function SettingsScreen({ navigation }) {
