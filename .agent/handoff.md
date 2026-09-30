@@ -1,12 +1,12 @@
 # Handoff
 
-_Last updated: 2026-09-30. Round timer built (plan tasks 1–8); uncommitted, awaiting review
-and a new dev build._
+_Last updated: 2026-09-30. Round timer built (plan tasks 1–8) and committed (5e8e6cb);
+awaiting a new dev build._
 
 ## Where we left off
 
-Branch `main`, last commit 6af3ac9. The whole round timer is in the working tree,
-**uncommitted**. `npm test` passes (engine, timer grammar, combo-grammar regression).
+Branch `main`; the round timer is commit 5e8e6cb (not pushed). `npm test` passes (engine,
+timer grammar, combo-grammar regression).
 
 Plan: `.agent/plan/260930_185109_boxing-round-timer.md`. See § Decisions log (build
 entries) for every call made where the wireframes don't draw a state, and § Execution
@@ -30,8 +30,7 @@ status for what was checked on the emulator.
   voice together, background → return, all four clock positions.
 - Emulator pass done (sounds, TTS, ducking focus, voice routing via injected transcripts,
   background catch-up). Still unverified: live mic recognition, real loudness over music.
-- Commit once the user has reviewed.
 
 ## Suggested next topic
 
-Device QA (task 9) on the new dev build; fix what it finds, then commit.
+Device QA (task 9) on the new dev build; fix what it finds.
