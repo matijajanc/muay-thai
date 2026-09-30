@@ -1,0 +1,1066 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Round Timer Wireframes</title>
+<style>
+:root {
+  --board: #ecebe6; --ink: #1c1c1a; --ink-2: #5b5a55; --line: #d3d1ca; --note: #fffdf6; --shadow: rgba(0,0,0,.18);
+  /* app tokens — constants/theme.js */
+  --bg: #111111; --surface: #1a1a1a; --border: #2a2a2a; --accent: #E86C3A;
+  --t1: #e0e0e0; --t2: #aaaaaa; --t3: #555555; --tab: #161616;
+  /* proposed timer phase tokens (reuse existing chip colors) */
+  --prep: #EF9F27; --work: #E86C3A; --warn: #F0544F; --rest: #85B7EB; --done: #97C459;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --board: #1b1b1a; --ink: #ecebe6; --ink-2: #a3a29c; --line: #34332f; --note: #232220; --shadow: rgba(0,0,0,.6); }
+}
+:root[data-theme="dark"] { --board: #1b1b1a; --ink: #ecebe6; --ink-2: #a3a29c; --line: #34332f; --note: #232220; --shadow: rgba(0,0,0,.6); }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--board); color: var(--ink); font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+.wrap { max-width: 1320px; margin: 0 auto; padding: 32px 16px 80px; }
+header h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: -.3px; }
+header p { margin: 0; color: var(--ink-2); max-width: 760px; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 14px; font-size: 12px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1.2px; margin: 48px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+h2 small { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--ink-2); margin-left: 8px; font-size: 13px; }
+.row { display: flex; flex-wrap: wrap; gap: 28px 28px; align-items: flex-start; }
+.frame { width: 300px; }
+.frame > .cap { font-weight: 600; font-size: 13px; margin: 0 0 8px; }
+.notes { margin: 10px 0 0; padding: 10px 12px 10px 28px; background: var(--note); border: 1px solid var(--line); border-radius: 8px; font-size: 12.5px; color: var(--ink-2); }
+.notes li { margin: 2px 0; }
+.notes b { color: var(--ink); font-weight: 600; }
+
+/* ---------- phone ---------- */
+.phone { position: relative; width: 300px; height: 640px; background: var(--bg); border: 7px solid #050505; border-radius: 36px; overflow: hidden; display: flex; flex-direction: column; color: var(--t1); font-size: 12.5px; box-shadow: 0 10px 28px var(--shadow); }
+.sb { height: 24px; flex: none; display: flex; justify-content: space-between; align-items: center; padding: 2px 20px 0; font-size: 10.5px; color: var(--t2); }
+.scr { flex: 1; padding: 6px 12px 0; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+.scr > * { flex-shrink: 0; }
+.tabbar { flex: none; height: 54px; background: var(--tab); border-top: 1px solid var(--border); display: grid; grid-template-columns: repeat(3, 1fr); }
+.tabbar div { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 10px; color: var(--t3); }
+.tabbar div.on { color: var(--accent); }
+.tabbar svg { width: 20px; height: 20px; }
+.tabbar .live { font-variant-numeric: tabular-nums; font-weight: 600; }
+.ico { width: 16px; height: 16px; flex: none; }
+
+.h1 { font-size: 17px; font-weight: 500; color: #fff; }
+.sub { font-size: 11px; color: #666; margin-top: 1px; }
+.lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .6px; color: #555; font-weight: 500; margin: 12px 0 6px; }
+.mic { margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--accent); color: var(--accent); border-radius: 10px; padding: 9px 8px; font-weight: 500; font-size: 12px; }
+.mic.on { background: var(--accent); color: #fff; }
+.mic .off { font-size: 9px; border: 1px solid rgba(255,255,255,.5); border-radius: 5px; padding: 0 4px; opacity: .85; }
+.fb { text-align: center; color: var(--accent); font-weight: 600; font-size: 11px; margin-top: 4px; }
+.chips { display: flex; gap: 6px; white-space: nowrap; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); }
+.chip { border: 1px solid #333; background: #1a1a1a; color: #888; border-radius: 20px; padding: 5px 11px; font-size: 11.5px; flex: none; }
+.chip.on { border-color: var(--accent); background: rgba(232,108,58,.14); color: var(--accent); }
+.chip.dash { border-style: dashed; }
+.card { background: var(--surface); border: .5px solid var(--border); border-radius: 10px; padding: 0 12px; }
+.r { height: 34px; display: flex; align-items: center; justify-content: space-between; border-bottom: .5px solid var(--border); color: var(--t2); }
+.r:last-child { border-bottom: 0; }
+.r b { color: var(--t1); font-weight: 500; display: inline-flex; align-items: center; gap: 2px; font-variant-numeric: tabular-nums; }
+.r b svg { width: 12px; height: 12px; color: var(--t3); }
+.r small { color: var(--t3); font-size: 10.5px; margin-left: 4px; }
+.tog { width: 30px; height: 17px; border-radius: 9px; background: #333; position: relative; }
+.tog::after { content: ""; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: 50%; background: #888; }
+.tog.on { background: var(--accent); }
+.tog.on::after { left: 15px; background: #fff; }
+.step { display: inline-flex; align-items: center; gap: 10px; color: var(--t1); font-weight: 500; }
+.step i { width: 22px; height: 22px; border-radius: 50%; border: 1px solid #3a3a3a; display: inline-flex; align-items: center; justify-content: center; font-style: normal; color: var(--accent); font-size: 14px; line-height: 1; }
+.btn { height: 46px; border-radius: 10px; background: var(--accent); color: #fff; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn.ghost { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
+.btn svg { width: 16px; height: 16px; }
+.dock { flex: none; padding: 10px 12px; border-top: 1px solid var(--border); background: var(--bg); }
+.fade { position: absolute; left: 0; right: 0; bottom: 0; height: 34px; background: linear-gradient(transparent, var(--bg)); pointer-events: none; }
+
+/* ---------- run screens ---------- */
+.run { align-items: center; padding: 6px 16px 0; }
+.runtop { width: 100%; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--t2); }
+.pill { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--accent); color: var(--accent); border-radius: 20px; padding: 2px 8px; font-size: 10.5px; font-weight: 600; }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.pill.idle { border-color: #333; color: var(--t3); }
+.pill.idle::before { background: var(--t3); }
+.phase { margin-top: 18px; font-size: 12px; letter-spacing: 2.4px; font-weight: 700; }
+.ringwrap { position: relative; width: 236px; height: 236px; margin-top: 10px; }
+.ringwrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ringwrap .track { stroke: #202020; }
+.center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.digits { font-size: 66px; font-weight: 300; letter-spacing: -1px; font-variant-numeric: tabular-nums; color: #fff; line-height: 1; }
+.digits.xl { font-size: 104px; font-weight: 200; }
+.under { font-size: 11px; color: var(--t2); margin-top: 6px; }
+.dots { display: flex; gap: 6px; margin-top: 14px; }
+.dots i { width: 8px; height: 8px; border-radius: 50%; background: #2c2c2c; }
+.dots i.d { background: var(--done); }
+.dots i.c { background: var(--work); box-shadow: 0 0 0 3px rgba(232,108,58,.25); }
+.meta { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+.meta div { background: var(--surface); border: .5px solid var(--border); border-radius: 10px; padding: 7px 10px; }
+.meta span { display: block; font-size: 9.5px; text-transform: uppercase; letter-spacing: .6px; color: var(--t3); }
+.meta b { font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.ctrls { margin-top: auto; padding: 12px 0 16px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 22px; }
+.cb { width: 54px; height: 54px; border-radius: 50%; border: 1px solid #333; display: flex; align-items: center; justify-content: center; color: var(--t1); position: relative; }
+.cb svg { width: 20px; height: 20px; }
+.cb.big { width: 78px; height: 78px; border: 0; color: #111; }
+.cb.big svg { width: 30px; height: 30px; }
+.cb em { position: absolute; top: 58px; font-style: normal; font-size: 9.5px; color: var(--t3); white-space: nowrap; }
+.cb.big em { top: 82px; }
+.cue { display: inline-flex; align-items: center; gap: 6px; border-radius: 20px; padding: 4px 10px; font-size: 11px; font-weight: 600; margin-top: 12px; }
+.cue svg { width: 13px; height: 13px; }
+.say { margin-top: 8px; font-size: 11px; color: var(--t2); font-style: italic; display: inline-flex; align-items: center; gap: 5px; }
+.say svg { width: 12px; height: 12px; }
+.hint { font-size: 10.5px; color: var(--t3); text-align: center; margin-top: 10px; }
+.tint-warn .scr { background: radial-gradient(120% 70% at 50% 40%, rgba(240,84,79,.22), transparent 70%); }
+.tint-prep .scr { background: radial-gradient(120% 70% at 50% 40%, rgba(239,159,39,.12), transparent 70%); }
+.tint-rest .scr { background: radial-gradient(120% 70% at 50% 40%, rgba(133,183,235,.12), transparent 70%); }
+.dim .digits { opacity: .35; }
+.badge { position: absolute; top: 34px; background: #2a2a2a; color: var(--t1); font-size: 10px; letter-spacing: 1.6px; font-weight: 700; padding: 3px 9px; border-radius: 6px; }
+
+/* ---------- sheet ---------- */
+.behind { opacity: .35; filter: saturate(.6); }
+.scrim { position: absolute; inset: 0; background: rgba(0,0,0,.55); }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; background: #181818; border-top: 1px solid var(--border); border-radius: 18px 18px 0 0; padding: 8px 16px 16px; }
+.grab { width: 36px; height: 4px; border-radius: 2px; background: #3a3a3a; margin: 0 auto 10px; }
+.sheet-t { display: flex; justify-content: space-between; align-items: baseline; }
+.sheet-t b { font-size: 15px; font-weight: 600; color: #fff; }
+.sheet-t span { font-size: 11px; color: var(--t3); }
+.editor { display: flex; justify-content: center; align-items: center; gap: 6px; margin: 16px 0 6px; }
+.col { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.col i { width: 40px; height: 32px; border-radius: 8px; border: 1px solid #333; display: flex; align-items: center; justify-content: center; font-style: normal; color: var(--accent); font-size: 18px; }
+.col .n { font-size: 52px; font-weight: 300; font-variant-numeric: tabular-nums; color: #fff; line-height: 1.05; }
+.col small { font-size: 10px; color: var(--t3); }
+.colon { font-size: 48px; font-weight: 200; color: var(--t2); margin-top: -18px; }
+.sheet .chips { justify-content: center; mask-image: none; -webkit-mask-image: none; flex-wrap: wrap; margin: 10px 0 14px; }
+
+/* ---------- pins ---------- */
+.pin { position: absolute; width: 18px; height: 18px; border-radius: 50%; background: #2b6fff; color: #fff; font-size: 10.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px var(--bg); z-index: 5; }
+.notes .pn { display: inline-flex; width: 16px; height: 16px; border-radius: 50%; background: #2b6fff; color: #fff; font-size: 10px; font-weight: 700; align-items: center; justify-content: center; margin-right: 4px; vertical-align: 1px; }
+.notes.pins { list-style: none; padding-left: 12px; }
+
+/* ---------- storyboard ---------- */
+.story { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 900px) { .story { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 520px) { .story { grid-template-columns: 1fr; } }
+.beat { background: var(--note); border: 1px solid var(--line); border-radius: 12px; padding: 14px; position: relative; }
+.beat .n { font-size: 11px; font-weight: 700; color: var(--ink-2); letter-spacing: 1px; }
+.beat .big { font-size: 26px; font-weight: 300; font-variant-numeric: tabular-nums; margin: 4px 0; }
+.beat .t { font-weight: 600; font-size: 13.5px; }
+.beat p { margin: 4px 0 0; font-size: 12.5px; color: var(--ink-2); }
+.beat .bar { height: 4px; border-radius: 2px; margin-top: 10px; }
+.quote { font-size: 15px; font-weight: 600; }
+
+/* ---------- timeline ---------- */
+.tl { background: var(--note); border: 1px solid var(--line); border-radius: 12px; padding: 18px 18px 14px; overflow: hidden; }
+.tl-inner { position: relative; height: 196px; }
+.segs { position: absolute; top: 86px; left: 0; right: 0; height: 28px; display: flex; border-radius: 6px; overflow: hidden; }
+.segs div { display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 600; color: #111; }
+.mk { position: absolute; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; text-align: center; font-size: 11px; line-height: 1.25; color: var(--ink); width: 96px; }
+.mk.hi { top: 30px; }
+.mk svg { width: 16px; height: 16px; }
+.mk .stem { width: 1px; background: var(--ink-2); opacity: .5; margin-top: 3px; }
+.tts { position: absolute; top: 124px; transform: translateX(-50%); font-size: 11px; color: var(--ink-2); font-style: italic; white-space: nowrap; display: flex; flex-direction: column; align-items: center; }
+.tts::before { content: ""; width: 1px; height: 10px; background: var(--ink-2); opacity: .4; margin-bottom: 3px; }
+.tts.lo { top: 158px; }
+.tl-foot { font-size: 12px; color: var(--ink-2); margin-top: 4px; }
+@media (max-width: 760px) { .tl-inner { transform: scale(.8); transform-origin: left top; width: 125%; height: 170px; } }
+
+/* ---------- training-screen clock ---------- */
+.float { position: absolute; z-index: 4; background: rgba(14,14,14,.92); border: 1px solid #353535; border-radius: 22px; padding: 7px 7px 8px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 10px 26px rgba(0,0,0,.65); }
+.float .dial { display: block; }
+.flab { font-size: 10px; color: var(--t2); margin-top: 3px; font-weight: 600; }
+.fctl { display: flex; gap: 10px; margin-top: 7px; justify-content: center; }
+.mini { width: 34px; height: 34px; border-radius: 50%; border: 1px solid #3a3a3a; display: flex; align-items: center; justify-content: center; color: var(--t1); }
+.mini svg { width: 13px; height: 13px; }
+.dockband { display: flex; gap: 12px; align-items: center; padding: 2px 0 10px; margin-bottom: 8px; border-bottom: 1px solid var(--border); }
+.anat { position: relative; background: var(--bg); border-radius: 20px; padding: 18px 25px; box-shadow: 0 10px 28px var(--shadow); }
+.anat .dial { display: block; }
+
+.titlerow { display: flex; justify-content: space-between; align-items: flex-start; }
+.tpill { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--accent); color: var(--accent); border-radius: 20px; padding: 4px 10px; font-size: 11px; font-weight: 600; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.tpill svg { width: 13px; height: 13px; }
+.overlay { position: absolute; left: 0; right: 0; bottom: 54px; z-index: 3; background: rgba(12,12,12,.93); border-top: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; padding: 8px 12px 12px; }
+.overlay .dial { display: block; margin-top: 6px; }
+.nowcard { width: 100%; margin-top: auto; background: var(--surface); border: 1px solid #333; border-radius: 12px; padding: 9px 12px 10px; }
+.nowtop { display: flex; justify-content: space-between; align-items: center; }
+.nowlbl { font-size: 9.5px; letter-spacing: 1.3px; color: var(--accent); font-weight: 700; }
+.nowname { font-size: 14px; font-weight: 600; color: #fff; margin-top: 3px; }
+.nowdesc { font-size: 11px; color: var(--t2); line-height: 1.45; margin-top: 3px; }
+.nowfoot { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.nowfoot .bar { flex: 1; height: 2px; background: #2a2a2a; border-radius: 2px; }
+.nowfoot .bar div { height: 100%; background: var(--accent); border-radius: 2px; }
+.navb { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #3a3a3a; display: flex; align-items: center; justify-content: center; color: var(--t1); font-size: 16px; line-height: 1; }
+.botband { position: absolute; left: 0; right: 0; bottom: 54px; z-index: 3; background: #151515; border-top: 1px solid var(--border); display: flex; gap: 12px; align-items: center; padding: 10px 12px; }
+
+.chips.multi { display: block; white-space: normal; -webkit-mask-image: none; mask-image: none; }
+.chips.multi .chip { display: inline-block; margin: 0 6px 6px 0; }
+.chip svg { width: 11px; height: 11px; vertical-align: -1px; margin-right: 3px; }
+.opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0; }
+.opt { border: 1px solid #333; border-radius: 12px; padding: 10px 8px 8px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11.5px; color: var(--t2); }
+.opt.on { border-color: var(--accent); background: rgba(232,108,58,.10); color: var(--accent); font-weight: 600; }
+.mini-scr { position: relative; width: 52px; height: 84px; border: 1.5px solid #3a3a3a; border-radius: 9px; background: #111; overflow: hidden; }
+.mini-scr i { position: absolute; left: 6px; right: 6px; height: 5px; border-radius: 2px; background: #2a2a2a; }
+.mini-scr b { position: absolute; border-radius: 50%; background: var(--accent); }
+.mini-scr u { position: absolute; left: 0; right: 0; height: 22px; background: #1f1f1f; border-color: #333; }
+.input { border: 1px solid var(--accent); border-radius: 10px; padding: 10px 12px; font-size: 14px; color: #fff; margin-top: 14px; }
+.input::after { content: ""; display: inline-block; width: 1.5px; height: 16px; background: var(--accent); vertical-align: -3px; margin-left: 1px; }
+.kbd { position: absolute; left: 0; right: 0; bottom: 0; height: 168px; background: #1d1d1d; border-top: 1px solid #2a2a2a; display: flex; align-items: center; justify-content: center; color: #444; font-size: 11px; letter-spacing: 1px; }
+
+/* ---------- table ---------- */
+table { width: 100%; border-collapse: collapse; background: var(--note); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; font-size: 13px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--ink-2); font-weight: 600; }
+tr:last-child td { border-bottom: 0; }
+td q { font-weight: 600; quotes: "“" "”"; }
+.tag { display: inline-block; font-size: 10.5px; font-weight: 700; border-radius: 4px; padding: 1px 6px; }
+.tag.int { background: rgba(151,196,89,.2); color: #4f7a1c; }
+.tag.fin { background: rgba(43,111,255,.15); color: #2b5fd0; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tag.int { color: var(--done); } :root:not([data-theme="light"]) .tag.fin { color: #8fb0ff; } }
+.tablewrap { overflow-x: auto; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+    <symbol id="i-barbell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9v6M6.5 6.5v11M17.5 6.5v11M21 9v6M6.5 12h11"/></symbol>
+    <symbol id="i-timer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 2M9.5 2.5h5"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-7.5-10.2A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4" height="15" rx="1" fill="currentColor"/><rect x="14" y="4.5" width="4" height="15" rx="1" fill="currentColor"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></symbol>
+    <symbol id="i-skip" viewBox="0 0 24 24"><path d="M5 5v14l10-7z" fill="currentColor"/><rect x="16.5" y="5" width="2.5" height="14" rx="1" fill="currentColor"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.8 1.8H4.2z"/><path d="M10 21h4" stroke-linecap="round"/></symbol>
+    <symbol id="i-clap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 20L14 4M10 20L19 4"/><path d="M3 8l2 1M2.5 12h2.2" stroke-width="1.6"/></symbol>
+    <symbol id="i-beep" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" stroke-linejoin="round"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></symbol>
+    <symbol id="i-speak" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H10l-5 4v-4H4z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></symbol>
+    <symbol id="i-restart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12a7.5 7.5 0 1 0 2.6-5.7"/><path d="M4.5 3.5v4h4"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+<header>
+  <h1>Round Timer: wireframes</h1>
+  <p>New <b>Timer</b> bottom tab for the Muay Thai app: editable round, rest and lead-in defaults, presets, bells and voice control. It uses the app’s dark theme tokens. Plan: <code>260930_185109_boxing-round-timer.md</code>.</p>
+  <div class="legend">
+    <span><i style="background:var(--prep)"></i>Lead-in / get ready</span>
+    <span><i style="background:var(--work)"></i>Round (work)</span>
+    <span><i style="background:var(--warn)"></i>Round ending (warning window)</span>
+    <span><i style="background:var(--rest)"></i>Rest</span>
+    <span><i style="background:var(--done)"></i>Done</span>
+    <span><i style="background:#2b6fff;border-radius:50%"></i>Annotation pin</span>
+  </div>
+</header>
+
+<!-- =============================== 1 · SETUP =============================== -->
+<h2>1 · Setup <small>Timer tab when idle. Defaults are saved on the device.</small></h2>
+<div class="row">
+
+  <div class="frame">
+    <p class="cap">A · Timer tab: setup</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 87%</span></div>
+      <div class="scr">
+        <div class="h1">Round timer</div>
+        <div class="sub">5 × 3:00 · rest 2:00 · total 23:10</div>
+        <div class="mic"><svg class="ico"><use href="#i-mic"/></svg>Tap to listen: “set 2 min countdown”</div>
+        <span class="pin" style="top:52px;right:4px">1</span>
+
+        <div class="lbl">Presets</div>
+        <div class="chips"><span class="chip on">Muay Thai</span><span class="chip">Boxing</span><span class="chip">MMA</span><span class="chip">Tabata</span><span class="chip">Bag 6×2</span><span class="chip dash">＋ Save</span></div>
+        <span class="pin" style="top:112px;right:4px">2</span>
+
+        <div class="lbl">Rounds</div>
+        <div class="card">
+          <div class="r">Round time <b>3:00<svg><use href="#i-chev"/></svg></b></div>
+          <div class="r">Rest <b>2:00<svg><use href="#i-chev"/></svg></b></div>
+          <div class="r">Rounds <span class="step"><i>−</i>5<i>+</i></span></div>
+          <div class="r">Start delay <b>10 s<svg><use href="#i-chev"/></svg></b></div>
+        </div>
+        <span class="pin" style="top:178px;right:4px">3</span>
+
+        <div class="lbl">Cues</div>
+        <div class="card">
+          <div class="r"><span>Round-end warning</span><b>10 s <small>clap</small><svg><use href="#i-chev"/></svg></b></div>
+          <div class="r"><span>Rest-end warning</span><b>10 s <small>beep</small><svg><use href="#i-chev"/></svg></b></div>
+          <div class="r">3-2-1 beeps <span class="tog on"></span></div>
+          <div class="r">Voice announcements <span class="tog on"></span></div>
+          <div class="r">Vibrate <span class="tog"></span></div>
+        </div>
+        <span class="pin" style="top:332px;right:4px">4</span>
+        <div class="fade"></div>
+      </div>
+      <div class="dock"><div class="btn"><svg><use href="#i-play"/></svg>Start · 23:10</div></div>
+      <span class="pin" style="bottom:118px;right:10px">5</span>
+      <div class="tabbar">
+        <div><svg><use href="#i-barbell"/></svg>Training</div>
+        <div class="on"><svg><use href="#i-timer"/></svg>Timer</div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+      </div>
+    </div>
+    <ol class="notes pins">
+      <li><span class="pn">1</span><b>Shared mic.</b> The same recognizer as Training, with the hint changed for this tab. Combo and timer commands work from either tab.</li>
+      <li><span class="pn">2</span>Built-in presets plus your own. Editing any value turns the selection into “Custom”, and <b>＋ Save</b> opens B4.</li>
+      <li><span class="pn">3</span>Round time and rest open the time sheet (B), and start delay opens the option sheet (B2). Rounds run 1–20, and + past 20 gives ∞.</li>
+      <li><span class="pn">4</span>Warning rows open the option sheet (B2) with <b>Off / 5 / 10 / 15 / 30 s</b>. The sounds are fixed: clap for round end, beep for rest end.</li>
+      <li><span class="pn">5</span>Start button pinned above the tab bar, big enough to hit with gloves on. It shows the total time.</li>
+      <li>The rest of the screen, below the fold, is frame A2.</li>
+    </ol>
+  </div>
+
+  <div class="frame">
+    <p class="cap">A2 · Setup, scrolled to the bottom</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 87%</span></div>
+      <div class="scr">
+        <div class="card">
+          <div class="r">Rounds <span class="step"><i>−</i>5<i>+</i></span></div>
+          <div class="r">Start delay <b>10 s<svg><use href="#i-chev"/></svg></b></div>
+        </div>
+        <div class="lbl">Cues</div>
+        <div class="card">
+          <div class="r"><span>Round-end warning</span><b>10 s <small>clap</small><svg><use href="#i-chev"/></svg></b></div>
+          <div class="r"><span>Rest-end warning</span><b>10 s <small>beep</small><svg><use href="#i-chev"/></svg></b></div>
+          <div class="r">3-2-1 beeps <span class="tog on"></span></div>
+          <div class="r">Voice announcements <span class="tog on"></span></div>
+          <div class="r">Vibrate <span class="tog"></span></div>
+        </div>
+        <div class="lbl">Test sounds</div>
+        <div class="chips multi"><span class="chip"><svg><use href="#i-bell"/></svg>Start bell</span><span class="chip"><svg><use href="#i-bell"/></svg>End bell ×3</span><span class="chip"><svg><use href="#i-clap"/></svg>Clap</span><span class="chip"><svg><use href="#i-beep"/></svg>Beep</span><span class="chip"><svg><use href="#i-speak"/></svg>Voice</span></div>
+        <span class="pin" style="top:290px;right:4px">1</span>
+        <div class="lbl">Display</div>
+        <div class="card">
+          <div class="r">Clock on Training <b>Center<svg><use href="#i-chev"/></svg></b></div>
+        </div>
+        <span class="pin" style="top:386px;right:4px">2</span>
+      </div>
+      <div class="dock"><div class="btn"><svg><use href="#i-play"/></svg>Start · 23:10</div></div>
+      <div class="tabbar">
+        <div><svg><use href="#i-barbell"/></svg>Training</div>
+        <div class="on"><svg><use href="#i-timer"/></svg>Timer</div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+      </div>
+    </div>
+    <ol class="notes pins">
+      <li><span class="pn">1</span><b>Test sounds:</b> tap a chip to play that cue at the current volume. “Voice” speaks “Round 1”. It works with the mic on, which is the device check in task 5.</li>
+      <li><span class="pn">2</span><b>Display:</b> tapping “Clock on Training” opens the position sheet (B3).</li>
+      <li>The screen scrolls between A and A2, and the Start button stays docked.</li>
+    </ol>
+  </div>
+
+  <div class="frame">
+    <p class="cap">B · Edit sheet: round time</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 87%</span></div>
+      <div class="scr behind">
+        <div class="h1">Round timer</div>
+        <div class="sub">5 × 3:00 · rest 2:00 · total 23:10</div>
+        <div class="mic"><svg class="ico"><use href="#i-mic"/></svg>Tap to listen</div>
+        <div class="lbl">Rounds</div>
+        <div class="card">
+          <div class="r">Round time <b>3:00</b></div>
+          <div class="r">Rest <b>2:00</b></div>
+          <div class="r">Rounds <b>5</b></div>
+          <div class="r">Start delay <b>10 s</b></div>
+        </div>
+      </div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="sheet-t"><b>Round time</b><span>0:10 – 20:00</span></div>
+        <div class="editor">
+          <div class="col"><i>+</i><div class="n">3</div><i>−</i><small>min</small></div>
+          <div class="colon">:</div>
+          <div class="col"><i>+</i><div class="n">00</div><i>−</i><small>sec · ±5</small></div>
+        </div>
+        <div class="chips"><span class="chip">0:30</span><span class="chip">1:00</span><span class="chip">2:00</span><span class="chip on">3:00</span><span class="chip">5:00</span></div>
+        <div class="btn">Done</div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>The time sheet is for <b>round time and rest</b>. Rest allows 0:00–10:00.</li>
+      <li>Hold <b>+ / −</b> to repeat faster. Seconds step by 5.</li>
+      <li>Chips are for common values, so most edits are a single tap.</li>
+      <li>Changes save to the device right away. There’s no Save button for defaults.</li>
+    </ul>
+  </div>
+
+  <div class="frame">
+    <p class="cap">B2 · Option sheet: round-end warning</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 87%</span></div>
+      <div class="scr behind">
+        <div class="h1">Round timer</div>
+        <div class="sub">5 × 3:00 · rest 2:00 · total 23:10</div>
+        <div class="mic"><svg class="ico"><use href="#i-mic"/></svg>Tap to listen</div>
+        <div class="lbl">Rounds</div>
+        <div class="card">
+          <div class="r">Round time <b>3:00</b></div>
+          <div class="r">Rest <b>2:00</b></div>
+          <div class="r">Rounds <b>5</b></div>
+          <div class="r">Start delay <b>10 s</b></div>
+        </div>
+      </div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="sheet-t"><b>Round-end warning</b><span>sound: clap</span></div>
+        <div class="chips" style="justify-content:center;flex-wrap:wrap;-webkit-mask-image:none;mask-image:none;margin:18px 0 8px"><span class="chip">Off</span><span class="chip">5 s</span><span class="chip on">10 s</span><span class="chip">15 s</span><span class="chip">30 s</span></div>
+        <div class="hint" style="margin:0 0 14px">Clap this long before the round ends, and TTS says “Ten seconds”.</div>
+        <div class="btn">Done</div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>The same option sheet serves <b>Rest-end warning</b> (sound: beep, same chips) and <b>Start delay</b> (Off / 5 / 10 / 15 / 30 s).</li>
+      <li>Tapping a chip applies it at once. Done or a tap on the scrim closes the sheet.</li>
+      <li>The hint line under the chips follows the chosen value (“Five seconds”, …). With Off it reads “No warning”.</li>
+    </ul>
+  </div>
+
+  <div class="frame">
+    <p class="cap">B3 · Clock position sheet</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 87%</span></div>
+      <div class="scr behind">
+        <div class="h1">Round timer</div>
+        <div class="sub">5 × 3:00 · rest 2:00 · total 23:10</div>
+        <div class="mic"><svg class="ico"><use href="#i-mic"/></svg>Tap to listen</div>
+        <div class="lbl">Rounds</div>
+        <div class="card">
+          <div class="r">Round time <b>3:00</b></div>
+          <div class="r">Rest <b>2:00</b></div>
+          <div class="r">Rounds <b>5</b></div>
+          <div class="r">Start delay <b>10 s</b></div>
+        </div>
+      </div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="sheet-t"><b>Clock on Training</b><span>while a timer runs</span></div>
+        <div class="opts">
+          <div class="opt on"><div class="mini-scr"><i style="top:8px"></i><i style="top:17px;right:20px"></i><i style="top:28px"></i><i style="top:37px"></i><u style="top:24px;bottom:0;height:auto;background:rgba(12,12,12,.9)"></u><b style="left:14px;top:30px;width:24px;height:24px"></b><i style="top:62px;height:14px;background:#262626;border:1px solid #3a3a3a"></i></div>Center</div>
+          <div class="opt"><div class="mini-scr"><u style="top:0;border-bottom:1px solid #333"></u><b style="left:5px;top:3px;width:16px;height:16px"></b><i style="top:8px;left:26px;right:6px;background:#3a3a3a"></i><i style="top:30px"></i><i style="top:39px"></i><i style="top:48px"></i><i style="top:57px"></i></div>Top</div>
+          <div class="opt"><div class="mini-scr"><i style="top:8px"></i><i style="top:17px;right:20px"></i><i style="top:28px"></i><i style="top:37px"></i><i style="top:46px"></i><u style="bottom:0;border-top:1px solid #333"></u><b style="left:5px;bottom:3px;width:16px;height:16px"></b><i style="bottom:10px;top:auto;left:26px;right:6px;background:#3a3a3a"></i></div>Bottom</div>
+          <div class="opt"><div class="mini-scr"><i style="top:8px"></i><i style="top:17px;right:20px"></i><i style="top:28px"></i><i style="top:37px"></i><i style="top:46px"></i><i style="top:55px"></i><i style="top:64px"></i></div>Off</div>
+        </div>
+        <div class="btn">Done</div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>The four tiles are schematic previews of K / L / M, with Off showing no clock. The selected tile has the accent border.</li>
+      <li>A tap selects and saves right away. The change also applies to a timer that’s already running.</li>
+    </ul>
+  </div>
+
+  <div class="frame">
+    <p class="cap">B4 · Save preset</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 87%</span></div>
+      <div class="scr behind">
+        <div class="h1">Round timer</div>
+        <div class="sub">5 × 3:00 · rest 2:00 · total 23:10</div>
+        <div class="mic"><svg class="ico"><use href="#i-mic"/></svg>Tap to listen</div>
+        <div class="lbl">Rounds</div>
+        <div class="card">
+          <div class="r">Round time <b>3:00</b></div>
+          <div class="r">Rest <b>2:00</b></div>
+          <div class="r">Rounds <b>5</b></div>
+          <div class="r">Start delay <b>10 s</b></div>
+        </div>
+      </div>
+      <div class="scrim"></div>
+      <div class="sheet" style="bottom:168px;border-radius:18px 18px 0 0">
+        <div class="grab"></div>
+        <div class="sheet-t"><b>Save preset</b><span>6 × 2:00 · rest 0:30</span></div>
+        <div class="input">Evening bag work</div>
+        <div class="hint" style="text-align:left;margin:6px 0 12px">Up to 20 characters. It appears after the built-in presets.</div>
+        <div class="btn">Save</div>
+      </div>
+      <div class="kbd">KEYBOARD</div>
+    </div>
+    <ul class="notes">
+      <li>Opened with <b>＋ Save</b> in the preset chips. Save is disabled while the name is empty.</li>
+      <li>Saving an existing name overwrites that preset.</li>
+      <li>Long-press a saved preset chip to delete it, with a native Alert: “Delete “Evening bag work”?” · Cancel / Delete. Built-in presets can’t be deleted.</li>
+    </ul>
+  </div>
+
+  <div class="frame">
+    <p class="cap">C · Voice set a value (idle)</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 87%</span></div>
+      <div class="scr">
+        <div class="h1">Round timer</div>
+        <div class="sub">6 × 3:00 · rest 0:30 · total 20:40</div>
+        <div class="mic on"><svg class="ico"><use href="#i-mic"/></svg>Listening: “set 2 min countdown” <span class="off">offline</span></div>
+        <div class="fb">✓ Rest 0:30</div>
+        <div class="lbl">Presets</div>
+        <div class="chips"><span class="chip">Muay Thai</span><span class="chip on">Custom</span><span class="chip">Boxing</span><span class="chip">MMA</span><span class="chip dash">＋ Save</span></div>
+        <div class="lbl">Rounds</div>
+        <div class="card">
+          <div class="r">Round time <b>3:00<svg><use href="#i-chev"/></svg></b></div>
+          <div class="r" style="background:rgba(232,108,58,.10);margin:0 -12px;padding:0 12px">Rest <b style="color:var(--accent)">0:30<svg><use href="#i-chev"/></svg></b></div>
+          <div class="r">Rounds <span class="step"><i>−</i>6<i>+</i></span></div>
+          <div class="r">Start delay <b>10 s<svg><use href="#i-chev"/></svg></b></div>
+        </div>
+        <div class="hint" style="margin-top:14px">You said <i>“set rest 30 seconds”</i> and then <i>“set rounds 6”</i>.<br>The row that changed is highlighted for a moment.</div>
+        <div class="fade"></div>
+      </div>
+      <div class="dock"><div class="btn"><svg><use href="#i-play"/></svg>Start · 20:40</div></div>
+      <div class="tabbar">
+        <div><svg><use href="#i-barbell"/></svg>Training</div>
+        <div class="on"><svg><use href="#i-timer"/></svg>Timer</div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>Voice edits use the <b>existing confirmation line</b> under the mic.</li>
+      <li>Setting commands only apply while the timer is <b>idle</b>. During a run they answer “Stop the timer first”.</li>
+      <li>The preset chip switches to <b>Custom</b> once a value differs from the preset.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- =============================== 2 · RUN =============================== -->
+<h2>2 · Running a workout <small>The ring shows time left in the current phase. The screen stays on.</small></h2>
+<div class="row">
+
+  <div class="frame">
+    <p class="cap">D · Lead-in (start delay)</p>
+    <div class="phone tint-prep">
+      <div class="sb"><span>9:41</span><span>● ● 87%</span></div>
+      <div class="scr run">
+        <div class="runtop"><span>Muay Thai · 5 × 3:00</span><span class="pill">listening</span></div>
+        <div class="phase" style="color:var(--prep)">GET READY</div>
+        <div class="ringwrap">
+          <svg viewBox="0 0 220 220"><circle class="track" cx="110" cy="110" r="100" fill="none" stroke-width="12"/><circle cx="110" cy="110" r="100" fill="none" stroke="var(--prep)" stroke-width="12" stroke-linecap="round" stroke-dasharray="628.3" stroke-dashoffset="188.5"/></svg>
+          <div class="center"><div class="digits xl" style="color:var(--prep)">7</div><div class="under">Round 1 of 5</div></div>
+        </div>
+        <div class="cue" style="background:rgba(239,159,39,.14);color:var(--prep)"><svg><use href="#i-beep"/></svg>beep · beep · beep at 3-2-1, then <svg><use href="#i-bell"/></svg></div>
+        <div class="say"><svg><use href="#i-speak"/></svg>“Get ready”</div>
+        <div class="ctrls">
+          <div class="cb"><svg><use href="#i-stop"/></svg><em>hold to stop</em></div>
+          <div class="cb big" style="background:var(--prep)"><svg><use href="#i-pause"/></svg><em>pause</em></div>
+          <div class="cb"><svg><use href="#i-skip"/></svg><em>skip</em></div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <div><svg><use href="#i-barbell"/></svg>Training</div>
+        <div class="on"><svg><use href="#i-timer"/></svg><span class="live">0:07</span></div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>Lead-in length comes from the <b>Start delay</b> setting (10 s by default, 0 skips it).</li>
+      <li>Seconds only, in very large digits so you can read them from across the gym.</li>
+      <li><b>Stop requires a long press</b> so a glove brushing the screen won’t end the workout. Pause and skip are single taps.</li>
+    </ul>
+  </div>
+
+  <div class="frame">
+    <p class="cap">E · Round in progress</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 86%</span></div>
+      <div class="scr run">
+        <div class="runtop"><span>Muay Thai · 5 × 3:00</span><span class="pill">listening</span></div>
+        <div class="phase" style="color:var(--work)">ROUND 2 OF 5</div>
+        <div class="ringwrap">
+          <svg viewBox="0 0 220 220"><circle class="track" cx="110" cy="110" r="100" fill="none" stroke-width="12"/><circle cx="110" cy="110" r="100" fill="none" stroke="var(--work)" stroke-width="12" stroke-linecap="round" stroke-dasharray="628.3" stroke-dashoffset="45"/></svg>
+          <div class="center"><div class="digits">2:47</div><div class="under">of 3:00</div></div>
+        </div>
+        <div class="dots"><i class="d"></i><i class="c"></i><i></i><i></i><i></i></div>
+        <div class="meta"><div><span>Next</span><b>Rest 2:00</b></div><div><span>Workout left</span><b>17:47</b></div></div>
+        <div class="ctrls">
+          <div class="cb"><svg><use href="#i-stop"/></svg><em>hold to stop</em></div>
+          <div class="cb big" style="background:var(--work)"><svg><use href="#i-pause"/></svg><em>pause</em></div>
+          <div class="cb"><svg><use href="#i-skip"/></svg><em>skip</em></div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <div><svg><use href="#i-barbell"/></svg>Training</div>
+        <div class="on"><svg><use href="#i-timer"/></svg><span class="live">2:47</span></div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>A single <b>start bell</b> rang when the round began, and TTS said “Round 2”.</li>
+      <li>The dots show rounds done (green), the current round and rounds still to come. With ∞ rounds the dots become a counter: “Round 7”.</li>
+      <li>While the timer runs, the tab label shows the live time, so you can see it from the Training tab too (section 5).</li>
+    </ul>
+  </div>
+
+  <div class="frame">
+    <p class="cap">E2 · Quick countdown running</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 86%</span></div>
+      <div class="scr run">
+        <div class="runtop"><span>Countdown · 2:00</span><span class="pill">listening</span></div>
+        <div class="phase" style="color:var(--work)">COUNTDOWN</div>
+        <div class="ringwrap">
+          <svg viewBox="0 0 220 220"><circle class="track" cx="110" cy="110" r="100" fill="none" stroke-width="12"/><circle cx="110" cy="110" r="100" fill="none" stroke="var(--work)" stroke-width="12" stroke-linecap="round" stroke-dasharray="628.3" stroke-dashoffset="41.9"/></svg>
+          <div class="center"><div class="digits">1:52</div><div class="under">of 2:00</div></div>
+        </div>
+        <div class="hint" style="margin-top:18px">Say “timer stop” to cancel</div>
+        <div class="ctrls">
+          <div class="cb"><svg><use href="#i-stop"/></svg><em>hold to stop</em></div>
+          <div class="cb big" style="background:var(--work)"><svg><use href="#i-pause"/></svg><em>pause</em></div>
+          <div class="cb"><svg><use href="#i-skip"/></svg><em>skip</em></div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <div><svg><use href="#i-barbell"/></svg>Training</div>
+        <div class="on"><svg><use href="#i-timer"/></svg><span class="live">1:52</span></div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>Same run screen as E, labelled <b>COUNTDOWN</b>, with no round dots and no meta cards.</li>
+      <li>The top-left label reads “Countdown · 2:00” instead of the preset name.</li>
+      <li>The lead-in, warning and bells come from settings. Done reads “Countdown done · 2:00”.</li>
+    </ul>
+  </div>
+
+  <div class="frame">
+    <p class="cap">F · Round ending (warning window)</p>
+    <div class="phone tint-warn">
+      <div class="sb"><span>9:41</span><span>● ● 86%</span></div>
+      <div class="scr run">
+        <div class="runtop"><span>Muay Thai · 5 × 3:00</span><span class="pill">listening</span></div>
+        <div class="phase" style="color:var(--warn)">ROUND 2 OF 5</div>
+        <div class="ringwrap">
+          <svg viewBox="0 0 220 220"><circle class="track" cx="110" cy="110" r="100" fill="none" stroke-width="12"/><circle cx="110" cy="110" r="100" fill="none" stroke="var(--warn)" stroke-width="12" stroke-linecap="round" stroke-dasharray="628.3" stroke-dashoffset="600.4"/></svg>
+          <div class="center"><div class="digits" style="color:var(--warn)">0:08</div><div class="under">of 3:00</div></div>
+        </div>
+        <div class="cue" style="background:rgba(240,84,79,.16);color:var(--warn)"><svg><use href="#i-clap"/></svg>clap · 10 s left</div>
+        <div class="say"><svg><use href="#i-speak"/></svg>“Ten seconds”</div>
+        <div class="ctrls">
+          <div class="cb"><svg><use href="#i-stop"/></svg><em>hold to stop</em></div>
+          <div class="cb big" style="background:var(--warn)"><svg><use href="#i-pause"/></svg><em>pause</em></div>
+          <div class="cb"><svg><use href="#i-skip"/></svg><em>skip</em></div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <div><svg><use href="#i-barbell"/></svg>Training</div>
+        <div class="on"><svg><use href="#i-timer"/></svg><span class="live" style="color:var(--warn)">0:08</span></div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>The warning window turns the round red and plays the classic <b>wood clap</b>, with an optional TTS line.</li>
+      <li>At 0:00 the <b>end bell rings three times</b> and TTS says “Rest” (or “Time” after the last round).</li>
+    </ul>
+  </div>
+
+  <div class="frame">
+    <p class="cap">G · Rest</p>
+    <div class="phone tint-rest">
+      <div class="sb"><span>9:41</span><span>● ● 86%</span></div>
+      <div class="scr run">
+        <div class="runtop"><span>Muay Thai · 5 × 3:00</span><span class="pill">listening</span></div>
+        <div class="phase" style="color:var(--rest)">REST</div>
+        <div class="ringwrap">
+          <svg viewBox="0 0 220 220"><circle class="track" cx="110" cy="110" r="100" fill="none" stroke-width="12"/><circle cx="110" cy="110" r="100" fill="none" stroke="var(--rest)" stroke-width="12" stroke-linecap="round" stroke-dasharray="628.3" stroke-dashoffset="408.4"/></svg>
+          <div class="center"><div class="digits" style="color:var(--rest)">0:42</div><div class="under">of 2:00</div></div>
+        </div>
+        <div class="dots"><i class="d"></i><i class="d"></i><i></i><i></i><i></i></div>
+        <div class="meta"><div><span>Next</span><b>Round 3 of 5</b></div><div><span>Workout left</span><b>12:42</b></div></div>
+        <div class="hint">Rest-end warning: a beep at 0:10, then 3-2-1 and the start bell.</div>
+        <div class="ctrls">
+          <div class="cb"><svg><use href="#i-stop"/></svg><em>hold to stop</em></div>
+          <div class="cb big" style="background:var(--rest)"><svg><use href="#i-pause"/></svg><em>pause</em></div>
+          <div class="cb"><svg><use href="#i-skip"/></svg><em>skip rest</em></div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <div><svg><use href="#i-barbell"/></svg>Training</div>
+        <div class="on"><svg><use href="#i-timer"/></svg><span class="live" style="color:var(--rest)">0:42</span></div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>Before the final round TTS says <b>“Last round”</b> instead of “Round 5”.</li>
+      <li>There’s no rest after the last round. The workout goes straight to Done (I).</li>
+    </ul>
+  </div>
+
+  <div class="frame">
+    <p class="cap">H · Paused</p>
+    <div class="phone dim">
+      <div class="sb"><span>9:41</span><span>● ● 85%</span></div>
+      <div class="scr run">
+        <div class="runtop"><span>Muay Thai · 5 × 3:00</span><span class="pill">listening</span></div>
+        <div class="phase" style="color:var(--t2)">ROUND 3 OF 5</div>
+        <div class="ringwrap">
+          <svg viewBox="0 0 220 220"><circle class="track" cx="110" cy="110" r="100" fill="none" stroke-width="12"/><circle cx="110" cy="110" r="100" fill="none" stroke="#5a5a5a" stroke-width="12" stroke-linecap="round" stroke-dasharray="628.3" stroke-dashoffset="293.2"/></svg>
+          <div class="center"><div class="digits">1:36</div><div class="under">paused</div></div>
+          <span class="badge" style="left:50%;transform:translateX(-50%)">PAUSED</span>
+        </div>
+        <div class="dots"><i class="d"></i><i class="d"></i><i class="c"></i><i></i><i></i></div>
+        <div class="hint">Say “timer resume” · “timer stop”</div>
+        <div class="ctrls">
+          <div class="cb"><svg><use href="#i-restart"/></svg><em>restart round</em></div>
+          <div class="cb big" style="background:var(--accent)"><svg><use href="#i-play"/></svg><em>resume</em></div>
+          <div class="cb"><svg><use href="#i-stop"/></svg><em>stop</em></div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <div><svg><use href="#i-barbell"/></svg>Training</div>
+        <div class="on"><svg><use href="#i-timer"/></svg><span class="live">❚❚ 1:36</span></div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>A single tap stops while paused, since the workout is already halted.</li>
+      <li><b>Restart round</b> resets the current phase to its full length.</li>
+      <li>The screen stays on while paused. The timer is based on timestamps, so pausing never drifts.</li>
+    </ul>
+  </div>
+
+  <div class="frame">
+    <p class="cap">I · Done</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 84%</span></div>
+      <div class="scr run">
+        <div class="runtop"><span>Muay Thai · 5 × 3:00</span><span class="pill idle">mic off</span></div>
+        <div style="margin-top:70px;width:92px;height:92px;border-radius:50%;background:rgba(151,196,89,.14);display:flex;align-items:center;justify-content:center;color:var(--done)"><svg style="width:46px;height:46px"><use href="#i-check"/></svg></div>
+        <div style="font-size:20px;font-weight:600;color:#fff;margin-top:18px">Workout complete</div>
+        <div style="color:var(--t2);margin-top:4px">5 rounds · 23:10</div>
+        <div class="say" style="margin-top:14px"><svg><use href="#i-speak"/></svg>“Time. Workout complete.”</div>
+        <div style="margin-top:auto;width:100%;display:grid;gap:10px;padding-bottom:16px">
+          <div class="btn"><svg><use href="#i-restart"/></svg>Again</div>
+          <div class="btn ghost">Back to setup</div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <div><svg><use href="#i-barbell"/></svg>Training</div>
+        <div class="on"><svg><use href="#i-timer"/></svg>Timer</div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>The end bell rings three times, then TTS speaks. Keep-awake is released here.</li>
+      <li>The top-right pill toggles the mic on every run screen: accent “listening” when on, grey “mic off” when off (shown here).</li>
+      <li>The quick countdown (section 3) ends here too, reading “Countdown done · 2:00”.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- =============================== 3 · VOICE COUNTDOWN =============================== -->
+<h2>3 · Voice: “set 2 minutes countdown” <small>A one-off countdown that doesn’t change the saved settings (decided)</small></h2>
+<div class="story">
+  <div class="beat">
+    <div class="n">1 · YOU SAY</div>
+    <div class="quote" style="margin-top:6px">“set 2 minutes countdown”</div>
+    <p>Accepted on the <b>final</b> result, so “2 minutes… 30 seconds” can finish before it fires. The confirmation line shows <b>✓ 2:00 countdown</b>. It works from any tab. On Training the clock appears in the center (K). From Favorites the app switches to the Timer tab.</p>
+    <div class="bar" style="background:var(--accent)"></div>
+  </div>
+  <div class="beat">
+    <div class="n">2 · LEAD-IN</div>
+    <div class="big" style="color:var(--prep)">10 → 1</div>
+    <div class="t">Start delay from settings</div>
+    <p>TTS says “Get ready”, then three beeps at 3-2-1. The lead-in also hides the ~1 s the recognizer takes to finalize.</p>
+    <div class="bar" style="background:var(--prep)"></div>
+  </div>
+  <div class="beat">
+    <div class="n">3 · START</div>
+    <div class="big">🔔 2:00</div>
+    <div class="t">Start bell (one ring)</div>
+    <p>Timer screen with the label <b>COUNTDOWN</b> and no round dots. “timer pause” / “timer stop” work as usual.</p>
+    <div class="bar" style="background:var(--work)"></div>
+  </div>
+  <div class="beat">
+    <div class="n">4 · WARNING</div>
+    <div class="big" style="color:var(--warn)">0:10</div>
+    <div class="t">Clap</div>
+    <p>Uses the round-end warning setting. It’s skipped when the countdown is shorter than twice the warning window.</p>
+    <div class="bar" style="background:var(--warn)"></div>
+  </div>
+  <div class="beat">
+    <div class="n">5 · END</div>
+    <div class="big">🔔🔔🔔</div>
+    <div class="t">End bell ×3 → Done</div>
+    <p>The Timer tab shows “Countdown done · 2:00” with <b>Again</b>. On Training the clock fades out. Saying the phrase again restarts it.</p>
+    <div class="bar" style="background:var(--done)"></div>
+  </div>
+</div>
+
+<!-- =============================== 4 · CUE TIMELINE =============================== -->
+<h2>4 · Cue timeline <small>One round and one rest, not to scale</small></h2>
+<div class="tl">
+  <div class="tl-inner">
+    <!-- markers: positions in % of width -->
+    <div class="mk" style="left:9%"><svg><use href="#i-beep"/></svg>3·2·1<br>beeps<div class="stem" style="height:44px"></div></div>
+    <div class="mk hi" style="left:14%"><svg><use href="#i-bell"/></svg>start bell<div class="stem" style="height:14px"></div></div>
+    <div class="mk" style="left:50%"><svg><use href="#i-clap"/></svg>clap<br>(−10 s)<div class="stem" style="height:44px"></div></div>
+    <div class="mk hi" style="left:58%"><svg><use href="#i-bell"/></svg>end bell ×3<div class="stem" style="height:14px"></div></div>
+    <div class="mk" style="left:74%"><svg><use href="#i-beep"/></svg>beep<br>(−10 s)<div class="stem" style="height:44px"></div></div>
+    <div class="mk hi" style="left:83%"><svg><use href="#i-beep"/></svg>3·2·1<div class="stem" style="height:14px"></div></div>
+    <div class="mk" style="left:88%"><svg><use href="#i-bell"/></svg>start<br>bell<div class="stem" style="height:44px"></div></div>
+
+    <div class="segs">
+      <div style="width:14%;background:var(--prep)">Lead-in 10 s</div>
+      <div style="width:36%;background:var(--work)">Round 1 · 3:00</div>
+      <div style="width:8%;background:var(--warn)">10 s</div>
+      <div style="width:30%;background:var(--rest)">Rest · 2:00</div>
+      <div style="width:12%;background:var(--work)">Round 2…</div>
+    </div>
+
+    <div class="tts" style="left:3%">“Get ready”</div>
+    <div class="tts lo" style="left:14%">“Round 1”</div>
+    <div class="tts" style="left:50%">“Ten seconds”</div>
+    <div class="tts lo" style="left:58%">“Rest”</div>
+    <div class="tts" style="left:74%">“Ten seconds”</div>
+    <div class="tts lo" style="left:88%">“Round 2” / “Last round”</div>
+  </div>
+  <div class="tl-foot">Top row: sounds (expo-audio). Italic: TTS (expo-speech), which can be switched off. Every cue is precomputed as <code>{atMs, sound, say}</code> from the config and fires once when elapsed time passes <code>atMs</code>. After the last round the end bell rings three times and TTS says “Time. Workout complete.” Vibrate (optional) fires on each bell.</div>
+</div>
+
+<!-- =============================== 5 · TIMER ON TRAINING =============================== -->
+<h2>5 · Timer on the Training screen <small>The clock shows only while a timer runs and disappears when it’s done. Position is a setting: Center (default) / Top / Bottom / Off.</small></h2>
+<div class="row">
+
+  <div class="frame">
+    <p class="cap">J · Idle: no clock, start from the header</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 86%</span></div>
+      <div class="scr">
+        <div class="titlerow"><div><div class="h1">Today's training</div><div class="sub">10 combos · 0 done</div></div><span class="tpill"><svg><use href="#i-timer"/></svg>5 × 3:00</span></div>
+        <div class="mic on"><svg class="ico"><use href="#i-mic"/></svg>Listening: “combo 3” / “set 2 min countdown”</div>
+        <div style="margin-top:12px;border:1px solid var(--accent);border-radius:10px;padding:8px 12px;color:var(--accent);text-align:center;font-weight:500">New session</div>
+        <div style="margin-top:8px" class="card"><div class="r" style="height:44px"><span><span style="color:#444;margin-right:8px">1</span>Jab - Cross - Hook</span><span style="color:#444">♡</span></div></div>
+        <div style="margin-top:8px" class="card"><div class="r" style="height:44px"><span><span style="color:#444;margin-right:8px">2</span>Jab - Teep</span><span style="color:#444">♡</span></div></div>
+        <div style="margin-top:8px" class="card"><div class="r" style="height:44px"><span><span style="color:#444;margin-right:8px">3</span>Cross - Hook → Rear kick</span><span style="color:#444">♡</span></div></div>
+        <div style="margin-top:8px" class="card"><div class="r" style="height:44px"><span><span style="color:#444;margin-right:8px">4</span>Teep → Cross - Rear kick</span><span style="color:var(--accent)">♥</span></div></div>
+        <div style="margin-top:8px" class="card"><div class="r" style="height:44px"><span><span style="color:#444;margin-right:8px">5</span>Double jab - Low kick</span><span style="color:#444">♡</span></div></div>
+        <div style="margin-top:8px" class="card"><div class="r" style="height:44px"><span><span style="color:#444;margin-right:8px">6</span>Hook - Switch kick</span><span style="color:#444">♡</span></div></div>
+        <div style="margin-top:8px" class="card"><div class="r" style="height:44px"><span><span style="color:#444;margin-right:8px">7</span>Jab - Cross - Knee</span><span style="color:#444">♡</span></div></div>
+        <div class="fade"></div>
+      </div>
+      <span class="pin" style="top:30px;right:4px">1</span>
+      <div class="tabbar">
+        <div class="on"><svg><use href="#i-barbell"/></svg>Training</div>
+        <div><svg><use href="#i-timer"/></svg>Timer</div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+      </div>
+    </div>
+    <ol class="notes pins">
+      <li><span class="pn">1</span><b>Timer pill.</b> Tap starts the saved workout (lead-in first). Long-press opens Timer setup. The pill also shows on the filter screen.</li>
+      <li>Voice works too: “set 2 minutes countdown” or “timer start”.</li>
+      <li>Until a timer starts, nothing floats and the screen looks exactly like today.</li>
+    </ol>
+  </div>
+
+  <div class="frame">
+    <p class="cap">K · Running, position Center <span style="color:var(--ink-2);font-weight:400">(default)</span></p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 86%</span></div>
+      <div class="scr">
+        <div class="titlerow"><div><div class="h1">Today's training</div><div class="sub">10 combos · 3 done</div></div></div>
+        <div class="mic on"><svg class="ico"><use href="#i-mic"/></svg>Listening: “combo 3” / “combo next”</div>
+        <div class="fb">Combo 4</div>
+        <div style="margin-top:10px;background:var(--surface);border:1px solid #333;border-radius:10px;padding:10px 12px">
+          <div style="display:flex;justify-content:space-between"><span><span style="color:#444;margin-right:8px">4</span><b style="font-weight:500">Teep → Cross - Rear kick</b></span><span style="color:var(--accent)">♥</span></div>
+          <div style="color:var(--t2);font-size:11.5px;margin-top:6px;line-height:1.5">Push kick to create range, step in with the cross, finish with a rear roundhouse.</div>
+          <div style="height:2px;background:#2a2a2a;margin-top:10px;border-radius:2px"><div style="width:62%;height:100%;background:var(--accent)"></div></div>
+        </div>
+        <div style="margin-top:8px" class="card"><div class="r" style="height:44px"><span><span style="color:#444;margin-right:8px">5</span>Double jab - Low kick</span><span style="color:#444">♡</span></div></div>
+        <div style="margin-top:8px" class="card"><div class="r" style="height:44px"><span><span style="color:#444;margin-right:8px">6</span>Hook - Switch kick</span><span style="color:#444">♡</span></div></div>
+      </div>
+      <div class="overlay" style="top:136px">
+        <div class="phase" style="margin-top:2px;color:var(--work)">ROUND 2 OF 5</div>
+        <svg class="dial" data-total="180" data-left="72" data-color="#E86C3A" data-warn="10" data-digits="1:12" data-sub="next: rest" style="width:188px;height:188px"></svg>
+        <div class="fctl"><span class="mini"><svg><use href="#i-pause"/></svg></span><span class="mini"><svg><use href="#i-skip"/></svg></span><span class="mini"><svg><use href="#i-stop"/></svg></span></div>
+        <div class="nowcard">
+          <div class="nowtop"><span class="nowlbl">NOW · COMBO 4 OF 10</span><span style="color:var(--accent)">♥</span></div>
+          <div class="nowname">Teep → Cross - Rear kick</div>
+          <div class="nowdesc">Push kick to create range, step in with the cross, finish with a rear roundhouse.</div>
+          <div class="nowfoot"><span class="navb">‹</span><div class="bar"><div style="width:62%"></div></div><span class="navb">›</span></div>
+        </div>
+      </div>
+      <span class="pin" style="top:190px;left:40px">1</span>
+      <span class="pin" style="bottom:170px;right:6px">2</span>
+      <div class="tabbar">
+        <div class="on"><svg><use href="#i-barbell"/></svg>Training</div>
+        <div style="color:var(--work)"><svg><use href="#i-timer"/></svg><span class="live">R2 · 1:12</span></div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+      </div>
+    </div>
+    <ol class="notes pins">
+      <li><span class="pn">1</span>The clock <b>appears when any timer starts</b> (voice, header pill or Timer tab). It fades out 2 s after the final bell, or right away on stop. While paused it stays, greyed, with PAUSED.</li>
+      <li><span class="pn">2</span><b>The current combo stays in view</b>, pinned under the clock: the combo you opened last (by voice or tap), with its description and 60 s bar. ‹ › work like “combo back” / “combo next”. Before any combo is open, the card reads “Next up: combo 1”.</li>
+      <li>The header and mic stay live above the overlay, and the list waits behind it.</li>
+    </ol>
+  </div>
+
+  <div class="frame">
+    <p class="cap">L · Running, position Top</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 86%</span></div>
+      <div class="scr">
+        <div class="dockband">
+          <svg class="dial" data-total="120" data-left="42" data-color="#85B7EB" data-warn="10" data-digits="" data-hub="26" style="width:112px;height:112px;flex:none"></svg>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:11px;letter-spacing:2px;font-weight:700;color:var(--rest)">REST</div>
+            <div style="font-size:46px;font-weight:300;line-height:1.05;font-variant-numeric:tabular-nums;color:var(--rest)">0:42</div>
+            <div style="font-size:11px;color:var(--t2)">Next: Round 3 of 5</div>
+            <div class="fctl" style="justify-content:flex-start;margin-top:8px"><span class="mini"><svg><use href="#i-pause"/></svg></span><span class="mini"><svg><use href="#i-skip"/></svg></span><span class="mini"><svg><use href="#i-stop"/></svg></span></div>
+          </div>
+        </div>
+        <div class="sub" style="margin-top:0">Today's training · 10 combos · 3 done</div>
+        <div class="mic on"><svg class="ico"><use href="#i-mic"/></svg>Listening: “combo 3” / “combo next”</div>
+        <div style="margin-top:10px;background:var(--surface);border:1px solid #333;border-radius:10px;padding:10px 12px">
+          <div style="display:flex;justify-content:space-between"><span><span style="color:#444;margin-right:8px">4</span><b style="font-weight:500">Teep → Cross - Rear kick</b></span><span style="color:var(--accent)">♥</span></div>
+          <div style="color:var(--t2);font-size:11.5px;margin-top:6px;line-height:1.5">Push kick to create range, step in with the cross, finish with a rear roundhouse.</div>
+          <div style="height:2px;background:#2a2a2a;margin-top:10px;border-radius:2px"><div style="width:30%;height:100%;background:var(--accent)"></div></div>
+        </div>
+        <div style="margin-top:8px" class="card"><div class="r" style="height:44px"><span><span style="color:#444;margin-right:8px">5</span>Double jab - Low kick</span><span style="color:#444">♡</span></div></div>
+        <div style="margin-top:8px" class="card"><div class="r" style="height:44px"><span><span style="color:#444;margin-right:8px">6</span>Hook - Switch kick</span><span style="color:#444">♡</span></div></div>
+        <div class="fade"></div>
+      </div>
+      <div class="tabbar">
+        <div class="on"><svg><use href="#i-barbell"/></svg>Training</div>
+        <div style="color:var(--rest)"><svg><use href="#i-timer"/></svg><span class="live">Rest · 0:42</span></div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>A band at the top replaces the “Today’s training” title while the timer runs.</li>
+      <li>The <b>current combo is the opened card in the list</b>, which voice jumps already scroll to the top.</li>
+      <li>Big digits beside the dial are for close range, and the dial is for reading at a distance.</li>
+    </ul>
+  </div>
+
+  <div class="frame">
+    <p class="cap">M · Running, position Bottom</p>
+    <div class="phone tint-prep">
+      <div class="sb"><span>9:41</span><span>● ● 86%</span></div>
+      <div class="scr">
+        <div class="titlerow"><div><div class="h1">Today's training</div><div class="sub">10 combos · 0 done</div></div></div>
+        <div class="mic on"><svg class="ico"><use href="#i-mic"/></svg>Listening: “combo 3” / “combo next”</div>
+        <div class="fb">✓ 2:00 countdown</div>
+        <div style="margin-top:10px;background:var(--surface);border:1px solid #333;border-radius:10px;padding:10px 12px">
+          <div style="display:flex;justify-content:space-between"><span><span style="color:#444;margin-right:8px">4</span><b style="font-weight:500">Teep → Cross - Rear kick</b></span><span style="color:var(--accent)">♥</span></div>
+          <div style="color:var(--t2);font-size:11.5px;margin-top:6px;line-height:1.5">Push kick to create range, step in with the cross, finish with a rear roundhouse.</div>
+          <div style="height:2px;background:#2a2a2a;margin-top:10px;border-radius:2px"><div style="width:96%;height:100%;background:var(--accent)"></div></div>
+        </div>
+        <div style="margin-top:8px" class="card"><div class="r" style="height:44px"><span><span style="color:#444;margin-right:8px">5</span>Double jab - Low kick</span><span style="color:#444">♡</span></div></div>
+        <div style="margin-top:8px" class="card"><div class="r" style="height:44px"><span><span style="color:#444;margin-right:8px">6</span>Hook - Switch kick</span><span style="color:#444">♡</span></div></div>
+        <div style="margin-top:8px" class="card"><div class="r" style="height:44px"><span><span style="color:#444;margin-right:8px">7</span>Jab - Cross - Knee</span><span style="color:#444">♡</span></div></div>
+      </div>
+      <div class="botband">
+        <svg class="dial" data-total="10" data-left="7" data-color="#EF9F27" data-digits="" data-hub="26" style="width:104px;height:104px;flex:none"></svg>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;letter-spacing:2px;font-weight:700;color:var(--prep)">GET READY</div>
+          <div style="font-size:44px;font-weight:300;line-height:1.05;font-variant-numeric:tabular-nums;color:var(--prep)">7</div>
+          <div style="font-size:11px;color:var(--t2)">Countdown 2:00 starts</div>
+          <div class="fctl" style="justify-content:flex-start;margin-top:6px"><span class="mini"><svg><use href="#i-pause"/></svg></span><span class="mini"><svg><use href="#i-skip"/></svg></span><span class="mini"><svg><use href="#i-stop"/></svg></span></div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <div class="on"><svg><use href="#i-barbell"/></svg>Training</div>
+        <div style="color:var(--prep)"><svg><use href="#i-timer"/></svg><span class="live">0:07</span></div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>The band sits above the tab bar, and the list gets matching bottom padding.</li>
+      <li>Shown here: “set 2 minutes countdown” said on the Training tab, now in the lead-in.</li>
+      <li>Top and Bottom leave the whole list usable. <b>Off</b> hides the clock on Training; the tab label still shows the time.</li>
+    </ul>
+  </div>
+
+  <div class="frame">
+    <p class="cap">N · Analog dial anatomy</p>
+    <div class="anat">
+      <svg class="dial" data-total="180" data-left="72" data-color="#E86C3A" data-warn="10" data-digits="1:12" data-sub="R2 / 5" style="width:250px;height:250px"></svg>
+      <span class="pin" style="left:62px;top:104px">1</span>
+      <span class="pin" style="left:80px;top:212px">2</span>
+      <span class="pin" style="left:116px;top:12px">3</span>
+      <span class="pin" style="left:236px;top:180px">4</span>
+      <span class="pin" style="left:178px;top:192px">5</span>
+    </div>
+    <ol class="notes pins">
+      <li><span class="pn">1</span><b>Wedge = time left.</b> A full circle is the current phase (3:00 round, 2:00 rest, 10 s lead-in), so every phase starts full.</li>
+      <li><span class="pn">2</span><b>Hand</b> sweeps clockwise from 12 as the phase runs.</li>
+      <li><span class="pn">3</span><b>Warning arc</b> on the rim marks the last 10 s. When the hand reaches it, the wedge turns red and pulses once, together with the clap.</li>
+      <li><span class="pn">4</span><b>Ticks</b> every 15 s, with long ticks at each minute. Phases of 60 s or less get 5 s ticks.</li>
+      <li><span class="pn">5</span><b>Hub</b> shows the digits and a short line (round or what’s next). In the Top and Bottom bands the digits sit beside the dial instead.</li>
+    </ol>
+  </div>
+</div>
+
+<!-- =============================== 6 · VOICE GRAMMAR =============================== -->
+<h2>6 · Voice grammar <small>Timer commands next to the existing “combo …” commands, all on one shared mic</small></h2>
+<div class="row">
+  <div style="flex:1;min-width:300px">
+        <div class="tablewrap">
+    <table>
+      <tr><th>Say</th><th>Does</th><th>Fires on</th></tr>
+      <tr><td><q>set 2 minutes countdown</q><br><q>countdown 90 seconds</q><br><q>set a 2 minute 30 timer</q></td><td>Quick countdown: one round of that length after the lead-in, starts right away. Saved settings are not changed.</td><td><span class="tag fin">final</span></td></tr>
+      <tr><td><q>set 5 rounds of 3 minutes</q></td><td>Runs that workout with rest and cues from settings, and starts it.</td><td><span class="tag fin">final</span></td></tr>
+      <tr><td><q>set rest 30 seconds</q> · <q>set rounds 6</q><br><q>set round 2 minutes</q> · <q>set delay 5 seconds</q></td><td>Changes one saved setting (idle only). The confirmation line flashes the new value.</td><td><span class="tag fin">final</span></td></tr>
+      <tr><td><q>preset muay thai</q> · <q>preset boxing</q> · <q>preset tabata</q></td><td>Loads a built-in or saved preset (idle only).</td><td><span class="tag fin">final</span></td></tr>
+      <tr><td><q>timer start</q> / <q>start timer</q></td><td>Starts the current settings, or resumes if paused.</td><td><span class="tag int">interim</span></td></tr>
+      <tr><td><q>timer pause</q> · <q>timer resume</q></td><td>Pause and resume.</td><td><span class="tag int">interim</span></td></tr>
+      <tr><td><q>timer skip</q></td><td>Ends the current phase now (lead-in, round or rest).</td><td><span class="tag int">interim</span></td></tr>
+      <tr><td><q>timer stop</q> / <q>timer reset</q></td><td>Stops and goes back to setup.</td><td><span class="tag int">interim</span></td></tr>
+    </table>
+    </div>
+    <ul class="notes" style="margin-top:12px">
+      <li>A bare <b>“pause” / “stop”</b> is ignored on purpose, because gym chatter would set it off. Controls need the word <b>timer</b>. Duration commands need <b>countdown / timer / rounds / rest / delay</b>. “set” is optional, since it’s often misheard as “said” or “sit”.</li>
+      <li>Durations: digits or words (“two”, “to”, “too”), plus “N minutes”, “N seconds”, “N minutes M (seconds)”, “a minute and a half”, “90 seconds” and “2:30”. The number mishearings reuse <code>WORD_TO_NUM</code> from the combo grammar.</li>
+      <li><b>Echo guard:</b> results are ignored while our own TTS is speaking (+0.5 s). Spoken lines (“Round 2”, “Rest”, “Ten seconds”) never contain a trigger word either.</li>
+    </ul>
+  </div>
+</div>
+
+</div>
+<script>
+// Renders every <svg class="dial"> from its data-* attributes (wireframe only).
+(function () {
+  const pt = (deg, r) => [100 + r * Math.sin(deg * Math.PI / 180), 100 - r * Math.cos(deg * Math.PI / 180)];
+  const f = (n) => n.toFixed(2);
+  const fmt = (s) => (s >= 60 ? Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') : String(s));
+  document.querySelectorAll('svg.dial').forEach((svg) => {
+    const d = svg.dataset, total = +d.total, left = +d.left, color = d.color;
+    const warn = +(d.warn || 0), idle = d.idle === '1', R = 90, hub = +(d.hub || 44);
+    const a = (1 - left / total) * 360; // elapsed angle, clockwise from 12
+    let h = '<circle cx="100" cy="100" r="98" style="fill:#141414;stroke:#2e2e2e;stroke-width:2"/>';
+    if (idle) h += `<circle cx="100" cy="100" r="${R}" style="fill:${color};fill-opacity:.16"/>`;
+    else if (left >= total) h += `<circle cx="100" cy="100" r="${R}" style="fill:${color}"/>`;
+    else if (left > 0) {
+      const [x, y] = pt(a, R);
+      h += `<path d="M100 100L${f(x)} ${f(y)}A${R} ${R} 0 ${360 - a > 180 ? 1 : 0} 1 100 ${100 - R}Z" style="fill:${color}"/>`;
+    }
+    if (warn && !idle) {
+      const [x, y] = pt((1 - warn / total) * 360, 95);
+      h += `<path d="M${f(x)} ${f(y)}A95 95 0 0 1 100 5" style="fill:none;stroke:#F0544F;stroke-width:5;stroke-linecap:round"/>`;
+    }
+    const step = total <= 60 ? 5 : total <= 180 ? 15 : 30;
+    for (let t = 0; t < total; t += step) {
+      const deg = (t / total) * 360, major = total > 60 ? t % 60 === 0 : t % 15 === 0;
+      const [x1, y1] = pt(deg, R - (major ? 16 : 8)), [x2, y2] = pt(deg, R - 1);
+      h += `<line x1="${f(x1)}" y1="${f(y1)}" x2="${f(x2)}" y2="${f(y2)}" style="stroke:rgba(255,255,255,${major ? 0.85 : 0.45});stroke-width:${major ? 3.5 : 2};stroke-linecap:round"/>`;
+    }
+    if (!idle) {
+      const [hx, hy] = pt(a, R + 3);
+      h += `<line x1="100" y1="100" x2="${f(hx)}" y2="${f(hy)}" style="stroke:#fff;stroke-width:4.5;stroke-linecap:round"/>`;
+    }
+    h += `<circle cx="100" cy="100" r="${hub}" style="fill:#0f0f0f;fill-opacity:.95"/>`;
+    const digits = d.digits ?? fmt(left);
+    if (idle) {
+      h += `<path d="M90 64l22 12-22 12z" style="fill:${color}"/>`;
+      h += `<text x="100" y="124" text-anchor="middle" style="fill:#fff;font-size:30px;font-weight:600;font-variant-numeric:tabular-nums">${digits}</text>`;
+    } else if (digits) {
+      h += `<text x="100" y="${d.sub ? 108 : 112}" text-anchor="middle" style="fill:#fff;font-size:34px;font-weight:500;font-variant-numeric:tabular-nums">${digits}</text>`;
+      if (d.sub) h += `<text x="100" y="131" text-anchor="middle" style="fill:#aaa;font-size:13px;font-weight:700;letter-spacing:1px">${d.sub}</text>`;
+    }
+    svg.setAttribute('viewBox', '0 0 200 200');
+    svg.innerHTML = h;
+  });
+})();
+</script>
+</body>
+</html>
