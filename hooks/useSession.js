@@ -18,6 +18,9 @@ export function useSession() {
   // Last opened slot index. Outlives the auto-collapse so "next" and "favorite"
   // still know where the user is. A ref so back-to-back commands see it at once.
   const activeSlotRef = useRef(null);
+  // The same slot as state, for UI that shows the last-opened combo (the
+  // Training clock's current-combo card).
+  const [activeIndex, setActiveIndex] = useState(null);
   const openedAtRef = useRef(0);       // when the active slot was opened
   const startedAtRef = useRef(null);   // when the first combo was opened
   const [doneIds, setDoneIds] = useState(new Set());
@@ -70,6 +73,7 @@ export function useSession() {
   const clearProgress = () => {
     clearActiveTimer();
     activeSlotRef.current = null;
+    setActiveIndex(null);
     startedAtRef.current = null;
     setJumpTarget(null);
     setExpandedId(null);
@@ -100,6 +104,7 @@ export function useSession() {
       openedAtRef.current = Date.now();
     }
     activeSlotRef.current = slotIndex;
+    setActiveIndex(slotIndex);
     if (startedAtRef.current == null) startedAtRef.current = Date.now();
   };
 
@@ -165,6 +170,7 @@ export function useSession() {
     timerSec,
     timerPercent,
     jumpTarget,
+    activeIndex,
     doneIds,
     summary,
     generate,

@@ -1,8 +1,12 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 
 export const SessionContext = createContext(null);
 export const FavoritesContext = createContext(null);
 export const VoiceContext = createContext(null);
+// Round timer: run state, controls and saved settings (changes rarely).
+export const TimerContext = createContext(null);
+// Round timer: live position, updated every UI tick (see TimerTickProvider).
+export const TimerTickContext = createContext(null);
 
 export function useSessionContext() {
   const ctx = useContext(SessionContext);
@@ -19,5 +23,21 @@ export function useFavoritesContext() {
 export function useVoiceContext() {
   const ctx = useContext(VoiceContext);
   if (!ctx) throw new Error('useVoiceContext must be used within VoiceContext.Provider');
+  return ctx;
+}
+
+export function useTimerContext() {
+  const ctx = useContext(TimerContext);
+  if (!ctx) throw new Error('useTimerContext must be used within TimerContext.Provider');
+  return ctx;
+}
+
+// { run, pos, paused } of the running timer (pos is null when idle). Pass fast=true
+// while a dial or ring is on screen to tick every 100 ms instead of 250 ms.
+export function useTimerTick(fast = false) {
+  const ctx = useContext(TimerTickContext);
+  if (!ctx) throw new Error('useTimerTick must be used within TimerTickProvider');
+  const { requestFast } = ctx;
+  useEffect(() => (fast ? requestFast() : undefined), [fast, requestFast]);
   return ctx;
 }

@@ -48,6 +48,12 @@
             "com.samsung.android.bixby.agent"
           ]
         }
+      ],
+      [
+        "expo-audio",
+        {
+          "enableBackgroundPlayback": false
+        }
       ]
     ],
     "extra": {

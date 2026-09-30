@@ -341,6 +341,60 @@ None. Waiting for the go-ahead.
   - The drag/corner-snap idea is dropped (and so is `PanResponder`).
   - A header timer pill replaces the idle floating button.
 
+- 2026-09-30 (build): expo-audio's `interruptionModeAndroid` is deprecated in SDK 56; the
+  cue player uses `interruptionMode: 'duckOthers'`. The expo-audio config plugin is set to
+  `enableBackgroundPlayback: false` (foreground only).
+- 2026-09-30 (build): the live position ticks in its own `TimerTickContext`
+  (`TimerTickProvider`), so only the ring, dial and tab label re-render each tick.
+- 2026-09-30 (build): states the wireframes don't draw got copy derived from the drawn
+  ones, all in `utils/timerLabels.js`: "restart rest" / "restart" on the paused button
+  outside a round; meta "Next: Done" in the last round; dial hub "next: R3", "next: rest",
+  "last round", "PAUSED"; band line "Next: …", "Last round", "Paused"; lead-in under-line
+  "Countdown 2:00 starts" on the ring too; countdown done has no sub line and says “Time.”;
+  start-delay sheet meta "before round 1" with hints "Counts down with 3-2-1 beeps, then
+  the start bell." / "Starts with the bell right away."; rest-warning hint mirrors the
+  round one; rest-screen hint variants when the warning or beeps are off; voice
+  confirmations "✓ Round time 2:00", "✓ Rounds 6", "✓ Start delay 5 s", "✓ 5 × 3:00",
+  "✓ Boxing preset", "✓ Timer paused" etc.
+- 2026-09-30 (build): rest sheet chips are 0:10 / 0:30 / 1:00 / 1:30 / 2:00 (B only draws
+  the round-time chips).
+- 2026-09-30 (build): the "Custom" chip sits right after the preset the edited values came
+  from (as in C); at the start if that preset was deleted.
+- 2026-09-30 (build): phase tints apply to the Timer-tab run screens only. Frame M carries
+  `tint-prep` but L (rest) has no tint, so Training stays untinted.
+- 2026-09-30 (build): on the filter screen the Center clock starts below Generate so a
+  session can still be generated while a timer runs; the Center dial shrinks below
+  188·W/286 only when the overlay is too short to fit it.
+- 2026-09-30 (build): the now-card's description is the combo's steps, one per line (the
+  data has no prose description); before any combo is opened it reads
+  "NEXT UP · COMBO 1 OF 10".
+- 2026-09-30 (build): countdowns ring the bells without "Round N" lines; with rest 0,
+  rounds run back to back with only the next start bell; skipping the last round ends the
+  run with its end cue; voice countdowns are clamped to 0:05–60:00 and voice settings to
+  the setup limits.
+
+- 2026-09-30 (build, after the wireframe-vs-code check): timer controls need the actual
+  word "timer" ("time", "next", "go", "hold", "end" were dropped as too chatty); a
+  built-in preset name can't be saved as a custom preset (Save stays disabled); on the
+  Timer tab the lead-in label keeps the active tab color (frame D); rejected voice
+  commands don't switch tabs; the Training pill also shows once a finished run's clock
+  has faded (status `done`), so a new run can start from Training.
+
+- 2026-09-30 (emulator check): when catching up after the background, only the latest due
+  cue moment plays (`dueCues`), so returning mid-countdown can't fire 3-2-1 as a burst.
+
 ## Execution status
 
-- Not started. The plan is final and waiting for the go-ahead.
+- 2026-09-30: tasks 1–8 built; `npm test` passes (engine, timer grammar, combo grammar
+  regression). Checked on the Android emulator (API 36, 411 dp wide): A, A2, B, B2, B3,
+  B4, D, E, F, G, H, I, J, K (filter and session views), L, M. Not yet seen: E2 and C
+  (voice only), sound levels/ducking, TTS. wireframe-vs-code: nothing drawn is missing;
+  its real gaps are fixed (see the last build decision).
+- 2026-09-30 emulator pass (audio on, Play image): all five sounds and TTS play; bells
+  take `GAIN_TRANSIENT_MAY_DUCK` focus (music ducks); C and E2 reached via the real result
+  handler (transcripts injected with a temporary hook, since removed): final-only rule,
+  echo guard during "Get ready", "Stop the timer first", Favorites → Timer switch, and a
+  combo + timer phrase all behave; wall-clock catch-up after 22 s in the background was
+  exact; screen stays on while running. Live mic recognition couldn't be tested: the
+  emulator's host audio input fails (`pcm_readi` I/O errors), likely macOS mic access.
+- Task 9 (device QA) is the user's, after the new dev build.

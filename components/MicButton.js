@@ -3,11 +3,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, fontSize, spacing } from '../constants/theme';
 import { useVoiceContext } from '../contexts/AppContext';
 
-export default function MicButton() {
+// The shared mic. Each place passes its own hint (idleText / listeningText).
+export default function MicButton({
+  idleText = 'Tap to listen for voice commands',
+  listeningText = 'Listening — "combo 3" / "combo next"',
+  reserveStatus = false, // keep the status line's height even when it's empty
+  style,
+}) {
   const { listening, lastHeard, error, notice, feedback, onDevice, toggle } = useVoiceContext();
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, style]}>
       <Pressable
         onPress={toggle}
         style={[styles.btn, listening ? styles.btnActive : styles.btnIdle]}
@@ -18,7 +24,7 @@ export default function MicButton() {
           color={listening ? '#ffffff' : colors.accent}
         />
         <Text style={[styles.label, { color: listening ? '#ffffff' : colors.accent }]}>
-          {listening ? 'Listening — "combo 3" / "combo next"' : 'Tap to listen for voice commands'}
+          {listening ? listeningText : idleText}
         </Text>
         {listening && onDevice && <Text style={styles.offline}>offline</Text>}
       </Pressable>
@@ -31,6 +37,8 @@ export default function MicButton() {
         <Text style={styles.notice}>{notice}</Text>
       ) : listening && lastHeard ? (
         <Text style={styles.heard} numberOfLines={1}>heard: {lastHeard}</Text>
+      ) : reserveStatus ? (
+        <Text style={styles.heard}> </Text>
       ) : null}
     </View>
   );

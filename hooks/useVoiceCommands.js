@@ -5,8 +5,8 @@ import {
   useSpeechRecognitionEvent,
 } from 'expo-speech-recognition';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
+import { parseCommands } from '../voice/parseCommands';
 
-const SESSION_SIZE = 10;
 // Safety net against the recognizer delivering the same phrase twice (e.g. once
 // at the end of one segment and again at the start of the next).
 const REPEAT_GUARD_MS = 1500;
@@ -16,95 +16,6 @@ const FEEDBACK_MS = 2500;
 const MAX_ERROR_STREAK = 6;
 const MAX_BACKOFF_MS = 4000;
 const KEEP_AWAKE_TAG = 'voice-commands';
-
-// Spoken-word → digit, including common mis-hearings of the recognizer. The short
-// numbers (4, 9, 10) get mangled most, so they have the most spelling variants.
-const WORD_TO_NUM = {
-  one: 1, won: 1, want: 1,
-  two: 2, to: 2, too: 2,
-  three: 3, tree: 3, free: 3,
-  four: 4, for: 4, fore: 4, faux: 4, foe: 4, far: 4,
-  five: 5, hive: 5,
-  six: 6, sex: 6, sicks: 6,
-  seven: 7,
-  eight: 8, ate: 8, ait: 8,
-  nine: 9, nein: 9, non: 9, niner: 9,
-  ten: 10, tan: 10, den: 10, then: 10, tin: 10,
-};
-
-// Non-numeric commands and their common mis-hearings.
-const ACTION_WORDS = {
-  next: 'next', nexts: 'next', necks: 'next', neck: 'next', nest: 'next', text: 'next',
-  back: 'previous', previous: 'previous', prev: 'previous',
-  favorite: 'favorite', favorites: 'favorite', favourite: 'favorite', favourites: 'favorite',
-  favorit: 'favorite', favor: 'favorite', favour: 'favorite', fave: 'favorite', save: 'favorite',
-  finish: 'finish', finished: 'finish', finnish: 'finish',
-};
-
-const slotCommand = (n) =>
-  n >= 1 && n <= SESSION_SIZE ? { type: 'slot', slot: n, key: `slot:${n}` } : null;
-const actionCommand = (type) => ({ type, key: type });
-
-// A word that directly follows the trigger → command, or null.
-function wordToCommand(word) {
-  if (!word) return null;
-  if (/^\d{1,2}$/.test(word)) return slotCommand(parseInt(word, 10));
-  if (WORD_TO_NUM[word]) return slotCommand(WORD_TO_NUM[word]);
-  if (ACTION_WORDS[word]) return actionCommand(ACTION_WORDS[word]);
-  return null;
-}
-
-// Whole words the recognizer produces when "combo X" is said fast and collapses
-// into a single token.
-const MERGED_WORDS = {
-  combine: slotCommand(9), combined: slotCommand(9), combines: slotCommand(9), // "combo nine"
-  comborine: slotCommand(9),
-  comba: slotCommand(8), // "combo eight" -> "comba(te)"
-};
-// "combo" + a command word (3+ chars) → the same command, e.g. "comboten", "combonext".
-for (const word of [...Object.keys(WORD_TO_NUM), ...Object.keys(ACTION_WORDS)]) {
-  if (word.length >= 3) MERGED_WORDS['combo' + word] = wordToCommand(word);
-}
-
-function mergedCommand(word) {
-  if (MERGED_WORDS[word]) return MERGED_WORDS[word];
-  const digits = word.match(/^combo(\d{1,2})$/); // "combo3"
-  return digits ? slotCommand(parseInt(digits[1], 10)) : null;
-}
-
-// Trigger: "combo" or near-misses starting with "com"/"kom", or "number".
-const isTrigger = (word) => /^(com|kom)/.test(word) || word === 'number';
-
-// Number words that are also how interim results spell the start of "favorite"
-// ("combo for…"). As the last word of an interim result they're tentative.
-const PREFIX_AMBIGUOUS = new Set(['for', 'far', 'fore', 'faux', 'foe']);
-
-// Every command in a transcript, in spoken order. Each is
-// { type: 'slot' | 'next' | 'previous' | 'favorite' | 'finish', slot?, key, tentative? }.
-export function parseCommands(transcript) {
-  if (!transcript) return [];
-  const words = transcript.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean);
-  const commands = [];
-  for (let i = 0; i < words.length; i++) {
-    const merged = mergedCommand(words[i]);
-    if (merged) {
-      commands.push(merged);
-      continue;
-    }
-    if (!isTrigger(words[i])) continue;
-    // Allow one filler word between trigger and command ("combo number 3").
-    for (const j of [i + 1, i + 2]) {
-      const cmd = wordToCommand(words[j]);
-      if (cmd) {
-        const tentative = j === words.length - 1 && PREFIX_AMBIGUOUS.has(words[j]);
-        commands.push(tentative ? { ...cmd, tentative } : cmd);
-        i = j;
-        break;
-      }
-    }
-  }
-  return commands;
-}
 
 // Scan every alternative the recognizer offers, not just the top guess — the
 // correct "combo N" is frequently the 2nd or 3rd alternative. Prefer the one
@@ -131,6 +42,9 @@ const START_OPTIONS = {
     'combo', 'combo one', 'combo two', 'combo three', 'combo four', 'combo five',
     'combo six', 'combo seven', 'combo eight', 'combo nine', 'combo ten',
     'combo next', 'combo back', 'combo previous', 'combo favorite', 'combo finish',
+    'timer start', 'timer pause', 'timer resume', 'timer skip', 'timer stop', 'timer reset',
+    'countdown', 'minutes countdown', 'seconds countdown', 'rounds of', 'set rest', 'set rounds',
+    'set round', 'set delay', 'preset',
   ],
 };
 
@@ -165,6 +79,8 @@ export function useVoiceCommands(onCommand) {
   const errorStreakRef = useRef(0);
   const restartTimerRef = useRef(null);
   const feedbackTimerRef = useRef(null);
+  // Echo guard: results are ignored until this time (our own bells and TTS).
+  const suppressUntilRef = useRef(0);
   const onDeviceRef = useRef(false);
   const onDeviceServiceRef = useRef(undefined); // which service has the model
   const fellBackRef = useRef(false); // guard against on-device→online loop
@@ -273,18 +189,25 @@ export function useVoiceCommands(onCommand) {
   // session can hold several commands. Act on each command position in the
   // current segment once; a later revision of an earlier position only re-fires
   // if it became a different slot number ("combo to" → "combo seven"). A
-  // tentative command waits for the next word or the final result.
+  // tentative command waits for the next word or the final result, and so do
+  // timer set/duration commands, so "2 minutes… 30 seconds" can finish.
   useSpeechRecognitionEvent('result', (event) => {
     if (!shouldListenRef.current) return;
     const transcript = event?.results?.[0]?.transcript;
     if (!transcript) return;
     errorStreakRef.current = 0;
+    if (Date.now() < suppressUntilRef.current) {
+      // Our own bell or TTS: never a command.
+      if (event.isFinal) segmentRef.current = [];
+      return;
+    }
     setLastHeard(transcript);
 
     const handled = segmentRef.current;
     parseFromAlternatives(event.results).forEach((command, i) => {
-      if (command.tentative && !event.isFinal) return;
-      if (i < handled.length && (handled[i] === command.key || command.type !== 'slot')) return;
+      if ((command.tentative || command.final) && !event.isFinal) return;
+      const prev = handled[i];
+      if (prev !== undefined && (prev === command.key || command.type !== 'slot')) return;
       handled[i] = command.key;
       fire(command);
     });
@@ -368,10 +291,15 @@ export function useVoiceCommands(onCommand) {
 
   const stop = useCallback(() => halt(), []);
 
+  // Ignore everything heard until untilMs (epoch ms). Only ever extends.
+  const suppress = useCallback((untilMs) => {
+    suppressUntilRef.current = Math.max(suppressUntilRef.current, untilMs);
+  }, []);
+
   const toggle = useCallback(() => {
     if (shouldListenRef.current) stop();
     else start();
   }, [start, stop]);
 
-  return { listening, lastHeard, error, notice, feedback, onDevice, start, stop, toggle };
+  return { listening, lastHeard, error, notice, feedback, onDevice, start, stop, toggle, suppress };
 }

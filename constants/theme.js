@@ -45,6 +45,44 @@ export const colors = {
   subtitle: '#666666',
   sectionLabel: '#555555',
   comboNumber: '#444444',
+
+  // Round timer phases (reuse the chip hues)
+  timerPrep: '#EF9F27',
+  timerWork: '#E86C3A',
+  timerWarn: '#F0544F',
+  timerRest: '#85B7EB',
+  timerDone: '#97C459',
+  timerPaused: '#5a5a5a',
+
+  // Round timer surfaces
+  timerOverlay: 'rgba(12,12,12,.93)', // Center clock on Training
+  timerBand: '#151515', // Bottom clock band
+  sheet: '#181818',
+  scrim: 'rgba(0,0,0,.55)',
+  behindDim: 'rgba(17,17,17,.65)', // the screen behind a sheet at 35% (under the scrim)
+  dialFace: '#141414',
+  dialStroke: '#2e2e2e',
+  dialHub: '#0f0f0f',
+  ringTrack: '#202020',
+  controlBorder: '#3a3a3a', // steppers, mini/nav buttons, grab handle
+  dotIdle: '#2c2c2c',
+  dotCurrentRing: 'rgba(232,108,58,.25)',
+  chipOnBg: 'rgba(232,108,58,.14)',
+  optionOnBg: 'rgba(232,108,58,.10)', // clock tiles, voice-changed row
+  cuePrepBg: 'rgba(239,159,39,.14)',
+  cueWarnBg: 'rgba(240,84,79,.16)',
+  doneCircleBg: 'rgba(151,196,89,.14)',
+  toggleOff: '#333333', toggleKnobOff: '#888888',
+
+  // Clock-position tiles (schematic mini screens, B3)
+  tileBand: '#1f1f1f',
+  tileOverlay: 'rgba(12,12,12,.9)',
+  tileCard: '#262626',
+
+  // Run-screen phase tints (radial, centered at 50% / 40%)
+  tintPrep: 'rgba(239,159,39,.12)',
+  tintWarn: 'rgba(240,84,79,.22)',
+  tintRest: 'rgba(133,183,235,.12)',
 };
 
 export const spacing = {

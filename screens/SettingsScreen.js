@@ -10,7 +10,10 @@ const HOW_IT_WORKS = [
   'Say "combo next" (or "combo back") to step through the session, starting at combo 1.',
   'Say "combo favorite" to save the combo you last opened to your favorites.',
   'Moving on to another combo marks the previous one done (if it was open at least 5 seconds). Say "combo finish" or tap Finish session at the end.',
-  'It keeps listening — and keeps the screen on — until you tap to stop or start a new session. It pauses while the app is in the background.',
+  'Timer: say "set 2 minutes countdown" for a one-off countdown, or "timer start" to run your saved rounds. It works from the Training and Timer tabs.',
+  'Say "timer pause", "timer resume", "timer skip" or "timer stop". A bare "pause" or "stop" is ignored, so gym chatter can\'t end your round.',
+  'Say "set rest 30 seconds", "set rounds 6" or "preset boxing" to change the timer settings while it\'s stopped.',
+  'It keeps listening — and keeps the screen on — until you tap to stop. It pauses while the app is in the background.',
 ];
 
 export default function SettingsScreen({ navigation }) {
@@ -35,7 +38,7 @@ export default function SettingsScreen({ navigation }) {
           <Text style={styles.infoBody}>
             Voice commands run inside the app — no Google Assistant or Google Home setup needed.
             Recognition runs on-device (offline) when available, so it keeps working without Wi-Fi.
-            The mic only listens while you have it switched on in the Training tab.
+            The mic only listens while you have it switched on in the Training or Timer tab.
           </Text>
         </View>
 

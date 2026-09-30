@@ -1,0 +1,211 @@
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { AppState } from 'react-native';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
+import {
+  buildSegments, buildCues, totalMsOf, positionAt, startClock, elapsedMs, pauseClock,
+  resumeClock, seekClock, cueIndexAt, dueCues, formatClock, isInfinite,
+} from '../utils/roundTimer';
+import { matchesPreset } from '../data/timerPresets';
+
+const KEEP_AWAKE_TAG = 'round-timer';
+
+// Top-left label of the run screens: "Muay Thai · 5 × 3:00" / "Countdown · 2:00".
+function runLabel(kind, config, presetName) {
+  if (kind === 'countdown') return `Countdown · ${formatClock(config.roundSec)}`;
+  const rounds = isInfinite(config.rounds) ? '∞' : config.rounds;
+  return `${presetName} · ${rounds} × ${formatClock(config.roundSec)}`;
+}
+
+// Run state of the round timer. The UI derives the live position from `clock`
+// (see TimerTickProvider); this hook only re-renders on status changes. Cues fire
+// from a timeout aimed at the next cue, re-armed after each fire and on
+// pause/resume, so bells stay tight regardless of the UI tick.
+//
+// timerSettings: useTimerSettings(); cues: useTimerCues().
+export function useRoundTimer(timerSettings, cues) {
+  const [status, setStatus] = useState('idle'); // idle | running | paused | done
+  const [run, setRun] = useState(null);
+  const [clock, setClock] = useState(null);
+
+  const runRef = useRef(null);
+  const clockRef = useRef(null);
+  const cueIndexRef = useRef(0);
+  const cueTimerRef = useRef(null);
+  const settingsRef = useRef(timerSettings);
+  settingsRef.current = timerSettings;
+  const cuesRef = useRef(cues);
+  cuesRef.current = cues;
+
+  const commitClock = (next) => {
+    clockRef.current = next;
+    setClock(next);
+  };
+
+  const finish = () => {
+    clearTimeout(cueTimerRef.current);
+    const r = runRef.current;
+    if (r) {
+      const done = { ...r, doneAt: Date.now() };
+      runRef.current = done;
+      setRun(done);
+    }
+    setStatus('done');
+  };
+
+  // Fire whatever is due, then aim a timeout at the next cue (or the end).
+  const schedule = () => {
+    clearTimeout(cueTimerRef.current);
+    const r = runRef.current;
+    const c = clockRef.current;
+    if (!r || !c || c.pausedAt != null || r.doneAt) return;
+    const e = elapsedMs(c, Date.now());
+    const { due, next } = dueCues(r.cues, cueIndexRef.current, e);
+    cueIndexRef.current = next;
+    due.forEach(cue => cuesRef.current.fire(cue));
+    if (e >= r.totalMs) {
+      finish();
+      return;
+    }
+    const nextAt = next < r.cues.length ? Math.min(r.cues[next].atMs, r.totalMs) : r.totalMs;
+    cueTimerRef.current = setTimeout(schedule, Math.max(0, nextAt - e));
+  };
+  const scheduleRef = useRef(schedule);
+  scheduleRef.current = schedule;
+
+  const launch = (kind, config, presetName) => {
+    clearTimeout(cueTimerRef.current);
+    cuesRef.current.stopSpeech();
+    const frozen = Object.freeze({ ...config });
+    const segments = buildSegments(frozen);
+    const next = {
+      kind,
+      config: frozen,
+      presetName,
+      label: runLabel(kind, frozen, presetName),
+      segments,
+      cues: buildCues(segments, frozen, kind),
+      totalMs: totalMsOf(segments),
+      doneAt: null,
+    };
+    runRef.current = next;
+    setRun(next);
+    commitClock(startClock(Date.now()));
+    cueIndexRef.current = 0;
+    setStatus('running');
+    schedule();
+  };
+
+  // override: { kind: 'countdown', roundSec } — one-off single round;
+  //           { kind: 'workout', rounds, roundSec } — that workout with saved rest/cues.
+  // Without it, runs the saved settings. Saved settings are never changed.
+  const start = useCallback((override) => {
+    const { settings, presets, selectedPreset } = settingsRef.current;
+    if (override?.kind === 'countdown') {
+      launch('countdown', { ...settings, rounds: 1, roundSec: override.roundSec, restSec: 0 }, null);
+      return;
+    }
+    const config = override
+      ? { ...settings, rounds: override.rounds, roundSec: override.roundSec }
+      : { ...settings };
+    const preset = selectedPreset && matchesPreset(selectedPreset, config)
+      ? selectedPreset
+      : presets.find(p => matchesPreset(p, config));
+    launch('workout', config, preset?.name ?? 'Custom');
+  }, []);
+
+  // "Again" on the done screen: the same run from the top.
+  const again = useCallback(() => {
+    const r = runRef.current;
+    if (r) launch(r.kind, r.config, r.presetName);
+  }, []);
+
+  const pause = useCallback(() => {
+    const c = clockRef.current;
+    if (!c || c.pausedAt != null || runRef.current?.doneAt) return;
+    clearTimeout(cueTimerRef.current);
+    commitClock(pauseClock(c, Date.now()));
+    setStatus('paused');
+  }, []);
+
+  const resume = useCallback(() => {
+    const c = clockRef.current;
+    if (!c || c.pausedAt == null) return;
+    commitClock(resumeClock(c, Date.now()));
+    setStatus('running');
+    scheduleRef.current();
+  }, []);
+
+  // Jump to `targetMs` elapsed. Cues at exactly the target (the next phase's
+  // bell) still fire; the ones jumped over don't.
+  const seek = (targetMs) => {
+    const r = runRef.current;
+    const c = clockRef.current;
+    if (!r || !c || r.doneAt) return;
+    commitClock(seekClock(c, Date.now(), targetMs));
+    cueIndexRef.current = cueIndexAt(r.cues, targetMs);
+    if (clockRef.current.pausedAt == null) scheduleRef.current();
+  };
+
+  // Ends the current phase now (lead-in, round or rest).
+  const skip = useCallback(() => {
+    const r = runRef.current;
+    const c = clockRef.current;
+    if (!r || !c || r.doneAt) return;
+    const pos = positionAt(r.segments, elapsedMs(c, Date.now()));
+    if (pos.done) return;
+    const target = pos.segment.startMs + pos.segment.durMs;
+    if (target >= r.totalMs && c.pausedAt != null) {
+      // Skipping the last round while paused ends the run with its end cue.
+      commitClock(resumeClock(c, Date.now()));
+      setStatus('running');
+    }
+    seek(target);
+  }, []);
+
+  // Resets the current phase to its full length.
+  const restartPhase = useCallback(() => {
+    const r = runRef.current;
+    const c = clockRef.current;
+    if (!r || !c || r.doneAt) return;
+    const pos = positionAt(r.segments, elapsedMs(c, Date.now()));
+    if (!pos.done) seek(pos.segment.startMs);
+  }, []);
+
+  const stop = useCallback(() => {
+    clearTimeout(cueTimerRef.current);
+    cuesRef.current.stopSpeech();
+    runRef.current = null;
+    clockRef.current = null;
+    setRun(null);
+    setClock(null);
+    setStatus('idle');
+  }, []);
+
+  const dismissDone = useCallback(() => {
+    if (runRef.current?.doneAt) stop();
+  }, [stop]);
+
+  // Timers don't run in the background: catch up (dropping stale cues) on return.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') scheduleRef.current();
+    });
+    return () => sub.remove();
+  }, []);
+
+  // The screen stays on while a run is going, paused included.
+  const awake = status === 'running' || status === 'paused';
+  useEffect(() => {
+    if (!awake) return;
+    activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(() => {});
+    return () => {
+      deactivateKeepAwake(KEEP_AWAKE_TAG).catch(() => {});
+    };
+  }, [awake]);
+
+  useEffect(() => () => clearTimeout(cueTimerRef.current), []);
+
+  return {
+    status, run, clock, start, again, pause, resume, skip, restartPhase, stop, dismissDone,
+  };
+}
