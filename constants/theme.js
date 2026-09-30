@@ -37,6 +37,9 @@ export const colors = {
   voiceTitle: '#85B7EB', voiceBody: '#6a8aaa',
   voiceStep: '#185FA5', voiceStepText: '#85B7EB',
 
+  // Done combos
+  doneCheck: '#97C459', doneText: '#666666',
+
   // Misc text
   title: '#ffffff',
   subtitle: '#666666',

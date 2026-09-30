@@ -13,6 +13,8 @@ during training.
   random 10-combo session. Sessions are never persisted.
 - **Hands-free training** — say "combo 3", "combo next" or "combo favorite" while the mic
   is on (see [Voice commands](#voice-commands)).
+- **Progress** — combos you move on from are ticked off; **Finish session** shows a summary
+  with a little celebration.
 - **Favorites** — tap the heart to save a combo; favorites persist via AsyncStorage.
 - **Dark theme only.**
 
@@ -51,9 +53,14 @@ session is generated.
 | `combo 3` | Open slot 3 of the current session for 60 seconds |
 | `combo next` / `combo back` | Open the next / previous slot (wraps; starts at slot 1) |
 | `combo favorite` | Save the last opened combo to favorites (never removes) |
+| `combo finish` | Finish the session (same as the **Finish session** button) |
 
 While listening, the screen stays on and the opened combo scrolls into view; the mic pauses
-when the app goes to the background and resumes when it returns.
+when the app goes to the background and resumes when it returns, and stops on **New session**.
+
+Moving on to another combo marks the previous one done (✓) if it was open at least 5 seconds —
+shorter counts as skipped. Tap the ✓ to undo. **Finish session** (end of the list) counts the
+combo in progress and shows a summary: combos done and time trained.
 
 ## Notation
 

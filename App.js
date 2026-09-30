@@ -62,6 +62,8 @@ export default function App() {
     const s = sessionRef.current;
     if (!s.generated) return 'Generate a session first';
     if (navigationRef.isReady()) navigationRef.navigate('Training');
+    // Any other command means training goes on: close the celebration.
+    if (command.type !== 'finish') s.dismissSummary();
 
     switch (command.type) {
       case 'slot': {
@@ -82,11 +84,21 @@ export default function App() {
         addFavorite(combo.id);
         return `♥ Combo ${slot + 1} saved to favorites`;
       }
+      case 'finish':
+        s.finish();
+        return 'Session finished';
       default:
         return null;
     }
   }, [navigationRef]);
   const voice = useVoiceCommands(onCommand);
+
+  // The mic button lives on the session view, so leaving it (New session) must
+  // not leave the mic running where it can't be switched off.
+  const { listening, stop: stopVoice } = voice;
+  useEffect(() => {
+    if (!session.generated && listening) stopVoice();
+  }, [session.generated, listening, stopVoice]);
 
   useEffect(() => {
     const handleUrl = ({ url }) => {

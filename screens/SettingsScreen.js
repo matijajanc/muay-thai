@@ -9,7 +9,8 @@ const HOW_IT_WORKS = [
   'Say "combo" + a number, e.g. "combo three", to expand that combo for 60 seconds.',
   'Say "combo next" (or "combo back") to step through the session, starting at combo 1.',
   'Say "combo favorite" to save the combo you last opened to your favorites.',
-  'It keeps listening — and keeps the screen on — until you tap to stop. It pauses while the app is in the background.',
+  'Moving on to another combo marks the previous one done (if it was open at least 5 seconds). Say "combo finish" or tap Finish session at the end.',
+  'It keeps listening — and keeps the screen on — until you tap to stop or start a new session. It pauses while the app is in the background.',
 ];
 
 export default function SettingsScreen({ navigation }) {

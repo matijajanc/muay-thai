@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { View, Text, Pressable, FlatList, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, fontSize, spacing } from '../constants/theme';
 import FilterChips from '../components/FilterChips';
 import ComboCard from '../components/ComboCard';
 import MicButton from '../components/MicButton';
+import FinishCelebration from '../components/FinishCelebration';
 import { useSessionContext, useFavoritesContext } from '../contexts/AppContext';
 
 function toggleInSet(setState, key) {
@@ -18,7 +20,8 @@ function toggleInSet(setState, key) {
 
 export default function TrainingScreen() {
   const {
-    session, generated, expandedId, timerPercent, jumpTarget, generate, reset, expandCombo,
+    session, generated, expandedId, timerPercent, jumpTarget, doneIds, summary,
+    generate, reset, expandCombo, unmarkDone, finish, dismissSummary,
   } = useSessionContext();
   const { favorites, toggleFavorite } = useFavoritesContext();
   const listRef = useRef(null);
@@ -41,7 +44,7 @@ export default function TrainingScreen() {
     <View style={styles.header}>
       <Text style={styles.title}>Today's training</Text>
       <Text style={styles.subtitle}>
-        {generated ? `${session.length} combos — training mode` : 'Pick filters, then generate'}
+        {generated ? `${session.length} combos · ${doneIds.size} done` : 'Pick filters, then generate'}
       </Text>
     </View>
   );
@@ -89,18 +92,27 @@ export default function TrainingScreen() {
             <Text style={styles.newSessionText}>New session</Text>
           </Pressable>
         }
+        ListFooterComponent={
+          <Pressable style={styles.finishBtn} onPress={finish}>
+            <Ionicons name="flag" size={fontSize.lg} color="#ffffff" />
+            <Text style={styles.finishText}>Finish session</Text>
+          </Pressable>
+        }
         renderItem={({ item, index }) => (
           <ComboCard
             combo={item}
             index={index + 1}
             isFavorite={favorites.has(item.id)}
+            isDone={doneIds.has(item.id)}
             isExpanded={expandedId === item.id}
             timerPercent={timerPercent}
             onExpand={expandCombo}
             onToggleFavorite={toggleFavorite}
+            onUndone={unmarkDone}
           />
         )}
       />
+      <FinishCelebration summary={summary} onNewSession={reset} onClose={dismissSummary} />
     </SafeAreaView>
   );
 }
@@ -133,4 +145,16 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   newSessionText: { color: colors.accent, fontSize: fontSize.base, fontWeight: '500' },
+
+  finishBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    backgroundColor: colors.accent,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
+  },
+  finishText: { color: '#ffffff', fontSize: 14, fontWeight: '500' },
 });

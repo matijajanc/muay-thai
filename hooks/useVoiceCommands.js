@@ -38,6 +38,7 @@ const ACTION_WORDS = {
   back: 'previous', previous: 'previous', prev: 'previous',
   favorite: 'favorite', favorites: 'favorite', favourite: 'favorite', favourites: 'favorite',
   favorit: 'favorite', favor: 'favorite', favour: 'favorite', fave: 'favorite', save: 'favorite',
+  finish: 'finish', finished: 'finish', finnish: 'finish',
 };
 
 const slotCommand = (n) =>
@@ -79,7 +80,7 @@ const isTrigger = (word) => /^(com|kom)/.test(word) || word === 'number';
 const PREFIX_AMBIGUOUS = new Set(['for', 'far', 'fore', 'faux', 'foe']);
 
 // Every command in a transcript, in spoken order. Each is
-// { type: 'slot' | 'next' | 'previous' | 'favorite', slot?, key, tentative? }.
+// { type: 'slot' | 'next' | 'previous' | 'favorite' | 'finish', slot?, key, tentative? }.
 export function parseCommands(transcript) {
   if (!transcript) return [];
   const words = transcript.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean);
@@ -129,7 +130,7 @@ const START_OPTIONS = {
   contextualStrings: [
     'combo', 'combo one', 'combo two', 'combo three', 'combo four', 'combo five',
     'combo six', 'combo seven', 'combo eight', 'combo nine', 'combo ten',
-    'combo next', 'combo back', 'combo previous', 'combo favorite',
+    'combo next', 'combo back', 'combo previous', 'combo favorite', 'combo finish',
   ],
 };
 

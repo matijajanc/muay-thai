@@ -9,12 +9,17 @@ export default function ComboCard({
   combo,
   index,
   isFavorite,
+  isDone = false,
   isExpanded = false,
   timerPercent = 100,
   expandable = true,
   onToggleFavorite,
   onExpand,
+  onUndone,
 }) {
+  // Done styling steps aside while the combo is open again.
+  const showDone = isDone && !isExpanded;
+
   const handleNamePress = () => {
     if (expandable && onExpand) onExpand(combo.id);
   };
@@ -29,8 +34,18 @@ export default function ComboCard({
           hitSlop={4}
         >
           <Text style={styles.number}>{index}</Text>
-          <Text style={styles.name}>{combo.name}</Text>
+          <Text style={[styles.name, showDone && styles.nameDone]}>{combo.name}</Text>
         </Pressable>
+
+        {showDone && (
+          <Pressable
+            onPress={() => onUndone && onUndone(combo.id)}
+            hitSlop={8}
+            style={styles.donePress}
+          >
+            <Ionicons name="checkmark-circle" size={fontSize.xl} color={colors.doneCheck} />
+          </Pressable>
+        )}
 
         <Pressable
           onPress={() => onToggleFavorite && onToggleFavorite(combo.id)}
@@ -97,6 +112,12 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     fontWeight: '500',
     lineHeight: fontSize.base * 1.35,
+  },
+  nameDone: {
+    color: colors.doneText,
+  },
+  donePress: {
+    paddingLeft: spacing.sm,
   },
   heartPress: {
     paddingLeft: spacing.sm,
