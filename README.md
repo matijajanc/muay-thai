@@ -53,7 +53,7 @@ hooks/                 useSession, useFavorites, useVoiceCommands, useTimerSetti
                        useRoundTimer (run state), useTimerCues (bells, TTS, vibration)
 utils/roundTimer.js    Pure timer engine: segments, cue timeline, wall-clock position
 utils/timerLabels.js   All derived timer copy (phase labels, tab label, hints)
-voice/                 numbers, comboGrammar, timerGrammar (+ tests)
+voice/                 numbers, comboGrammar, timerGrammar, commandHelp (+ tests)
 components/            ComboCard, FilterChips, TimerBar, MicButton, FinishCelebration
 components/timer/      TimerRing, TimerDial, TrainingClock, sheets, run/done views, icons
 screens/               TrainingScreen, TimerScreen, FavoritesScreen, SettingsScreen
@@ -64,7 +64,8 @@ scripts/               generate-sounds.js (writes assets/sounds/*.wav, no depend
 
 Voice runs inside the app (`expo-speech-recognition`), on-device when the offline English
 model is available. One shared mic works from the Training and Timer tabs: tap the mic
-button (or the "listening" pill on a running timer).
+button (or the "listening" pill on a running timer). The **?** next to the mic (and Settings)
+lists every command from `voice/commandHelp.js`; a test checks each listed phrase parses.
 
 | Say | Does |
 | --- | --- |
@@ -74,7 +75,7 @@ button (or the "listening" pill on a running timer).
 | `combo finish` | Finish the session (same as the **Finish session** button) |
 | `set 2 minutes countdown` / `countdown 90 seconds` | One-off countdown after the lead-in; saved settings don't change |
 | `set 5 rounds of 3 minutes` | Run that workout with the saved rest and cues |
-| `set rest 30 seconds` / `set rounds 6` / `set round 2 minutes` / `set delay 5 seconds` | Change one saved setting (timer idle only) |
+| `set rest 30 seconds` / `set rounds 6` / `rounds infinite` / `set round 2 minutes` / `set delay 5 seconds` / `delay off` | Change one saved setting (timer idle only) |
 | `preset boxing` | Load a built-in or saved preset (timer idle only) |
 | `timer start` / `pause` / `resume` / `skip` / `stop` | Control the running timer |
 

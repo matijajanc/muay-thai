@@ -2,18 +2,13 @@ import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, fontSize, spacing } from '../constants/theme';
+import VoiceCommandList from '../components/VoiceCommandList';
 
-const HOW_IT_WORKS = [
-  'In the Training tab, generate a session.',
-  'Tap "Tap to listen for voice commands" and allow the microphone the first time. Android may also prompt once to download the small offline voice model.',
-  'Say "combo" + a number, e.g. "combo three", to expand that combo for 60 seconds.',
-  'Say "combo next" (or "combo back") to step through the session, starting at combo 1.',
-  'Say "combo favorite" to save the combo you last opened to your favorites.',
-  'Moving on to another combo marks the previous one done (if it was open at least 5 seconds). Say "combo finish" or tap Finish session at the end.',
-  'Timer: say "set 2 minutes countdown" for a one-off countdown, or "timer start" to run your saved rounds. It works from the Training and Timer tabs.',
-  'Say "timer pause", "timer resume", "timer skip" or "timer stop". A bare "pause" or "stop" is ignored, so gym chatter can\'t end your round.',
-  'Say "set rest 30 seconds", "set rounds 6" or "preset boxing" to change the timer settings while it\'s stopped.',
-  'It keeps listening — and keeps the screen on — until you tap to stop. It pauses while the app is in the background.',
+const GETTING_STARTED = [
+  'Tap the mic on the Training or Timer tab and allow the microphone the first time. Android may also prompt once to download the small offline voice model.',
+  'Say any command below. What was heard, and what it did, shows under the mic.',
+  'Combo commands need a generated session; timer commands work any time.',
+  'It keeps listening — and keeps the screen on — until you tap the mic again. It pauses while the app is in the background.',
 ];
 
 export default function SettingsScreen({ navigation }) {
@@ -42,10 +37,10 @@ export default function SettingsScreen({ navigation }) {
           </Text>
         </View>
 
-        {/* How it works steps */}
+        {/* Getting started steps */}
         <View style={styles.card}>
-          {HOW_IT_WORKS.map((step, i) => (
-            <View key={i} style={[styles.stepRow, i === HOW_IT_WORKS.length - 1 && styles.stepRowLast]}>
+          {GETTING_STARTED.map((step, i) => (
+            <View key={i} style={[styles.stepRow, i === GETTING_STARTED.length - 1 && styles.stepRowLast]}>
               <View style={styles.stepCircle}>
                 <Text style={styles.stepCircleText}>{i + 1}</Text>
               </View>
@@ -54,9 +49,11 @@ export default function SettingsScreen({ navigation }) {
           ))}
         </View>
 
-        <Text style={styles.tip}>
-          Tip: numbers refer to the slot in your current session (1–10), so the same commands keep
-          working after you generate a new session.
+        <VoiceCommandList />
+
+        <Text style={[styles.tip, styles.tipSpaced]}>
+          Tip: moving on to another combo marks the previous one done if it was open at least
+          5 seconds. Tap the ✓ to undo.
         </Text>
 
         {/* Session preferences */}
@@ -141,6 +138,7 @@ const styles = StyleSheet.create({
   stepText: { flex: 1, color: colors.textSecondary, fontSize: fontSize.md, lineHeight: fontSize.md * 1.4 },
 
   tip: { color: colors.textMuted, fontSize: fontSize.sm, lineHeight: fontSize.sm * 1.5, marginBottom: spacing.md },
+  tipSpaced: { marginTop: spacing.md },
 
   prefRow: {
     flexDirection: 'row',

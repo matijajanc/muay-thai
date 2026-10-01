@@ -11,7 +11,7 @@ import { Chip, Btn } from './TimerUI';
 
 // ---- Shell: scrim + bottom sheet (.scrim / .sheet / .grab / .sheet-t) ----
 
-function Sheet({ visible, onClose, title, meta, children }) {
+export function Sheet({ visible, onClose, title, meta, children }) {
   const insets = useSafeAreaInsets();
   const [mounted, setMounted] = useState(visible);
   const [keyboard, setKeyboard] = useState(0);
