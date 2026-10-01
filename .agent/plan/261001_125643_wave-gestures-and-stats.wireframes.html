@@ -1,0 +1,843 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gestures &amp; Stats Wireframes</title>
+<style>
+:root {
+  --board: #ecebe6; --ink: #1c1c1a; --ink-2: #5b5a55; --line: #d3d1ca; --note: #fffdf6; --shadow: rgba(0,0,0,.18);
+  /* app tokens — constants/theme.js */
+  --bg: #111111; --surface: #1a1a1a; --border: #2a2a2a; --accent: #E86C3A;
+  --t1: #e0e0e0; --t2: #aaaaaa; --t3: #555555; --tab: #161616;
+  --prep: #EF9F27; --work: #E86C3A; --rest: #85B7EB; --done: #97C459; --paused: #5a5a5a;
+  --type: #85B7EB; --beg: #97C459; --int: #EF9F27; --adv: #F09595;
+  --voiceBg: #1a1a2e; --voiceBorder: #185FA5; --voiceTitle: #85B7EB; --voiceBody: #6a8aaa;
+  /* proposed stats tokens */
+  --barPast: rgba(232,108,58,.35); --barTrack: #202020;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --board: #1b1b1a; --ink: #ecebe6; --ink-2: #a3a29c; --line: #34332f; --note: #232220; --shadow: rgba(0,0,0,.6); }
+}
+:root[data-theme="dark"] { --board: #1b1b1a; --ink: #ecebe6; --ink-2: #a3a29c; --line: #34332f; --note: #232220; --shadow: rgba(0,0,0,.6); }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--board); color: var(--ink); font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+.wrap { max-width: 1320px; margin: 0 auto; padding: 32px 16px 80px; }
+header h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: -.3px; }
+header p { margin: 0; color: var(--ink-2); max-width: 760px; }
+h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1.2px; margin: 48px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+h2 small { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--ink-2); margin-left: 8px; font-size: 13px; }
+.row { display: flex; flex-wrap: wrap; gap: 28px 28px; align-items: flex-start; }
+.frame { width: 300px; }
+.frame > .cap { font-weight: 600; font-size: 13px; margin: 0 0 8px; }
+.notes { margin: 10px 0 0; padding: 10px 12px 10px 28px; background: var(--note); border: 1px solid var(--line); border-radius: 8px; font-size: 12.5px; color: var(--ink-2); }
+.notes li { margin: 2px 0; }
+.notes b { color: var(--ink); font-weight: 600; }
+
+/* ---------- phone ---------- */
+.phone { position: relative; width: 300px; height: 640px; background: var(--bg); border: 7px solid #050505; border-radius: 36px; overflow: hidden; display: flex; flex-direction: column; color: var(--t1); font-size: 12.5px; box-shadow: 0 10px 28px var(--shadow); }
+.sb { height: 24px; flex: none; display: flex; justify-content: space-between; align-items: center; padding: 2px 20px 0; font-size: 10.5px; color: var(--t2); }
+.scr { flex: 1; padding: 6px 12px 0; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+.scr > * { flex-shrink: 0; }
+.tabbar { flex: none; height: 54px; background: var(--tab); border-top: 1px solid var(--border); display: grid; grid-template-columns: repeat(5, 1fr); }
+.tabbar div { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 9.5px; color: var(--t3); }
+.tabbar div.on { color: var(--accent); }
+.tabbar svg { width: 20px; height: 20px; }
+.tabbar .live { font-variant-numeric: tabular-nums; font-weight: 600; }
+.ico { width: 16px; height: 16px; flex: none; }
+
+.h1 { font-size: 17px; font-weight: 500; color: #fff; }
+.sub { font-size: 11px; color: #666; margin-top: 1px; }
+.lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .6px; color: #555; font-weight: 500; margin: 14px 0 6px; display: flex; justify-content: space-between; align-items: baseline; }
+.lbl span { text-transform: none; letter-spacing: 0; color: #555; font-weight: 400; font-size: 10.5px; }
+.mic { margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--accent); color: var(--accent); border-radius: 10px; padding: 9px 8px; font-weight: 500; font-size: 12px; }
+.mic.on { background: var(--accent); color: #fff; }
+.microw { display: flex; gap: 8px; margin-top: 12px; }
+.microw .mic { margin-top: 0; flex: 1; }
+.microw .q { width: 42px; border: 1px solid #333; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--t2); font-weight: 700; }
+.fb { text-align: center; color: var(--accent); font-weight: 600; font-size: 11px; margin-top: 4px; }
+.chips { display: flex; gap: 6px; white-space: nowrap; }
+.chip { border: 1px solid #333; background: #1a1a1a; color: #888; border-radius: 20px; padding: 5px 11px; font-size: 11.5px; flex: none; }
+.chip.on { border-color: var(--accent); background: rgba(232,108,58,.14); color: var(--accent); }
+.card { background: var(--surface); border: .5px solid var(--border); border-radius: 10px; padding: 0 12px; }
+.r { min-height: 34px; display: flex; align-items: center; justify-content: space-between; gap: 8px; border-bottom: .5px solid var(--border); color: var(--t2); }
+.r:last-child { border-bottom: 0; }
+.r b { color: var(--t1); font-weight: 500; font-variant-numeric: tabular-nums; }
+.tog { width: 30px; height: 17px; border-radius: 9px; background: #333; position: relative; flex: none; }
+.tog::after { content: ""; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: 50%; background: #888; }
+.tog.on { background: var(--accent); }
+.tog.on::after { left: 15px; background: #fff; }
+.tog.dis { opacity: .35; }
+.btn { height: 46px; border-radius: 10px; background: var(--accent); color: #fff; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.fade { position: absolute; left: 0; right: 0; bottom: 0; height: 34px; background: linear-gradient(transparent, var(--bg)); pointer-events: none; }
+.hint { font-size: 10.5px; color: var(--t3); text-align: center; margin-top: 10px; }
+.tip { font-size: 11px; color: var(--t3); line-height: 1.5; margin-top: 8px; }
+
+/* ---------- gestures card ---------- */
+.gx { padding: 9px 0; border-bottom: .5px solid var(--border); display: flex; align-items: center; gap: 10px; }
+.gx:last-child { border-bottom: 0; }
+.gx .say { flex: none; width: 92px; white-space: nowrap; }
+.gx .say i { font-style: normal; display: inline-block; background: rgba(232,108,58,.14); color: var(--accent); font-weight: 600; font-size: 12px; border-radius: 6px; padding: 2px 7px; }
+.gx .does { color: var(--t2); font-size: 11.5px; line-height: 1.35; }
+.off .gx .say i, .off .gx .does { opacity: .45; }
+.sense { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; }
+.sense::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: #2c2c2c; border: 1px solid #3a3a3a; }
+.sense.near { color: var(--accent); }
+.sense.near::before { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,108,58,.25); }
+.r small { color: var(--t3); font-size: 10.5px; }
+.nosensor { padding: 10px 0; color: var(--t2); font-size: 11.5px; line-height: 1.45; }
+
+/* ---------- stats ---------- */
+.streak { background: var(--surface); border: .5px solid var(--border); border-radius: 12px; padding: 11px 12px 10px; margin-top: 12px; }
+.sk-top { display: flex; align-items: center; gap: 7px; }
+.sk-top svg { width: 20px; height: 20px; color: var(--accent); }
+.sk-n { font-size: 26px; font-weight: 600; color: #fff; font-variant-numeric: tabular-nums; line-height: 1; }
+.sk-l { font-size: 12.5px; color: var(--t1); font-weight: 500; }
+.sk-best { margin-left: auto; font-size: 11px; color: var(--t3); }
+.sk-best b { color: var(--t2); font-weight: 600; }
+.wk { display: grid; grid-template-columns: repeat(7, 1fr); margin-top: 10px; }
+.wk div { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 9.5px; color: var(--t3); }
+.wk i { width: 22px; height: 22px; border-radius: 50%; background: #222; border: 1px solid #2c2c2c; display: flex; align-items: center; justify-content: center; color: #111; }
+.wk i svg { width: 12px; height: 12px; }
+.wk .on i { background: var(--accent); border-color: var(--accent); }
+.wk .today i { border: 1.5px solid var(--accent); background: transparent; }
+.wk .today { color: var(--accent); font-weight: 700; }
+.sk-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 11px; color: var(--t2); gap: 8px; }
+.goal { flex: none; border: 1px solid #333; border-radius: 20px; padding: 3px 9px; font-size: 10.5px; color: var(--t1); font-weight: 600; }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tile { background: var(--surface); border: .5px solid var(--border); border-radius: 10px; padding: 8px 10px; }
+.tile span { display: block; font-size: 9.5px; text-transform: uppercase; letter-spacing: .6px; color: var(--t3); }
+.tile b { display: block; font-size: 18px; font-weight: 500; color: #fff; font-variant-numeric: tabular-nums; margin-top: 1px; }
+.tile em { display: block; font-style: normal; font-size: 10px; color: var(--t3); margin-top: 1px; }
+.tile em.up { color: var(--done); }
+.chartcard { background: var(--surface); border: .5px solid var(--border); border-radius: 10px; padding: 10px 10px 6px; }
+.chartcard svg { display: block; width: 100%; height: auto; }
+.mix { background: var(--surface); border: .5px solid var(--border); border-radius: 10px; padding: 8px 12px; }
+.mx { display: grid; grid-template-columns: 62px 1fr 30px; align-items: center; gap: 8px; height: 21px; font-size: 11px; color: var(--t2); }
+.mx .bar { height: 6px; background: var(--barTrack); border-radius: 3px; overflow: hidden; }
+.mx .bar div { height: 100%; background: var(--type); border-radius: 3px; }
+.mx b { text-align: right; font-weight: 500; color: var(--t1); font-variant-numeric: tabular-nums; }
+.diff { display: flex; height: 8px; border-radius: 4px; overflow: hidden; gap: 2px; margin-top: 10px; }
+.diffleg { display: flex; justify-content: space-between; font-size: 10px; margin-top: 5px; }
+.rank { display: grid; grid-template-columns: 16px 1fr auto; gap: 8px; align-items: center; min-height: 34px; border-bottom: .5px solid var(--border); font-size: 12px; }
+.rank:last-child { border-bottom: 0; }
+.rank i { font-style: normal; color: #444; font-variant-numeric: tabular-nums; }
+.rank span { color: var(--t1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rank b { color: var(--t2); font-weight: 600; font-variant-numeric: tabular-nums; font-size: 11.5px; }
+.day { font-size: 9.5px; text-transform: uppercase; letter-spacing: .6px; color: #555; font-weight: 600; margin: 10px 0 5px; }
+.hrow { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: .5px solid var(--border); }
+.hrow:last-child { border-bottom: 0; }
+.hrow .hi { width: 28px; height: 28px; border-radius: 50%; background: #222; display: flex; align-items: center; justify-content: center; flex: none; }
+.hrow .hi svg { width: 15px; height: 15px; }
+.hrow .ht { flex: 1; min-width: 0; }
+.hrow .ht b { display: block; font-weight: 500; color: var(--t1); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hrow .ht small { display: block; color: var(--t3); font-size: 10.5px; margin-top: 1px; }
+.hrow .ht small em { font-style: normal; color: var(--t2); }
+.hrow time { font-size: 10.5px; color: var(--t3); font-variant-numeric: tabular-nums; }
+.hrow.held { background: #232323; margin: 0 -12px; padding: 8px 12px; }
+.more { text-align: center; color: var(--accent); font-weight: 600; font-size: 11.5px; padding: 10px 0 2px; }
+.empty { background: var(--surface); border: .5px solid var(--border); border-radius: 12px; padding: 22px 16px; margin-top: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.empty svg { width: 30px; height: 30px; color: var(--t3); }
+.empty b { color: var(--t1); font-weight: 500; font-size: 13.5px; margin-top: 8px; }
+.empty p { margin: 4px 0 0; color: var(--t3); font-size: 11.5px; line-height: 1.45; }
+
+/* ---------- run screen (Timer tab) ---------- */
+.run { align-items: center; padding: 6px 16px 0; }
+.runtop { width: 100%; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--t2); }
+.runtop .gfb { color: var(--accent); font-weight: 600; }
+.pill { display: inline-flex; align-items: center; gap: 5px; border: 1px solid #333; color: var(--t3); border-radius: 20px; padding: 2px 8px; font-size: 10.5px; font-weight: 600; }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--t3); }
+.phase { margin-top: 18px; font-size: 12px; letter-spacing: 2.4px; font-weight: 700; }
+.ringwrap { position: relative; width: 236px; height: 236px; margin-top: 10px; }
+.ringwrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.digits { font-size: 66px; font-weight: 300; letter-spacing: -1px; font-variant-numeric: tabular-nums; color: #fff; line-height: 1; opacity: .35; }
+.digits.live { opacity: 1; }
+.digits.xl { font-size: 104px; font-weight: 200; }
+.under { font-size: 11px; color: var(--t2); margin-top: 6px; }
+.tint-prep .scr { background: radial-gradient(120% 70% at 50% 40%, rgba(239,159,39,.12), transparent 70%); }
+.badge { position: absolute; top: 34px; left: 50%; transform: translateX(-50%); background: #2a2a2a; color: var(--t1); font-size: 10px; letter-spacing: 1.6px; font-weight: 700; padding: 3px 9px; border-radius: 6px; }
+.dots { display: flex; gap: 6px; margin-top: 14px; }
+.dots i { width: 8px; height: 8px; border-radius: 50%; background: #2c2c2c; }
+.dots i.d { background: var(--done); }
+.dots i.c { background: var(--work); box-shadow: 0 0 0 3px rgba(232,108,58,.25); }
+.ctrls { margin-top: auto; padding: 12px 0 16px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 22px; }
+.cb { width: 54px; height: 54px; border-radius: 50%; border: 1px solid #333; display: flex; align-items: center; justify-content: center; color: var(--t1); position: relative; }
+.cb svg { width: 20px; height: 20px; }
+.cb.big { width: 78px; height: 78px; border: 0; color: #111; background: var(--accent); }
+.cb.big svg { width: 30px; height: 30px; }
+.cb em { position: absolute; top: 58px; font-style: normal; font-size: 9.5px; color: var(--t3); white-space: nowrap; }
+.cb.big em { top: 82px; }
+
+/* ---------- sheet + alert ---------- */
+.behind { opacity: .35; filter: saturate(.6); }
+.scrim { position: absolute; inset: 0; background: rgba(0,0,0,.55); }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; background: #181818; border-top: 1px solid var(--border); border-radius: 18px 18px 0 0; padding: 8px 16px 16px; }
+.grab { width: 36px; height: 4px; border-radius: 2px; background: #3a3a3a; margin: 0 auto 10px; }
+.sheet-t { display: flex; justify-content: space-between; align-items: baseline; }
+.sheet-t b { font-size: 15px; font-weight: 600; color: #fff; }
+.sheet-t span { font-size: 11px; color: var(--t3); }
+.alert { position: absolute; left: 22px; right: 22px; top: 300px; background: #2b2b2b; border-radius: 22px; padding: 20px 20px 14px; box-shadow: 0 12px 40px rgba(0,0,0,.6); }
+.alert b { display: block; color: #fff; font-size: 16px; font-weight: 500; }
+.alert p { margin: 10px 0 0; color: #c4c4c4; font-size: 12.5px; line-height: 1.5; }
+.alert .acts { display: flex; justify-content: flex-end; gap: 22px; margin-top: 18px; font-size: 13px; font-weight: 600; color: #a8c7fa; }
+
+/* ---------- pins ---------- */
+.pin { position: absolute; width: 18px; height: 18px; border-radius: 50%; background: #2b6fff; color: #fff; font-size: 10.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px var(--bg); z-index: 5; }
+.notes .pn { display: inline-flex; width: 16px; height: 16px; border-radius: 50%; background: #2b6fff; color: #fff; font-size: 10px; font-weight: 700; align-items: center; justify-content: center; margin-right: 4px; vertical-align: 1px; }
+.notes.pins { list-style: none; padding-left: 12px; }
+
+/* ---------- explainer ---------- */
+.explain { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 860px) { .explain { grid-template-columns: 1fr; } }
+.panel { background: var(--note); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.panel h3 { margin: 0 0 6px; font-size: 14px; }
+.panel p { margin: 0 0 8px; font-size: 13px; color: var(--ink-2); }
+.panel svg { display: block; width: 100%; height: auto; }
+.traces text { font: 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; fill: var(--ink-2); }
+.traces .nm { font-weight: 600; fill: var(--ink); font-size: 12px; }
+.traces .ax { stroke: var(--line); }
+.traces .sig { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; }
+.traces .fire { fill: var(--accent); }
+.traces .tick { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 3 3; }
+.traces .x { stroke: #c0392b; stroke-width: 2.2; stroke-linecap: round; }
+
+table { width: 100%; border-collapse: collapse; background: var(--note); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; font-size: 13px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--ink-2); font-weight: 600; }
+tr:last-child td { border-bottom: 0; }
+td q { font-weight: 600; quotes: "“" "”"; }
+.tablewrap { overflow-x: auto; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+    <symbol id="i-barbell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9v6M6.5 6.5v11M17.5 6.5v11M21 9v6M6.5 12h11"/></symbol>
+    <symbol id="i-timer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 2M9.5 2.5h5"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-7.5-10.2A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/></symbol>
+    <symbol id="i-stats" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20h16"/><rect x="5.5" y="11" width="3" height="6.5" rx=".8"/><rect x="10.5" y="6.5" width="3" height="11" rx=".8"/><rect x="15.5" y="13.5" width="3" height="4" rx=".8"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.8l1.6 2.3 2.7-.6.6 2.7 2.3 1.6-1.2 2.5 1.2 2.5-2.3 1.6-.6 2.7-2.7-.6L12 21.2l-1.6-2.3-2.7.6-.6-2.7-2.3-1.6L6 12.7 4.8 10.2l2.3-1.6.6-2.7 2.7.6z"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 2.5c.6 3.2 4.5 5.3 4.5 10.2A4.5 4.5 0 0 1 12 21.5a5.5 5.5 0 0 1-5.5-5.6c0-2.6 1.4-4.2 2.6-5.4.2 1.6.8 2.6 1.9 3.1C10.6 9.8 11.2 6 12 2.5z" fill="currentColor"/></symbol>
+    <symbol id="i-hand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12V5.5a1.5 1.5 0 0 1 3 0V11M11 10V4a1.5 1.5 0 0 1 3 0v7M14 10.5V5.5a1.5 1.5 0 0 1 3 0V14c0 4-2.5 7-6.5 7-2.6 0-4-1.3-5.3-3.4L3.6 15a1.5 1.5 0 0 1 2.4-1.8L8 15.5"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4" height="15" rx="1" fill="currentColor"/><rect x="14" y="4.5" width="4" height="15" rx="1" fill="currentColor"/></symbol>
+    <symbol id="i-skip" viewBox="0 0 24 24"><path d="M5 5v14l10-7z" fill="currentColor"/><rect x="16.5" y="5" width="2.5" height="14" rx="1" fill="currentColor"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></symbol>
+    <symbol id="i-restart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12a7.5 7.5 0 1 0 2.6-5.7"/><path d="M4.5 3.5v4h4"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+<header>
+  <h1>Wave gestures + Stats: wireframes</h1>
+  <p>Two additions to the Muay Thai app. <b>Wave gestures</b> let you control the timer and combos by waving a glove over the phone. The new <b>Stats</b> tab shows a weekly streak, this week vs last, a 12-week chart, technique mix and history. It uses the app’s dark theme tokens. Plan: <code>261001_125643_wave-gestures-and-stats.md</code>.</p>
+</header>
+
+<!-- =============================== 1 · HOW IT WORKS =============================== -->
+<h2>1 · How the wave works <small>No camera. The proximity sensor only knows “something is close” or “nothing is close”.</small></h2>
+<div class="explain">
+  <div class="panel">
+    <h3>The sensor</h3>
+    <p>The sensor is a tiny infrared emitter and receiver beside the front camera. It’s the part that blanks the screen when you hold the phone to your ear on a call. It reports <b>near</b> when something is within about 5 cm, and <b>far</b> otherwise.</p>
+    <svg viewBox="0 0 268 170" aria-label="Phone top edge with the proximity sensor next to the front camera">
+      <rect x="54" y="40" width="160" height="150" rx="22" fill="#111" stroke="#050505" stroke-width="6"/>
+      <rect x="114" y="50" width="40" height="5" rx="2.5" fill="#2a2a2a"/>
+      <circle cx="134" cy="66" r="5" fill="#222" stroke="#333"/>
+      <circle cx="152" cy="66" r="3.2" fill="#E86C3A"/>
+      <path d="M152 62 Q 152 40 152 22" stroke="#E86C3A" stroke-width="1.3" stroke-dasharray="3 3" fill="none"/>
+      <path d="M146 30 l6 -8 l6 8" stroke="#E86C3A" stroke-width="1.3" fill="none"/>
+      <text x="164" y="70" style="font:11px sans-serif;fill:var(--ink-2)">sensor</text>
+      <text x="96" y="70" style="font:11px sans-serif;fill:var(--ink-2)" text-anchor="end">camera</text>
+      <g transform="translate(118 -2)" style="color:var(--ink)"><svg width="34" height="34" viewBox="0 0 24 24"><use href="#i-hand"/></svg></g>
+      <text x="196" y="22" style="font:11px sans-serif;fill:var(--ink-2)">≈ 5 cm</text>
+      <text x="134" y="120" style="font:11px sans-serif;fill:#555" text-anchor="middle">phone face up</text>
+      <text x="134" y="135" style="font:11px sans-serif;fill:#555" text-anchor="middle">on the floor or a bench</text>
+    </svg>
+    <p style="margin-top:8px">The sensor can’t see the direction of your hand or its shape. The app tells the gestures apart <b>by timing alone</b>: how long the sensor stays covered, and how many times in a row.</p>
+    <p>It needs no permission and uses almost no battery. It only works with the phone lying face up, and on Android only for now.</p>
+  </div>
+  <div class="panel">
+    <h3>Three gestures, read from the sensor signal</h3>
+    <svg class="traces" viewBox="0 0 640 352" aria-label="Sensor signal over time for each gesture">
+      <!-- scale: x0=150, 80 px per second -->
+      <g transform="translate(0 0)">
+        <text class="nm" x="0" y="34">Wave</text>
+        <text x="0" y="50">covered &lt; 0.8 s</text>
+        <line class="ax" x1="150" y1="50" x2="630" y2="50"/>
+        <path class="sig" d="M150 50 H190 V22 H222 V50 H630"/>
+        <circle class="fire" cx="270" cy="50" r="6"/>
+        <text x="280" y="44">fires 0.6 s after release (waiting to see whether a 2nd wave follows)</text>
+      </g>
+      <g transform="translate(0 84)">
+        <text class="nm" x="0" y="34">Double wave</text>
+        <text x="0" y="50">2 waves within 1 s</text>
+        <line class="ax" x1="150" y1="50" x2="630" y2="50"/>
+        <path class="sig" d="M150 50 H190 V22 H218 V50 H244 V22 H272 V50 H630"/>
+        <circle class="fire" cx="276" cy="50" r="6"/>
+        <text x="290" y="44">fires on the 2nd release</text>
+      </g>
+      <g transform="translate(0 168)">
+        <text class="nm" x="0" y="34">Hold</text>
+        <text x="0" y="50">covered 1.5 – 4 s</text>
+        <line class="ax" x1="150" y1="50" x2="630" y2="50"/>
+        <path class="sig" d="M150 50 H190 V22 H366 V50 H630"/>
+        <line class="tick" x1="310" y1="10" x2="310" y2="60"/>
+        <text x="314" y="10">1.5 s: short tick “armed”</text>
+        <circle class="fire" cx="370" cy="50" r="6"/>
+        <text x="384" y="44">fires when you lift</text>
+      </g>
+      <g transform="translate(0 252)">
+        <text class="nm" x="0" y="34">Ignored</text>
+        <text x="0" y="50">covered &gt; 4 s</text>
+        <line class="ax" x1="150" y1="50" x2="630" y2="50"/>
+        <path class="sig" d="M150 50 H190 V22 H560 V50 H630"/>
+        <line class="tick" x1="510" y1="10" x2="510" y2="60"/>
+        <text x="420" y="10">4 s: cancelled</text>
+        <path class="x" d="M556 44 l10 12 M566 44 l-10 12"/>
+        <text x="0" y="78">Also ignored: any wave within 0.3 s of a screen touch (a hand reaching for the mic crosses the sensor).</text>
+      </g>
+      <text x="150" y="350">0 s</text><text x="310" y="350">2 s</text><text x="470" y="350">4 s</text><text x="610" y="350">6 s</text>
+    </svg>
+    <p style="margin-top:8px">The line is up while the sensor is covered. Long covers are things like a pocket, a phone lying face down, or a hand resting on it. Nothing fires until the sensor reads clear again.</p>
+  </div>
+</div>
+
+<!-- =============================== 2 · SETTINGS =============================== -->
+<h2>2 · Settings <small>Gestures are off until you switch them on. The card is at the top of the Settings tab.</small></h2>
+<div class="row">
+
+  <div class="frame">
+    <p class="cap">G1 · Gestures on, sensor test covered</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 87%</span></div>
+      <div class="scr">
+        <div class="h1">Voice &amp; Settings</div>
+        <div class="lbl" style="margin-top:14px">Wave gestures</div>
+        <div class="card">
+          <div class="r" style="min-height:40px"><span style="color:var(--t1)">Wave gestures</span><span class="tog on"></span></div>
+          <div class="gx"><span class="say"><i>Wave</i></span><span class="does">Start the timer</span></div>
+          <div class="gx"><span class="say"><i>Double wave</i></span><span class="does">Next combo</span></div>
+          <div class="gx"><span class="say"><i>Hold 2 s</i></span><span class="does">Open the current combo</span></div>
+          <div class="r" style="min-height:40px"><span>Sensor test <small>· last: wave</small></span><span class="sense near">Covered</span></div>
+        </div>
+        <span class="pin" style="top:92px;right:4px">1</span>
+        <span class="pin" style="top:250px;right:4px">2</span>
+        <div class="tip">Wave a hand or glove about 5 cm over the top of the screen, next to the front camera. Covering the sensor longer than 4 s does nothing, so a pocket or a face-down phone won’t set anything off.</div>
+
+        <div class="lbl" style="margin-top:18px">Voice commands</div>
+        <div style="background:var(--voiceBg);border:1px solid var(--voiceBorder);border-radius:10px;padding:12px">
+          <div style="display:flex;gap:8px;align-items:center;color:var(--voiceTitle);font-weight:600;font-size:13px"><svg class="ico"><use href="#i-mic"/></svg>Hands-free voice commands</div>
+          <div style="color:var(--voiceBody);font-size:12px;line-height:1.5;margin-top:8px">Voice commands run inside the app — no Google Assistant or Google Home setup needed…</div>
+        </div>
+        <div class="fade"></div>
+      </div>
+      <div class="tabbar">
+        <div><svg><use href="#i-barbell"/></svg>Training</div>
+        <div><svg><use href="#i-timer"/></svg>Timer</div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+        <div><svg><use href="#i-stats"/></svg>Stats</div>
+        <div class="on"><svg><use href="#i-gear"/></svg>Settings</div>
+      </div>
+    </div>
+    <ol class="notes pins">
+      <li><span class="pn">1</span><b>Off by default.</b> The setting is saved on the device. While it’s off, the three gesture rows stay visible but dimmed (G2 shows the dimmed style), so you can still see what you’d get.</li>
+      <li><span class="pn">2</span><b>Sensor test</b> is live while this screen is open, even with gestures off. It reads <b>Covered</b> (accent dot) or <b>Clear</b> (grey dot), plus the last gesture recognised (“last: double wave”). Use it to find where the sensor is on your phone. Gestures fired here only show up as text and don’t control anything.</li>
+      <li>The rest of the screen (voice commands, session preferences) is unchanged, below.</li>
+    </ol>
+  </div>
+
+  <div class="frame">
+    <p class="cap">G2 · No usable sensor</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 87%</span></div>
+      <div class="scr">
+        <div class="h1">Voice &amp; Settings</div>
+        <div class="lbl" style="margin-top:14px">Wave gestures</div>
+        <div class="card off">
+          <div class="r" style="min-height:40px"><span style="color:var(--t3)">Wave gestures</span><span class="tog dis"></span></div>
+          <div class="nosensor">This phone has no proximity sensor the app can use. Voice commands still work hands-free.</div>
+        </div>
+
+        <div class="lbl" style="margin-top:18px">Voice commands</div>
+        <div style="background:var(--voiceBg);border:1px solid var(--voiceBorder);border-radius:10px;padding:12px">
+          <div style="display:flex;gap:8px;align-items:center;color:var(--voiceTitle);font-weight:600;font-size:13px"><svg class="ico"><use href="#i-mic"/></svg>Hands-free voice commands</div>
+          <div style="color:var(--voiceBody);font-size:12px;line-height:1.5;margin-top:8px">Voice commands run inside the app — no Google Assistant or Google Home setup needed…</div>
+        </div>
+        <div class="lbl" style="margin-top:16px">Gestures off (for comparison)</div>
+        <div class="card off">
+          <div class="r" style="min-height:40px"><span style="color:var(--t1)">Wave gestures</span><span class="tog"></span></div>
+          <div class="gx"><span class="say"><i>Wave</i></span><span class="does">Start the timer</span></div>
+          <div class="gx"><span class="say"><i>Double wave</i></span><span class="does">Next combo</span></div>
+          <div class="gx"><span class="say"><i>Hold 2 s</i></span><span class="does">Open the current combo</span></div>
+          <div class="r" style="min-height:40px"><span>Sensor test</span><span class="sense">Clear</span></div>
+        </div>
+        <div class="fade"></div>
+      </div>
+      <div class="tabbar">
+        <div><svg><use href="#i-barbell"/></svg>Training</div>
+        <div><svg><use href="#i-timer"/></svg>Timer</div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+        <div><svg><use href="#i-stats"/></svg>Stats</div>
+        <div class="on"><svg><use href="#i-gear"/></svg>Settings</div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>This shows when the phone has no proximity sensor, or when the sensor never reports while the screen is on. Some phones use “virtual” or ultrasound sensors that only run during calls.</li>
+      <li>On iOS this card isn’t shown at all for now.</li>
+      <li>The lower card is the normal <b>off</b> state from G1, drawn here for comparison only. It isn’t part of the G2 screen.</li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- =============================== 3 · FEEDBACK =============================== -->
+<h2>3 · When a gesture fires <small>A short blip, a 40 ms buzz, and a “✋ …” line. The lines are the same as voice, so the rules match.</small></h2>
+<div class="row">
+
+  <div class="frame">
+    <p class="cap">F1 · Double wave on Training</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 86%</span></div>
+      <div class="scr">
+        <div class="h1">Today's training</div><div class="sub">10 combos · 4 done</div>
+        <div class="microw"><div class="mic"><svg class="ico"><use href="#i-mic"/></svg>Tap to listen for voice commands</div><div class="q">?</div></div>
+        <div class="fb">✋ Combo 5</div>
+        <span class="pin" style="top:116px;right:60px">1</span>
+        <div style="margin-top:8px" class="card"><div class="r" style="height:44px"><span><span style="color:var(--done);margin-right:8px">✓</span><span style="color:#666">Teep → Cross - Rear kick</span></span><span style="color:#444">♡</span></div></div>
+        <div style="margin-top:8px;background:var(--surface);border:1px solid #333;border-radius:10px;padding:10px 12px">
+          <div style="display:flex;justify-content:space-between"><span><span style="color:#444;margin-right:8px">5</span><b style="font-weight:500">Double jab - Low kick</b></span><span style="color:#444">♡</span></div>
+          <div style="color:var(--t2);font-size:11.5px;margin-top:6px;line-height:1.5">Jab — measure distance<br>Jab — draw the guard up<br>Low kick — rear leg to the thigh</div>
+          <div style="height:2px;background:#2a2a2a;margin-top:10px;border-radius:2px"><div style="width:96%;height:100%;background:var(--accent)"></div></div>
+        </div>
+        <div style="margin-top:8px" class="card"><div class="r" style="height:44px"><span><span style="color:#444;margin-right:8px">6</span>Hook - Switch kick</span><span style="color:#444">♡</span></div></div>
+        <div style="margin-top:8px" class="card"><div class="r" style="height:44px"><span><span style="color:#444;margin-right:8px">7</span>Cross - Knee - Elbow</span><span style="color:#444">♡</span></div></div>
+      </div>
+      <div class="tabbar">
+        <div class="on"><svg><use href="#i-barbell"/></svg>Training</div>
+        <div><svg><use href="#i-timer"/></svg>Timer</div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+        <div><svg><use href="#i-stats"/></svg>Stats</div>
+        <div><svg><use href="#i-gear"/></svg>Settings</div>
+      </div>
+    </div>
+    <ol class="notes pins">
+      <li><span class="pn">1</span>Gesture feedback goes in the <b>same line under the mic</b> that voice uses, prefixed with ✋. It shows for the same time as voice feedback. Gestures work <b>with the mic off</b>.</li>
+      <li>Double wave behaves exactly like “combo next”. It opens the next combo with a fresh 60 s bar, marks the previous one done, and wraps around after the last combo.</li>
+      <li>Combo layout is the existing code (approximate here).</li>
+    </ol>
+  </div>
+
+  <div class="frame">
+    <p class="cap">F2 · Wave starts the timer (Timer tab)</p>
+    <div class="phone tint-prep">
+      <div class="sb"><span>9:41</span><span>● ● 87%</span></div>
+      <div class="scr run">
+        <div class="runtop"><span class="gfb">✋ Timer started</span><span class="pill">mic off</span></div>
+        <span class="pin" style="top:2px;left:120px">1</span>
+        <div class="phase" style="color:var(--prep)">GET READY</div>
+        <div class="ringwrap">
+          <svg viewBox="0 0 220 220"><circle cx="110" cy="110" r="100" fill="none" stroke="#202020" stroke-width="12"/><circle cx="110" cy="110" r="100" fill="none" stroke="var(--prep)" stroke-width="12" stroke-linecap="round" stroke-dasharray="628.3" stroke-dashoffset="0"/></svg>
+          <div class="center"><div class="digits live xl" style="color:var(--prep)">10</div><div class="under">Round 1 of 5</div></div>
+        </div>
+        <div class="ctrls">
+          <div class="cb"><svg><use href="#i-stop"/></svg><em>hold to stop</em></div>
+          <div class="cb big" style="background:var(--prep)"><svg><use href="#i-pause"/></svg><em>pause</em></div>
+          <div class="cb"><svg><use href="#i-skip"/></svg><em>skip</em></div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <div><svg><use href="#i-barbell"/></svg>Training</div>
+        <div class="on"><svg><use href="#i-timer"/></svg><span class="live">0:10</span></div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+        <div><svg><use href="#i-stats"/></svg>Stats</div>
+        <div><svg><use href="#i-gear"/></svg>Settings</div>
+      </div>
+    </div>
+    <ol class="notes pins">
+      <li><span class="pn">1</span>Run screens have no mic line, so the feedback <b>replaces the run label</b> (“Muay Thai · 5 × 3:00”) for 2 s, in accent.</li>
+      <li>A wave works like saying <b>“timer start”</b>. It starts the saved workout when the timer is idle or done, and resumes it when paused. While the timer runs it does nothing and shows “✋ Timer is already running”. <b>No gesture pauses the timer.</b></li>
+      <li>On Training a wave starts the same workout, and the Training clock appears (timer frame K). From Favorites or Stats it switches to the Timer tab, like voice does.</li>
+      <li>Otherwise this is frame D of the timer wireframes, unchanged (the cue and “Get ready” lines are left out here).</li>
+    </ol>
+  </div>
+
+  <div class="frame">
+    <p class="cap">F3 · Hold opens the current combo</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 86%</span></div>
+      <div class="scr">
+        <div class="h1">Today's training</div><div class="sub">10 combos · 3 done</div>
+        <div class="microw"><div class="mic"><svg class="ico"><use href="#i-mic"/></svg>Tap to listen for voice commands</div><div class="q">?</div></div>
+        <div class="fb">✋ Combo 4</div>
+        <span class="pin" style="top:116px;right:60px">1</span>
+        <div style="margin-top:8px" class="card"><div class="r" style="height:44px"><span><span style="color:var(--done);margin-right:8px">✓</span><span style="color:#666">Jab - Cross - Hook</span></span><span style="color:#444">♡</span></div></div>
+        <div style="margin-top:8px;background:var(--surface);border:1px solid #333;border-radius:10px;padding:10px 12px">
+          <div style="display:flex;justify-content:space-between"><span><span style="color:#444;margin-right:8px">4</span><b style="font-weight:500">Teep → Cross - Rear kick</b></span><span style="color:var(--accent)">♥</span></div>
+          <div style="color:var(--t2);font-size:11.5px;margin-top:6px;line-height:1.5">Teep — push kick to make range<br>Cross — step in behind it<br>Rear kick — finish with the roundhouse</div>
+          <div style="height:2px;background:#2a2a2a;margin-top:10px;border-radius:2px"><div style="width:100%;height:100%;background:var(--accent)"></div></div>
+        </div>
+        <div style="margin-top:8px" class="card"><div class="r" style="height:44px"><span><span style="color:#444;margin-right:8px">5</span>Double jab - Low kick</span><span style="color:#444">♡</span></div></div>
+        <div style="margin-top:8px" class="card"><div class="r" style="height:44px"><span><span style="color:#444;margin-right:8px">6</span>Hook - Switch kick</span><span style="color:#444">♡</span></div></div>
+      </div>
+      <div class="tabbar">
+        <div class="on"><svg><use href="#i-barbell"/></svg>Training</div>
+        <div><svg><use href="#i-timer"/></svg>Timer</div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+        <div><svg><use href="#i-stats"/></svg>Stats</div>
+        <div><svg><use href="#i-gear"/></svg>Settings</div>
+      </div>
+    </div>
+    <ol class="notes pins">
+      <li><span class="pn">1</span>Hold opens the <b>current combo’s details</b>, meaning the combo you opened last (combo 1 if none yet). Its card expands with the steps and a <b>fresh 60 s bar</b>, and the list scrolls to it. This is the same as saying “combo 4”.</li>
+      <li>Use it to bring the steps back after the card collapses at 60 s, without moving on. The combo isn’t marked done, because it’s the same slot.</li>
+      <li>With the timer running, the Center clock’s current-combo card shows the same combo (timer frame K).</li>
+    </ol>
+  </div>
+
+  <div class="frame" style="width:min(560px,100%)">
+    <p class="cap">Gesture lines (copy)</p>
+    <div class="tablewrap">
+    <table>
+      <tr><th>Gesture</th><th>State</th><th>Does</th><th>Line</th></tr>
+      <tr><td>Wave</td><td>idle / done</td><td>starts the saved workout (lead-in first)</td><td><q>✋ Timer started</q></td></tr>
+      <tr><td>Wave</td><td>paused</td><td>resume</td><td><q>✋ Timer resumed</q></td></tr>
+      <tr><td>Wave</td><td>running</td><td>nothing</td><td><q>✋ Timer is already running</q></td></tr>
+      <tr><td>Double wave</td><td>session</td><td>combo next</td><td><q>✋ Combo 5</q></td></tr>
+      <tr><td>Double wave</td><td>no session</td><td>nothing</td><td><q>✋ Generate a session first</q></td></tr>
+      <tr><td>Hold</td><td>session</td><td>opens the current combo (or combo 1)</td><td><q>✋ Combo 4</q></td></tr>
+      <tr><td>Hold</td><td>no session</td><td>nothing</td><td><q>✋ Generate a session first</q></td></tr>
+    </table>
+    </div>
+    <ul class="notes">
+      <li>Lines that do something play the blip and buzz. Lines that do nothing are text only, so you know the gesture was read but nothing happened.</li>
+      <li>Gestures follow the tab rules voice already uses. Timer gestures stay on Training and Timer, and switch from Favorites, Stats or Settings to the Timer tab. Combo gestures go to Training.</li>
+      <li>The blip goes through the voice echo guard, so it can’t trigger a voice command.</li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- =============================== 4 · STATS =============================== -->
+<h2>4 · Stats tab <small>Tab order: Training | Timer | Favorites | Stats | Settings. Everything is computed on the device from the training log.</small></h2>
+<div class="row">
+
+  <div class="frame">
+    <p class="cap">S1 · Top: streak + this week</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 87%</span></div>
+      <div class="scr">
+        <div class="h1">Stats</div>
+        <div class="sub">This week · 28 Sep – 4 Oct</div>
+        <div class="streak">
+          <div class="sk-top"><svg><use href="#i-flame"/></svg><span class="sk-n">6</span><span class="sk-l">week streak</span><span class="sk-best">Best <b>9</b></span></div>
+          <div class="wk">
+            <div class="on"><i><svg><use href="#i-check"/></svg></i>M</div>
+            <div><i></i>T</div>
+            <div class="on"><i><svg><use href="#i-check"/></svg></i>W</div>
+            <div class="today"><i></i>T</div>
+            <div><i></i>F</div>
+            <div><i></i>S</div>
+            <div><i></i>S</div>
+          </div>
+          <div class="sk-foot"><span>2 of 3 days · 1 more to keep the streak</span><span class="goal">Goal 3/wk ›</span></div>
+        </div>
+        <span class="pin" style="top:62px;right:4px">1</span>
+        <span class="pin" style="top:150px;right:4px">2</span>
+
+        <div class="lbl">This week</div>
+        <div class="tiles">
+          <div class="tile"><span>Training time</span><b>52 m</b><em class="up">+18 m vs last week</em></div>
+          <div class="tile"><span>Rounds</span><b>9</b><em class="up">+4 vs last week</em></div>
+          <div class="tile"><span>Combos done</span><b>8</b><em>−3 vs last week</em></div>
+          <div class="tile"><span>Sessions</span><b>4</b><em>Same as last week</em></div>
+        </div>
+        <span class="pin" style="top:236px;right:4px">3</span>
+
+        <div class="lbl">Last 12 weeks <span>minutes per week</span></div>
+        <div class="chartcard"><svg class="bars" data-values="40,65,0,80,95,70,110,120,85,130,140,52" data-labels="Jul,,,,Aug,,,,Sep,,,Oct" data-avg="82" viewBox="0 0 262 118"></svg></div>
+        <div class="fade"></div>
+      </div>
+      <div class="tabbar">
+        <div><svg><use href="#i-barbell"/></svg>Training</div>
+        <div><svg><use href="#i-timer"/></svg>Timer</div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+        <div class="on"><svg><use href="#i-stats"/></svg>Stats</div>
+        <div><svg><use href="#i-gear"/></svg>Settings</div>
+      </div>
+    </div>
+    <ol class="notes pins">
+      <li><span class="pn">1</span><b>Week streak.</b> Weeks run Monday to Sunday. A week counts when you train on at least <b>goal</b> days. This week only adds to the streak once its goal is met. Until Sunday ends, an unmet week doesn’t break the streak. <b>Best</b> is the longest streak ever.</li>
+      <li><span class="pn">2</span><b>A training day</b> is a day with at least <b>5 min</b> of logged training. Dots: filled ✓ = trained, outlined = today. The line below reads “2 of 3 days · 1 more to keep the streak”, then “3 of 3 days · goal met ✓”. With no streak it reads “Train 3 days this week to start a streak”. <b>Goal 3/wk ›</b> opens S6.</li>
+      <li><span class="pn">3</span>The deltas compare with last week <b>up to the same weekday</b>, so Thursday is compared with last Monday–Thursday. Up is green, down is grey, never red. <b>Sessions</b> counts timer runs plus combo sessions.</li>
+    </ol>
+  </div>
+
+  <div class="frame">
+    <p class="cap">S2 · Scrolled: chart + technique mix</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 87%</span></div>
+      <div class="scr">
+        <div class="lbl" style="margin-top:4px">Last 12 weeks <span>minutes per week</span></div>
+        <div class="chartcard"><svg class="bars" data-values="40,65,0,80,95,70,110,120,85,130,140,52" data-labels="Jul,,,,Aug,,,,Sep,,,Oct" data-avg="82" viewBox="0 0 262 118"></svg></div>
+        <span class="pin" style="top:40px;right:4px">1</span>
+
+        <div class="lbl">Technique mix <span>combos done · last 30 days</span></div>
+        <div class="mix">
+          <div class="mx">Punches<div class="bar"><div style="width:100%"></div></div><b>31%</b></div>
+          <div class="mx">Kicks<div class="bar"><div style="width:71%"></div></div><b>22%</b></div>
+          <div class="mx">Mixed<div class="bar"><div style="width:48%"></div></div><b>15%</b></div>
+          <div class="mx">Knees<div class="bar"><div style="width:35%"></div></div><b>11%</b></div>
+          <div class="mx">Elbows<div class="bar"><div style="width:29%"></div></div><b>9%</b></div>
+          <div class="mx">Clinch<div class="bar"><div style="width:23%"></div></div><b>7%</b></div>
+          <div class="mx">Deadliest<div class="bar"><div style="width:16%"></div></div><b>5%</b></div>
+          <div class="diff"><div style="flex:30;background:var(--beg)"></div><div style="flex:52;background:var(--int)"></div><div style="flex:18;background:var(--adv)"></div></div>
+          <div class="diffleg"><span style="color:var(--beg)">Beginner 30%</span><span style="color:var(--int)">Intermediate 52%</span><span style="color:var(--adv)">Advanced 18%</span></div>
+          <div style="height:6px"></div>
+        </div>
+        <span class="pin" style="top:206px;right:4px">2</span>
+        <div class="fade"></div>
+      </div>
+      <div class="tabbar">
+        <div><svg><use href="#i-barbell"/></svg>Training</div>
+        <div><svg><use href="#i-timer"/></svg>Timer</div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+        <div class="on"><svg><use href="#i-stats"/></svg>Stats</div>
+        <div><svg><use href="#i-gear"/></svg>Settings</div>
+      </div>
+    </div>
+    <ol class="notes pins">
+      <li><span class="pn">1</span>Bars show training minutes per week, oldest to newest. The current week is in accent and past weeks are faded accent. The dashed line is the 12-week average (“avg 82”). Months are labelled under the first week that starts in them. A week with no training has no bar. The chart is drawn with <code>react-native-svg</code>, with no chart library.</li>
+      <li><span class="pn">2</span>The mix counts combos marked done in the <b>last 30 days</b>, by combo type. Bars are scaled to the biggest type, in the type-chip blue, and sorted high to low. The thin bar under them is the difficulty split, in the chip colours. If fewer than 5 combos were done, the card reads “Do a few combos to see your mix.”</li>
+    </ol>
+  </div>
+
+  <div class="frame">
+    <p class="cap">S3 · Scrolled: most drilled + history</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 87%</span></div>
+      <div class="scr">
+        <div class="lbl" style="margin-top:4px">Most drilled <span>last 30 days</span></div>
+        <div class="card">
+          <div class="rank"><i>1</i><span>Jab - Cross - Hook</span><b>×9</b></div>
+          <div class="rank"><i>2</i><span>Teep → Cross - Rear kick</span><b>×7</b></div>
+          <div class="rank"><i>3</i><span>Double jab - Low kick</span><b>×6</b></div>
+          <div class="rank"><i>4</i><span>Cross - Knee - Elbow</span><b>×5</b></div>
+          <div class="rank"><i>5</i><span>Hook - Switch kick</span><b>×5</b></div>
+        </div>
+        <span class="pin" style="top:30px;right:4px">1</span>
+
+        <div class="lbl">History</div>
+        <div class="card">
+          <div class="day">Yesterday</div>
+          <div class="hrow"><span class="hi" style="color:var(--work)"><svg><use href="#i-timer"/></svg></span><span class="ht"><b>Muay Thai · 5 × 3:00</b><small><em>5/5 rounds</em> · 23 min</small></span><time>18:05</time></div>
+          <div class="hrow"><span class="hi" style="color:var(--accent)"><svg><use href="#i-barbell"/></svg></span><span class="ht"><b>Combo session</b><small><em>8/10 done</em> · 24 min</small></span><time>18:02</time></div>
+          <div class="day">Mon 28 Sep</div>
+          <div class="hrow"><span class="hi" style="color:var(--work)"><svg><use href="#i-timer"/></svg></span><span class="ht"><b>Boxing · 12 × 3:00</b><small><em>4/12 rounds</em> · stopped · 15 min</small></span><time>07:30</time></div>
+          <div class="hrow"><span class="hi" style="color:var(--work)"><svg><use href="#i-timer"/></svg></span><span class="ht"><b>Countdown · 2:00</b><small><em>Done</em> · 2 min</small></span><time>07:12</time></div>
+        </div>
+        <span class="pin" style="top:212px;right:4px">2</span>
+        <div class="fade"></div>
+      </div>
+      <div class="tabbar">
+        <div><svg><use href="#i-barbell"/></svg>Training</div>
+        <div><svg><use href="#i-timer"/></svg>Timer</div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+        <div class="on"><svg><use href="#i-stats"/></svg>Stats</div>
+        <div><svg><use href="#i-gear"/></svg>Settings</div>
+      </div>
+    </div>
+    <ol class="notes pins">
+      <li><span class="pn">1</span>The top 5 combos by times marked done in the last 30 days. Ties are broken by the most recent. If nothing was done in 30 days, this card is hidden.</li>
+      <li><span class="pn">2</span><b>History</b> is newest first, grouped by day: “Today”, “Yesterday”, then “Mon 28 Sep”. Each row has the timer icon in the work colour or the barbell icon in accent, a title, a meta line and the start time.
+        <br>Timer titles are the run label. Meta reads “5/5 rounds”, “4/12 rounds · stopped” or “Done” for a countdown.
+        <br>Combo meta reads “8/10 done”. Minutes are active time (pauses and idle gaps left out).
+        <br>Rows aren’t tappable in v1, and long-press deletes (S7).</li>
+    </ol>
+  </div>
+
+  <div class="frame">
+    <p class="cap">S4 · Scrolled to the bottom: all time</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 87%</span></div>
+      <div class="scr">
+        <div class="card" style="margin-top:4px">
+          <div class="day">Fri 26 Sep</div>
+          <div class="hrow"><span class="hi" style="color:var(--accent)"><svg><use href="#i-barbell"/></svg></span><span class="ht"><b>Combo session</b><small><em>10/10 done</em> · 31 min</small></span><time>19:40</time></div>
+          <div class="hrow"><span class="hi" style="color:var(--work)"><svg><use href="#i-timer"/></svg></span><span class="ht"><b>Tabata · 8 × 0:20</b><small><em>8/8 rounds</em> · 4 min</small></span><time>19:20</time></div>
+          <div class="more">Show older</div>
+        </div>
+        <span class="pin" style="top:150px;right:4px">1</span>
+
+        <div class="lbl">All time</div>
+        <div class="card">
+          <div class="r">Training time <b>41 h 20 m</b></div>
+          <div class="r">Sessions <b>87</b></div>
+          <div class="r">Rounds <b>312</b></div>
+          <div class="r">Combos done <b>640</b></div>
+          <div class="r">Best week <b>3 h 05 m</b></div>
+          <div class="r">Logging since <b>12 Jul 2026</b></div>
+        </div>
+        <span class="pin" style="top:236px;right:4px">2</span>
+      </div>
+      <div class="tabbar">
+        <div><svg><use href="#i-barbell"/></svg>Training</div>
+        <div><svg><use href="#i-timer"/></svg>Timer</div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+        <div class="on"><svg><use href="#i-stats"/></svg>Stats</div>
+        <div><svg><use href="#i-gear"/></svg>Settings</div>
+      </div>
+    </div>
+    <ol class="notes pins">
+      <li><span class="pn">1</span>The list shows the last 30 entries. <b>Show older</b> adds 30 more each tap.</li>
+      <li><span class="pn">2</span>All-time totals over the whole log. <b>Best week</b> is the highest weekly training time.</li>
+    </ol>
+  </div>
+
+  <div class="frame">
+    <p class="cap">S5 · Empty (nothing logged yet)</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 87%</span></div>
+      <div class="scr">
+        <div class="h1">Stats</div>
+        <div class="sub">This week · 28 Sep – 4 Oct</div>
+        <div class="streak">
+          <div class="sk-top"><svg style="color:var(--t3)"><use href="#i-flame"/></svg><span class="sk-n" style="color:var(--t3)">0</span><span class="sk-l">week streak</span></div>
+          <div class="wk">
+            <div><i></i>M</div><div><i></i>T</div><div><i></i>W</div><div class="today"><i></i>T</div><div><i></i>F</div><div><i></i>S</div><div><i></i>S</div>
+          </div>
+          <div class="sk-foot"><span>Train 3 days this week to start a streak</span><span class="goal">Goal 3/wk ›</span></div>
+        </div>
+        <div class="empty">
+          <svg><use href="#i-stats"/></svg>
+          <b>No training logged yet</b>
+          <p>Finish a timer workout or a combo session and it shows up here.</p>
+        </div>
+      </div>
+      <div class="tabbar">
+        <div><svg><use href="#i-barbell"/></svg>Training</div>
+        <div><svg><use href="#i-timer"/></svg>Timer</div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+        <div class="on"><svg><use href="#i-stats"/></svg>Stats</div>
+        <div><svg><use href="#i-gear"/></svg>Settings</div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>The streak card always shows, so the goal can be set before the first workout. Every other section is hidden until there’s at least one entry.</li>
+      <li>Nothing from before this update is backfilled. The log starts with the first workout after it.</li>
+    </ul>
+  </div>
+
+  <div class="frame">
+    <p class="cap">S6 · Weekly goal sheet</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 87%</span></div>
+      <div class="scr behind">
+        <div class="h1">Stats</div>
+        <div class="sub">This week · 28 Sep – 4 Oct</div>
+        <div class="streak">
+          <div class="sk-top"><svg><use href="#i-flame"/></svg><span class="sk-n">6</span><span class="sk-l">week streak</span><span class="sk-best">Best <b>9</b></span></div>
+          <div class="sk-foot"><span>2 of 3 days · 1 more to keep the streak</span><span class="goal">Goal 3/wk ›</span></div>
+        </div>
+      </div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="sheet-t"><b>Weekly goal</b><span>training days per week</span></div>
+        <div class="chips" style="justify-content:center;flex-wrap:wrap;margin:18px 0 8px"><span class="chip">1</span><span class="chip">2</span><span class="chip on">3</span><span class="chip">4</span><span class="chip">5</span><span class="chip">6</span><span class="chip">7</span></div>
+        <div class="hint" style="margin:0 0 14px">A week counts toward your streak when you train on 3 days. A day counts after 5 minutes of training.</div>
+        <div class="btn">Done</div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>This works the same way as the timer option sheet (B2). Tapping a chip applies it at once, and Done or the scrim closes the sheet. The default is <b>3</b>.</li>
+      <li>Changing the goal <b>recalculates the whole streak</b> with the new goal, including Best.</li>
+      <li>The hint follows the chosen number (“on 1 day”, “on 4 days”).</li>
+    </ul>
+  </div>
+
+  <div class="frame">
+    <p class="cap">S7 · Long-press a history row</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 87%</span></div>
+      <div class="scr">
+        <div class="lbl" style="margin-top:4px">History</div>
+        <div class="card">
+          <div class="day">Yesterday</div>
+          <div class="hrow"><span class="hi" style="color:var(--work)"><svg><use href="#i-timer"/></svg></span><span class="ht"><b>Muay Thai · 5 × 3:00</b><small><em>5/5 rounds</em> · 23 min</small></span><time>18:05</time></div>
+          <div class="hrow"><span class="hi" style="color:var(--accent)"><svg><use href="#i-barbell"/></svg></span><span class="ht"><b>Combo session</b><small><em>8/10 done</em> · 24 min</small></span><time>18:02</time></div>
+          <div class="hrow held"><span class="hi" style="color:var(--work)"><svg><use href="#i-timer"/></svg></span><span class="ht"><b>Countdown · 2:00</b><small><em>Done</em> · 2 min</small></span><time>17:58</time></div>
+        </div>
+      </div>
+      <div class="scrim"></div>
+      <div class="alert">
+        <b>Delete this entry?</b>
+        <p>Countdown · 2:00, yesterday at 17:58. Your stats will be recalculated without it.</p>
+        <div class="acts"><span>Cancel</span><span>Delete</span></div>
+      </div>
+      <div class="tabbar" style="position:relative;z-index:0">
+        <div><svg><use href="#i-barbell"/></svg>Training</div>
+        <div><svg><use href="#i-timer"/></svg>Timer</div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+        <div class="on"><svg><use href="#i-stats"/></svg>Stats</div>
+        <div><svg><use href="#i-gear"/></svg>Settings</div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>A native <code>Alert</code>, like deleting a custom preset. The held row highlights while the alert is open. <b>Delete</b> is the destructive style, and there’s no undo.</li>
+      <li>This is for accidental logs, such as a countdown started by mistake.</li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- =============================== 5 · WHAT GETS LOGGED =============================== -->
+<h2>5 · What gets logged <small>Behaviour only. Nothing here is UI.</small></h2>
+<div class="tablewrap">
+<table>
+  <tr><th>Event</th><th>Logged?</th><th>Entry</th></tr>
+  <tr><td>Timer run reaches the final bell</td><td>yes</td><td>run label, rounds done / planned, active minutes</td></tr>
+  <tr><td>Timer stopped early</td><td>only if ≥ 60 s of round time was done</td><td>same, marked “stopped”</td></tr>
+  <tr><td>Quick countdown (voice) finishes</td><td>yes</td><td>“Countdown · 2:00”, “Done”</td></tr>
+  <tr><td>Combo session finished (celebration)</td><td>if ≥ 1 combo done</td><td>done / total, active minutes. Finishing again after “keep training” updates the same entry.</td></tr>
+  <tr><td>“New session”, or a session expiring after 12 h</td><td>if ≥ 1 combo done and not logged yet</td><td>same as finished</td></tr>
+  <tr><td>App killed mid-run, run over by reopen</td><td>no</td><td>we can’t tell whether you trained</td></tr>
+</table>
+</div>
+<ul class="notes" style="max-width:760px">
+  <li><b>Active minutes</b> leave out the lead-in and pauses. For combos, a gap of more than 5 min between combos is left out too.</li>
+  <li>When combos and a timer run overlap, the time is counted <b>once</b> in “Training time”, the chart and the 5-minute day rule.</li>
+  <li>The log is stored on the device only. It keeps at most 2,000 entries, about 5 years of daily training.</li>
+</ul>
+
+</div>
+
+<script>
+// Renders every <svg class="bars"> from its data-* attributes (wireframe only).
+(function () {
+  document.querySelectorAll('svg.bars').forEach((svg) => {
+    const vals = svg.dataset.values.split(',').map(Number);
+    const labels = svg.dataset.labels.split(',');
+    const avg = +svg.dataset.avg;
+    const W = 262, top = 8, base = 96, H = base - top, max = Math.max(...vals) * 1.08;
+    const n = vals.length, gap = 6, bw = (W - 40 - gap * (n - 1)) / n;
+    let h = '';
+    h += `<line x1="0" y1="${base}" x2="${W - 40}" y2="${base}" style="stroke:#2a2a2a;stroke-width:1"/>`;
+    vals.forEach((v, i) => {
+      const x = i * (bw + gap), bh = (v / max) * H, last = i === n - 1;
+      if (v > 0) h += `<rect x="${x.toFixed(1)}" y="${(base - bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="3" style="fill:${last ? '#E86C3A' : 'rgba(232,108,58,.35)'}"/>`;
+      if (labels[i]) h += `<text x="${x.toFixed(1)}" y="${base + 14}" style="fill:#555;font:10px sans-serif">${labels[i]}</text>`;
+    });
+    const ay = base - (avg / max) * H;
+    h += `<line x1="0" y1="${ay.toFixed(1)}" x2="${W - 40}" y2="${ay.toFixed(1)}" style="stroke:#888;stroke-width:1;stroke-dasharray:3 3"/>`;
+    h += `<text x="${W - 36}" y="${(ay + 3).toFixed(1)}" style="fill:#888;font:10px sans-serif">avg ${avg}</text>`;
+    h += `<text x="${(n - 1) * (bw + gap) + bw / 2}" y="${(base - (vals[n - 1] / max) * H - 4).toFixed(1)}" text-anchor="middle" style="fill:#E86C3A;font:600 10px sans-serif">${vals[n - 1]}</text>`;
+    svg.innerHTML = h;
+  });
+})();
+</script>
+</body>
+</html>
