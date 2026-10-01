@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { COMBOS } from '../data/combos';
 import { loadJSON, saveJSON, removeKey } from '../utils/storage';
 import { filterCombos, pickSession, favoriteMixCount } from '../utils/sessionPicker';
+import { comboEntry } from '../utils/history';
 
 const TIMER_SECONDS = 60;
 // A combo open for less than this before moving on counts as skipped (or a
@@ -11,10 +12,15 @@ const MIN_DONE_MS = 5000;
 // one left untouched this long is "today's training" no more.
 const SESSION_KEY = '@muaythai_session';
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+// Combo activations kept for the training log, per session.
+const MAX_ACTIVATIONS = 500;
 
 const COMBO_BY_ID = new Map(COMBOS.map(c => [c.id, c]));
 
-export function useSession() {
+// Sessions are logged through onLog(entry) (utils/history.js comboEntry) when
+// finished, and on "New session" or expiry if there's activity not logged yet.
+// onLog: useHistory().upsert.
+export function useSession(onLog) {
   const [session, setSession] = useState([]);
   const [generated, setGenerated] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
@@ -39,6 +45,16 @@ export function useSession() {
   const [loaded, setLoaded] = useState(false);
   // Set once the user generates or resets, so a slow restore can't replace that.
   const touchedRef = useRef(false);
+  // Training log: the session's id, when combos were opened, when it was last
+  // finished, and the last activation already logged.
+  const onLogRef = useRef(onLog);
+  onLogRef.current = onLog;
+  const sessionIdRef = useRef(null);
+  const activationsRef = useRef([]);
+  const finishedAtRef = useRef(null);
+  const loggedThroughRef = useRef(0);
+  // Bumped on every activation, so the saved session keeps up with them.
+  const [activity, setActivity] = useState(0);
 
   useEffect(() => {
     loadJSON(SESSION_KEY).then(saved => {
@@ -59,16 +75,57 @@ export function useSession() {
       activeIndex,
       startedAt: startedAtRef.current,
       savedAt: Date.now(),
+      sessionId: sessionIdRef.current,
+      activations: activationsRef.current,
+      finishedAt: finishedAtRef.current,
+      loggedThrough: loggedThroughRef.current,
     });
-  }, [loaded, generated, session, doneIds, activeIndex]);
+  }, [loaded, generated, session, doneIds, activeIndex, activity]);
 
-  // Brings back a saved session (no combo is open, and no celebration).
+  // Logs the session if a combo was done and there's activity not logged yet
+  // (always when finishing: the entry is replaced, so finishing again after
+  // "keep training" updates it).
+  const logSession = (done, total, always = false) => {
+    const activations = activationsRef.current;
+    const last = activations.length ? Math.max(...activations) : 0;
+    if (!always && last <= loggedThroughRef.current) return;
+    const entry = comboEntry({
+      id: sessionIdRef.current,
+      activations,
+      doneIds: [...done],
+      total,
+      finishedAt: finishedAtRef.current,
+    });
+    if (!entry) return;
+    loggedThroughRef.current = last;
+    onLogRef.current?.(entry);
+  };
+
+  // A saved session's logging state; one saved before logging existed starts
+  // its log from now on.
+  const restoreLog = (saved) => {
+    const isTime = (t) => Number.isFinite(t) && t >= 0;
+    const id = saved.sessionId;
+    sessionIdRef.current = typeof id === 'string' ? id : `session-${Date.now()}`;
+    activationsRef.current = Array.isArray(saved.activations) ? saved.activations.filter(isTime) : [];
+    finishedAtRef.current = isTime(saved.finishedAt) ? saved.finishedAt : null;
+    loggedThroughRef.current = isTime(saved.loggedThrough) ? saved.loggedThrough : 0;
+  };
+
+  // Brings back a saved session (no combo is open, and no celebration). One
+  // that expired is logged instead, if it wasn't yet.
   const restore = (saved) => {
     if (!saved || !Array.isArray(saved.ids)) return;
-    if (!(Date.now() - saved.savedAt < SESSION_TTL_MS)) return;
     const combos = saved.ids.map(id => COMBO_BY_ID.get(id)).filter(Boolean);
     if (combos.length === 0) return;
     const ids = new Set(combos.map(c => c.id));
+    const savedDone = (saved.doneIds ?? []).filter(id => ids.has(id));
+    restoreLog(saved);
+    if (!(Date.now() - saved.savedAt < SESSION_TTL_MS)) {
+      logSession(savedDone, combos.length);
+      clearLog();
+      return;
+    }
     const slot = Number.isInteger(saved.activeIndex) && saved.activeIndex < combos.length
       ? saved.activeIndex
       : null;
@@ -76,7 +133,7 @@ export function useSession() {
     openedAtRef.current = Date.now();
     startedAtRef.current = Number.isFinite(saved.startedAt) ? saved.startedAt : null;
     setActiveIndex(slot);
-    setDoneIds(new Set((saved.doneIds ?? []).filter(id => ids.has(id))));
+    setDoneIds(new Set(savedDone));
     setSession(combos);
     setGenerated(true);
   };
@@ -114,6 +171,7 @@ export function useSession() {
     if (pool.length === 0) return false;
     touchedRef.current = true;
     clearProgress();
+    sessionIdRef.current = `session-${Date.now()}`;
     setSession(pickSession(pool, previousIdsRef.current, mixIn, favoriteMixCount(mixIn.length)));
     setGenerated(true);
     return true;
@@ -121,6 +179,12 @@ export function useSession() {
 
   const reset = () => {
     touchedRef.current = true;
+    if (generated) {
+      const done = new Set(doneIds);
+      const last = activeDoneCombo();
+      if (last) done.add(last.id);
+      logSession(done, session.length);
+    }
     if (session.length > 0) previousIdsRef.current = new Set(session.map(c => c.id));
     clearProgress();
     setGenerated(false);
@@ -136,6 +200,14 @@ export function useSession() {
     setExpandedId(null);
     setDoneIds(new Set());
     setSummary(null);
+    clearLog();
+  };
+
+  const clearLog = () => {
+    sessionIdRef.current = null;
+    activationsRef.current = [];
+    finishedAtRef.current = null;
+    loggedThroughRef.current = 0;
   };
 
   // The active combo counts as done once it was open long enough.
@@ -162,7 +234,10 @@ export function useSession() {
     }
     activeSlotRef.current = slotIndex;
     setActiveIndex(slotIndex);
-    if (startedAtRef.current == null) startedAtRef.current = Date.now();
+    const now = Date.now();
+    if (startedAtRef.current == null) startedAtRef.current = now;
+    activationsRef.current = [...activationsRef.current, now].slice(-MAX_ACTIVATIONS);
+    setActivity(n => n + 1);
   };
 
   // Manual tap: tapping the open card again collapses it.
@@ -209,6 +284,8 @@ export function useSession() {
     const last = activeDoneCombo();
     if (last) done.add(last.id);
     setDoneIds(done);
+    finishedAtRef.current = Date.now();
+    logSession(done, session.length, true);
     setSummary({
       done: done.size,
       total: session.length,

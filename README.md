@@ -2,8 +2,9 @@
 
 A personal Android training app built with Expo (React Native, JavaScript). It shows 107
 curated Muay Thai combos, filters by difficulty and type, generates a 10-combo training
-session, saves favorites, runs a boxing round timer with bells, and expands combo details
-hands-free via in-app voice commands during training.
+session, saves favorites, runs a boxing round timer with bells, expands combo details
+hands-free via in-app voice commands or wave gestures during training, and keeps a training
+log with weekly streaks and stats.
 
 ## Features
 
@@ -27,6 +28,18 @@ hands-free via in-app voice commands during training.
   (center, top or bottom band, or off — a setting) and the Timer tab label shows the live
   time. Foreground only: the screen stays on while a timer runs. A run in progress survives
   the app being killed and comes back at its real position (dropped if paused over 2 hours).
+- **Wave gestures** (Android, off by default — Settings) — wave a hand or glove over the
+  proximity sensor by the front camera: **wave** starts the timer (or resumes it), **double
+  wave** opens the next combo, **hold** about 2 s opens the current combo again. They run the
+  same commands as voice, with a "✋ …" line, a blip and a short buzz. Covers longer than 4 s
+  (a pocket, the phone face down) and passes right after a screen touch are ignored. Settings
+  has a live sensor test to find the sensor on your phone.
+- **Stats** — every finished timer run (and one stopped after at least a minute of rounds) and
+  every combo session with a combo done is logged on the device. The Stats tab shows a weekly
+  streak against a training-days goal (default 3; a day counts after 5 minutes), this week vs
+  last week, a 12-week chart, technique mix and most drilled combos (last 30 days), the history
+  (long-press to delete) and all-time totals. Training time leaves out lead-ins, pauses and
+  idle gaps, and overlapping timer and combo time counts once.
 - **Dark theme only.**
 
 ## Setup
@@ -37,12 +50,13 @@ npm install
 npx expo start
 ```
 
-Voice commands need a development build (`eas build --profile development`) — the speech
-recognition module isn't in Expo Go. The `muaythai://combo/N` deep link still works too.
+Voice commands and wave gestures need a development build (`eas build --profile development`)
+— the speech recognition module and the local proximity module (`modules/proximity`) aren't
+in Expo Go. The `muaythai://combo/N` deep link still works too.
 
 ```bash
-npm test                          # engine + voice grammar unit tests (jest-expo)
-node scripts/generate-sounds.js   # regenerate the timer sounds in assets/sounds/
+npm test                          # engine, gestures, log, stats + voice grammar tests (jest-expo)
+node scripts/generate-sounds.js   # regenerate the timer sounds and gesture blip in assets/sounds/
 ```
 
 ## Project structure
@@ -53,17 +67,24 @@ app.json               Expo config + muaythai:// deep-link scheme
 data/combos.js         All 107 combos (single source of truth)
 data/timerPresets.js   Round-timer presets and defaults
 constants/theme.js     Colors (incl. timer phase colors), spacing, radius, font sizes
-contexts/AppContext.js Session, Favorites, Voice and Timer contexts
+contexts/AppContext.js Session, Favorites, Voice, Timer, History, Prefs and Gesture contexts
 hooks/                 useSession, useFavorites, useVoiceCommands, useTimerSettings,
-                       useRoundTimer (run state), useTimerCues (bells, TTS, vibration)
+                       useRoundTimer (run state), useTimerCues (bells, TTS, vibration),
+                       useHistory (training log), usePrefs, useWaveGestures
+modules/proximity/     Local Expo module: proximity sensor near/far (Kotlin; iOS stub)
 utils/roundTimer.js    Pure timer engine: segments, cue timeline, wall-clock position
 utils/timerLabels.js   All derived timer copy (phase labels, tab label, hints)
+utils/waveGestures.js  Wave / double wave / hold detector from near/far timing (pure, tested)
+utils/history.js       Training-log entries: builders, validation, activity spans (pure, tested)
+utils/stats.js         Streaks, weeks, chart, technique mix, totals (pure, tested)
+utils/statsLabels.js   All Stats copy
 utils/sessionPicker.js Filtering and picking a session (pure, tested)
 utils/storage.js       AsyncStorage JSON helpers that never throw
 voice/                 numbers, comboGrammar, timerGrammar, commandHelp (+ tests)
-components/            ComboCard, FilterChips, TimerBar, MicButton, FinishCelebration
+components/            ComboCard, FilterChips, TimerBar, MicButton, FinishCelebration,
+                       WaveGesturesCard
 components/timer/      TimerRing, TimerDial, TrainingClock, sheets, run/done views, icons
-screens/               TrainingScreen, TimerScreen, FavoritesScreen, SettingsScreen
+screens/               TrainingScreen, TimerScreen, FavoritesScreen, StatsScreen, SettingsScreen
 scripts/               generate-sounds.js (writes assets/sounds/*.wav, no dependencies)
 ```
 
@@ -110,6 +131,8 @@ combo in progress and shows a summary: combos done and time trained.
 
 ## Not in v1
 
-Custom combo creation, workout history, timer bells with the screen locked or the app in the
-background, custom timer sounds, combo search, on-card difficulty/type badges (removed
-intentionally for training readability), and Play Store release config.
+Custom combo creation, timer bells with the screen locked or the app in the background,
+custom timer sounds, combo search, on-card difficulty/type badges (removed intentionally for
+training readability), and Play Store release config. Wave gestures on iOS, camera or
+"tap the phone" gestures and rebinding gestures. Exporting or sharing stats, heart rate and
+watch data, training reminders, and history from before the log existed.

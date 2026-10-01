@@ -3,8 +3,10 @@ import { AppState } from 'react-native';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import {
   buildSegments, buildCues, totalMsOf, positionAt, startClock, elapsedMs, pauseClock,
-  resumeClock, seekClock, cueIndexAt, dueCues, formatClock, isInfinite,
+  resumeClock, seekClock, cueIndexAt, dueCues, openPiece, closePiece,
 } from '../utils/roundTimer';
+import { runLabel } from '../utils/timerLabels';
+import { timerEntry } from '../utils/history';
 import { matchesPreset } from '../data/timerPresets';
 import { loadJSON, saveJSON, removeKey } from '../utils/storage';
 
@@ -14,13 +16,6 @@ const KEEP_AWAKE_TAG = 'round-timer';
 // it is now. A run left paused longer than this is dropped instead.
 const RUN_KEY = '@muaythai_timer_run';
 const PAUSED_TTL_MS = 2 * 60 * 60 * 1000;
-
-// Top-left label of the run screens: "Muay Thai · 5 × 3:00" / "Countdown · 2:00".
-function runLabel(kind, config, presetName) {
-  if (kind === 'countdown') return `Countdown · ${formatClock(config.roundSec)}`;
-  const rounds = isInfinite(config.rounds) ? '∞' : config.rounds;
-  return `${presetName} · ${rounds} × ${formatClock(config.roundSec)}`;
-}
 
 function buildRun(kind, config, presetName) {
   const frozen = Object.freeze({ ...config });
@@ -45,14 +40,22 @@ const isSavedRun = (s) =>
   && (s.config.rounds === null || (Number.isInteger(s.config.rounds) && s.config.rounds >= 1))
   && isNum(s.clock.startedAt, 0) && isNum(s.clock.pausedTotal, 0)
   && (s.clock.pausedAt === null || isNum(s.clock.pausedAt, 0));
+// Saved activity pieces: all closed but the last, which is open while running.
+const isSavedPieces = (pieces, paused) =>
+  Array.isArray(pieces) && pieces.length > 0
+  && pieces.every((p, i) => !!p && isNum(p.w0, 0) && isNum(p.e0, 0)
+    && (i === pieces.length - 1 && !paused ? p.w1 === null : isNum(p.w1, p.w0)));
 
 // Run state of the round timer. The UI derives the live position from `clock`
 // (see TimerTickProvider); this hook only re-renders on status changes. Cues fire
 // from a timeout aimed at the next cue, re-armed after each fire and on
 // pause/resume, so bells stay tight regardless of the UI tick.
 //
-// timerSettings: useTimerSettings(); cues: useTimerCues().
-export function useRoundTimer(timerSettings, cues) {
+// Runs are logged through onLog(entry) (utils/history.js timerEntry): at the
+// final bell, or when stopped early after enough round time.
+//
+// timerSettings: useTimerSettings(); cues: useTimerCues(); onLog: useHistory().upsert.
+export function useRoundTimer(timerSettings, cues, onLog) {
   const [status, setStatus] = useState('idle'); // idle | running | paused | done
   const [run, setRun] = useState(null);
   const [clock, setClock] = useState(null);
@@ -65,13 +68,19 @@ export function useRoundTimer(timerSettings, cues) {
   settingsRef.current = timerSettings;
   const cuesRef = useRef(cues);
   cuesRef.current = cues;
+  const onLogRef = useRef(onLog);
+  onLogRef.current = onLog;
+  // Activity of the current run (utils/roundTimer.js pieces), for the log.
+  const piecesRef = useRef([]);
 
   // Saves the run in progress, or clears the saved one when there's none.
   const persist = () => {
     const r = runRef.current;
     const c = clockRef.current;
     if (r && c && !r.doneAt) {
-      saveJSON(RUN_KEY, { kind: r.kind, config: r.config, presetName: r.presetName, clock: c });
+      saveJSON(RUN_KEY, {
+        kind: r.kind, config: r.config, presetName: r.presetName, clock: c, pieces: piecesRef.current,
+      });
     } else {
       removeKey(RUN_KEY);
     }
@@ -83,10 +92,20 @@ export function useRoundTimer(timerSettings, cues) {
     persist();
   };
 
+  // Closes the run's activity and logs it (completed, or stopped early).
+  const logRun = (completed) => {
+    const r = runRef.current;
+    if (!r || r.doneAt) return;
+    piecesRef.current = closePiece(piecesRef.current, Date.now(), r.totalMs);
+    const entry = timerEntry(r, piecesRef.current, completed);
+    if (entry) onLogRef.current?.(entry);
+  };
+
   const finish = () => {
     clearTimeout(cueTimerRef.current);
     const r = runRef.current;
     if (r) {
+      logRun(true);
       const done = { ...r, doneAt: Date.now() };
       runRef.current = done;
       setRun(done);
@@ -118,10 +137,13 @@ export function useRoundTimer(timerSettings, cues) {
   const launch = (kind, config, presetName) => {
     clearTimeout(cueTimerRef.current);
     cuesRef.current.stopSpeech();
+    logRun(false); // a run still going is replaced
     const next = buildRun(kind, config, presetName);
+    const now = Date.now();
     runRef.current = next;
     setRun(next);
-    commitClock(startClock(Date.now()));
+    piecesRef.current = openPiece([], now, 0);
+    commitClock(startClock(now));
     cueIndexRef.current = 0;
     setStatus('running');
     schedule();
@@ -155,14 +177,18 @@ export function useRoundTimer(timerSettings, cues) {
     const c = clockRef.current;
     if (!c || c.pausedAt != null || runRef.current?.doneAt) return;
     clearTimeout(cueTimerRef.current);
-    commitClock(pauseClock(c, Date.now()));
+    const now = Date.now();
+    piecesRef.current = closePiece(piecesRef.current, now, runRef.current.totalMs);
+    commitClock(pauseClock(c, now));
     setStatus('paused');
   }, []);
 
   const resume = useCallback(() => {
     const c = clockRef.current;
     if (!c || c.pausedAt == null) return;
-    commitClock(resumeClock(c, Date.now()));
+    const now = Date.now();
+    piecesRef.current = openPiece(piecesRef.current, now, elapsedMs(c, now));
+    commitClock(resumeClock(c, now));
     setStatus('running');
     scheduleRef.current();
   }, []);
@@ -173,7 +199,12 @@ export function useRoundTimer(timerSettings, cues) {
     const r = runRef.current;
     const c = clockRef.current;
     if (!r || !c || r.doneAt) return;
-    commitClock(seekClock(c, Date.now(), targetMs));
+    const now = Date.now();
+    const pieces = piecesRef.current;
+    if (pieces.length > 0 && pieces[pieces.length - 1].w1 == null) {
+      piecesRef.current = openPiece(closePiece(pieces, now, r.totalMs), now, targetMs);
+    }
+    commitClock(seekClock(c, now, targetMs));
     cueIndexRef.current = cueIndexAt(r.cues, targetMs);
     if (clockRef.current.pausedAt == null) scheduleRef.current();
   };
@@ -206,7 +237,9 @@ export function useRoundTimer(timerSettings, cues) {
   const stop = useCallback(() => {
     clearTimeout(cueTimerRef.current);
     cuesRef.current.stopSpeech();
+    logRun(false);
     runRef.current = null;
+    piecesRef.current = [];
     clockRef.current = null;
     setRun(null);
     setClock(null);
@@ -237,8 +270,13 @@ export function useRoundTimer(timerSettings, cues) {
         removeKey(RUN_KEY);
         return;
       }
+      const paused = c.pausedAt != null;
       runRef.current = r;
       setRun(r);
+      // Its activity so far, or (saved before logging existed) from now on.
+      piecesRef.current = isSavedPieces(saved.pieces, paused)
+        ? saved.pieces
+        : paused ? [] : openPiece([], now, e);
       clockRef.current = c;
       setClock(c);
       // Cues already behind us stay silent.

@@ -48,7 +48,24 @@ const ICONS = {
     <Path d="M4 5h16v11H10l-5 4v-4H4z" {...stroke(c, 2, { strokeLinecap: undefined, strokeLinejoin: 'round' })} />
   ),
   check: (c) => <Path d="M5 12.5l4.5 4.5L19 7.5" {...stroke(c, 2.6, { strokeLinejoin: 'round' })} />,
+  // The Stats day dots draw it bolder (gestures wireframe).
+  checkBold: (c) => <Path d="M5 12.5l4.5 4.5L19 7.5" {...stroke(c, 2.8, { strokeLinejoin: 'round' })} />,
   chev: (c) => <Path d="M9 6l6 6-6 6" {...stroke(c, 2.4)} />,
+  barbell: (c) => <Path d="M3 9v6M6.5 6.5v11M17.5 6.5v11M21 9v6M6.5 12h11" {...stroke(c, 2)} />,
+  flame: (c) => (
+    <Path
+      d="M12 2.5c.6 3.2 4.5 5.3 4.5 10.2A4.5 4.5 0 0 1 12 21.5a5.5 5.5 0 0 1-5.5-5.6c0-2.6 1.4-4.2 2.6-5.4.2 1.6.8 2.6 1.9 3.1C10.6 9.8 11.2 6 12 2.5z"
+      fill={c}
+    />
+  ),
+  stats: (c) => (
+    <G {...stroke(c, 2)}>
+      <Path d="M4 20h16" />
+      <Rect x="5.5" y="11" width="3" height="6.5" rx=".8" />
+      <Rect x="10.5" y="6.5" width="3" height="11" rx=".8" />
+      <Rect x="15.5" y="13.5" width="3" height="4" rx=".8" />
+    </G>
+  ),
   restart: (c) => (
     <G {...stroke(c, 2, { strokeLinejoin: 'round' })}>
       <Path d="M4.5 12a7.5 7.5 0 1 0 2.6-5.7" />

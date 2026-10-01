@@ -83,6 +83,12 @@ export const colors = {
   tintPrep: 'rgba(239,159,39,.12)',
   tintWarn: 'rgba(240,84,79,.22)',
   tintRest: 'rgba(133,183,235,.12)',
+
+  // Stats (bar tracks use ringTrack, the chart axis border)
+  barPast: 'rgba(232,108,58,.35)', // past weeks in the 12-week chart
+  chartAvg: '#888888', // average line and its label
+  dayDotIdle: '#222222', // streak day dots, history row icons
+  historyHeld: '#232323', // a long-pressed history row
 };
 
 export const spacing = {

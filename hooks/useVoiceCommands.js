@@ -312,5 +312,8 @@ export function useVoiceCommands(onCommand) {
     else start();
   }, [start, stop]);
 
-  return { listening, lastHeard, error, notice, feedback, onDevice, start, stop, toggle, suppress };
+  // flash(message): the confirmation line under the mic (wave gestures use it too).
+  return {
+    listening, lastHeard, error, notice, feedback, onDevice, start, stop, toggle, suppress, flash,
+  };
 }

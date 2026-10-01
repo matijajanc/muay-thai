@@ -43,10 +43,10 @@ export default function MicButton({
         </Pressable>
       </View>
 
-      {error ? (
-        <Text style={styles.error}>{error}</Text>
-      ) : feedback ? (
+      {feedback ? (
         <Text style={styles.feedback} numberOfLines={1}>{feedback}</Text>
+      ) : error ? (
+        <Text style={styles.error}>{error}</Text>
       ) : notice ? (
         <Text style={styles.notice}>{notice}</Text>
       ) : listening && lastHeard ? (

@@ -1,7 +1,9 @@
 import { View, Text, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../../constants/theme';
-import { useTimerContext, useTimerTick, useVoiceContext } from '../../contexts/AppContext';
+import {
+  useTimerContext, useTimerTick, useVoiceContext, useGestureContext,
+} from '../../contexts/AppContext';
 import { isInfinite, secondsPhrase } from '../../utils/roundTimer';
 import {
   phaseColor, phaseLabel, phaseDigits, ringUnder, nextLabel, workoutLeft, restHint, doneTitle,
@@ -15,12 +17,16 @@ import { Btn } from './TimerUI';
 // Wireframe phone content width; the ring scales with the real screen width.
 const WIREFRAME_W = 286;
 
-// .runtop: run label + mic pill (tap toggles the shared mic).
+// .runtop: run label + mic pill (tap toggles the shared mic). A wave gesture's
+// line takes the label's place for 2 s (.gfb, gestures frame F2).
 function RunTop({ label }) {
   const { listening, toggle } = useVoiceContext();
+  const { feedback } = useGestureContext();
   return (
     <View style={styles.runtop}>
-      <Text style={styles.runLabel} numberOfLines={1}>{label}</Text>
+      <Text style={[styles.runLabel, feedback && styles.gestureLine]} numberOfLines={1}>
+        {feedback ?? label}
+      </Text>
       <Pressable onPress={toggle} hitSlop={8} style={[styles.pill, !listening && styles.pillIdle]}>
         <View style={[styles.pillDot, !listening && styles.pillDotIdle]} />
         <Text style={[styles.pillText, !listening && styles.pillTextIdle]}>
@@ -281,6 +287,7 @@ const styles = StyleSheet.create({
 
   runtop: { width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   runLabel: { flexShrink: 1, fontSize: 11, color: colors.textSecondary, marginRight: 8 },
+  gestureLine: { color: colors.accent, fontWeight: '600' },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',

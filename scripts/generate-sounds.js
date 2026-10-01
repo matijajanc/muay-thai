@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// Generates the round-timer cue sounds into assets/sounds/ (44.1 kHz, 16-bit mono WAV).
-// No dependencies and fully deterministic (seeded noise), so re-running it
-// reproduces the committed files byte for byte:
+// Generates the round-timer cues and the wave-gesture blip into assets/sounds/
+// (44.1 kHz, 16-bit mono WAV). No dependencies and fully deterministic (seeded
+// noise), so re-running it reproduces the committed files byte for byte:
 //
 //   node scripts/generate-sounds.js
 //   afplay assets/sounds/bell.wav
@@ -129,6 +129,17 @@ function tone(hz, seconds) {
   return fade(out, 5, 5);
 }
 
+// A sine sweeping linearly from fromHz to toHz.
+function chirp(fromHz, toHz, seconds) {
+  const out = buffer(seconds);
+  const k = (toHz - fromHz) / seconds;
+  for (let i = 0; i < out.length; i++) {
+    const t = i / SR;
+    out[i] = Math.sin(2 * Math.PI * (fromHz * t + (k * t * t) / 2));
+  }
+  return fade(out, 4, 25);
+}
+
 const SOUNDS = {
   // Start of a round: one strike.
   bell: () => bellStrike(2.8, 1),
@@ -154,6 +165,8 @@ const SOUNDS = {
     mixInto(out, tone(1000, 0.12), 0.21);
     return out;
   },
+  // Wave gesture recognised: a short rising blip, unlike any timer cue.
+  blip: () => chirp(900, 1600, 0.07),
 };
 
 function toWav(samples) {

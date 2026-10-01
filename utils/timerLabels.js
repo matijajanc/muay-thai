@@ -7,6 +7,14 @@ import { formatClock, ceilSec, isInfinite, secondsPhrase, workoutTotalSec } from
 
 const roundsOf = (run) => (isInfinite(run.config.rounds) ? null : run.config.rounds);
 
+// Top-left label of the run screens, and a timer entry's title in Stats:
+// "Muay Thai · 5 × 3:00" / "Countdown · 2:00". config: { roundSec, rounds }.
+export function runLabel(kind, config, presetName) {
+  if (kind === 'countdown') return `Countdown · ${formatClock(config.roundSec)}`;
+  const rounds = isInfinite(config.rounds) ? '∞' : config.rounds;
+  return `${presetName} · ${rounds} × ${formatClock(config.roundSec)}`;
+}
+
 // "Round 3 of 5", or "Round 7" with ∞ rounds.
 export function roundOf(run, round) {
   const n = roundsOf(run);

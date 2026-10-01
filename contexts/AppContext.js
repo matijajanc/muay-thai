@@ -7,6 +7,11 @@ export const VoiceContext = createContext(null);
 export const TimerContext = createContext(null);
 // Round timer: live position, updated every UI tick (see TimerTickProvider).
 export const TimerTickContext = createContext(null);
+// Training log (useHistory) and app preferences (usePrefs).
+export const HistoryContext = createContext(null);
+export const PrefsContext = createContext(null);
+// Wave gestures: { feedback } — the "✋ …" line a run screen shows for 2 s.
+export const GestureContext = createContext({ feedback: null });
 
 export function useSessionContext() {
   const ctx = useContext(SessionContext);
@@ -31,6 +36,20 @@ export function useTimerContext() {
   if (!ctx) throw new Error('useTimerContext must be used within TimerContext.Provider');
   return ctx;
 }
+
+export function useHistoryContext() {
+  const ctx = useContext(HistoryContext);
+  if (!ctx) throw new Error('useHistoryContext must be used within HistoryContext.Provider');
+  return ctx;
+}
+
+export function usePrefsContext() {
+  const ctx = useContext(PrefsContext);
+  if (!ctx) throw new Error('usePrefsContext must be used within PrefsContext.Provider');
+  return ctx;
+}
+
+export const useGestureContext = () => useContext(GestureContext);
 
 // { run, pos, paused } of the running timer (pos is null when idle). Pass fast=true
 // while a dial or ring is on screen to tick every 100 ms instead of 250 ms.

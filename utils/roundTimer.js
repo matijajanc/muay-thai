@@ -186,3 +186,53 @@ export const formatClock = (sec) => `${Math.floor(sec / 60)}:${String(sec % 60).
 // Countdown display rounds up, so a phase shows its full length at the start
 // and reaches 0 exactly when it ends.
 export const ceilSec = (ms) => Math.max(0, Math.ceil(ms / 1000));
+
+// ---- Activity (training log) ----
+//
+// A run's activity is a list of pieces { w0, e0, w1 }: from wall time w0, when
+// the run was at e0 elapsed, it ran without pausing until w1 (null while it's
+// still running). Pausing closes a piece; resuming, skipping and restarting a
+// phase open a new one.
+
+export const openPiece = (pieces, now, elapsed) => [...pieces, { w0: now, e0: elapsed, w1: null }];
+
+// Closes the open piece at `now`, or where the run ended if that was earlier.
+export function closePiece(pieces, now, totalMs) {
+  const last = pieces[pieces.length - 1];
+  if (!last || last.w1 != null) return pieces;
+  const w1 = Math.max(last.w0, Math.min(now, last.w0 + totalMs - last.e0));
+  return [...pieces.slice(0, -1), { ...last, w1 }];
+}
+
+// The elapsed ranges actually run, [[from, to]] (closed pieces only).
+const ranges = (pieces) =>
+  pieces.filter(p => p.w1 != null).map(p => [p.e0, p.e0 + (p.w1 - p.w0)]);
+
+// → { roundsDone, workMs }: rounds run to their end (a skipped round isn't
+// done) and the round time actually run (rests, the lead-in and skipped time
+// left out).
+export function workSummary(segments, pieces) {
+  let roundsDone = 0;
+  let workMs = 0;
+  const lived = ranges(pieces);
+  for (const seg of segments) {
+    if (seg.kind !== 'work') continue;
+    const end = seg.startMs + seg.durMs;
+    if (lived.some(([a, b]) => a < end && b >= end)) roundsDone += 1;
+    for (const [a, b] of lived) workMs += Math.max(0, Math.min(b, end) - Math.max(a, seg.startMs));
+  }
+  return { roundsDone, workMs };
+}
+
+// Wall-clock [[start, end]] spans of training: the closed pieces without the
+// lead-in (rests count, pauses don't).
+export function activeSpans(segments, pieces) {
+  const prepEnd = segments[0]?.kind === 'prep' ? segments[0].durMs : 0;
+  const spans = [];
+  for (const p of pieces) {
+    if (p.w1 == null) continue;
+    const start = p.w0 + Math.max(0, prepEnd - p.e0);
+    if (p.w1 > start) spans.push([start, p.w1]);
+  }
+  return spans;
+}

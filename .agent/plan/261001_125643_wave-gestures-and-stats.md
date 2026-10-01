@@ -269,6 +269,7 @@ None. Ready to build from task 2.
   nothing (text-only line). "Combo details" means the expanded card (steps + 60 s bar).
 - 2026-10-01 (user): Wireframes approved ("looks ok"), after being updated for the new
   mapping.
+- 2026-10-01 (user): today-and-trained day dot is the filled ✓ (wireframe S1 note updated).
 - 2026-10-01 (wireframes): the training-day threshold is 5 min. Week-over-week deltas compare
   up to the same weekday. Technique mix and most drilled cover the last 30 days. History
   pages 30 entries at a time.
@@ -276,3 +277,40 @@ None. Ready to build from task 2.
 ## Execution status
 
 - 2026-10-01: Task 1 done (wireframes approved). Next is task 2; nothing is built yet.
+- 2026-10-01: Tasks 2–7 built and committed; task 8 (device QA) open.
+  - Task 2: `modules/proximity` (Kotlin + iOS stub) compiles and autolinks; verified on the
+    emulator's virtual sensor. `blip.wav` added; the other sounds regenerate byte for byte.
+  - Task 3: `utils/waveGestures.js` + 28 timing tests.
+  - Task 4: `useWaveGestures`, touch guard, routing through `onCommand`, prefs, Settings card,
+    help-sheet list. F1–F3 checked on the emulator (double wave, hold, wave start/resume/running).
+  - Task 5: `utils/history.js`, `useHistory`; logging in `useRoundTimer` and `useSession`.
+  - Task 6: `utils/stats.js`, `utils/statsLabels.js` + tests (DST, year end), `StatsScreen`,
+    the Stats tab. S1–S7 checked on the emulator with a seeded log.
+  - Task 7: README.
+  - `wireframe-vs-code` review: fixed a gesture that did nothing on Favorites/Stats showing no
+    line (gestures now always go to their tab, per the section 3 note), the gesture line
+    hidden by a voice error under the mic, and the day-dot check weight (2.8). G2 checked by
+    forcing the no-sensor state.
+
+## Implementation notes
+
+- Gesture timing beyond the plan (tested): covers under 40 ms are sensor glitches; a double
+  wave's second pass must start within 0.6 s of the first release; after a double wave or a
+  hold, a cover starting within 0.6 s is ignored (a third pass, a hand bouncing as it lifts);
+  a wave followed by a too-long cover drops the wave; a cover already there on the first
+  reading is ignored until it clears.
+- The Settings card treats a sensor that sends no reading within 3 s as missing (G2).
+- Timer activity is tracked as pieces (wall time ↔ elapsed), so skips and pauses are left out
+  of round time and spans. A skipped round isn't counted as done. ∞ runs show "7 rounds".
+- Combo spans: each activation counts 60 s; gaps up to 5 min join; finishing cuts the last
+  combo short or extends the window to the finish.
+- A session is re-logged on "New session"/expiry only if there was activity after its last
+  log, so deleting a finished session's entry sticks.
+- A day that is both today and trained draws the filled ✓ dot (the wireframe CSS would draw it
+  outlined with an invisible check); today's letter stays accent. Approved, wireframe note
+  updated.
+- Derived copy not in the wireframes: countdown stopped early → "Stopped"; under a minute →
+  "<1 min"; day headers add the year when it isn't this year's; "1 day" singular in the streak
+  line and goal hint. The 12-week chart labels the oldest week plus the first week starting
+  in each month (the note's rule; the sample labels in S1 differ). Technique mix shows all
+  seven types, zeros included.
