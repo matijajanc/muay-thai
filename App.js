@@ -8,7 +8,6 @@ import {
   DarkTheme,
 } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 
 import TrainingScreen from './screens/TrainingScreen';
@@ -32,7 +31,6 @@ import { LIMITS } from './data/timerPresets';
 import { colors } from './constants/theme';
 
 const Tab = createBottomTabNavigator();
-const FavStack = createNativeStackNavigator();
 
 const navTheme = {
   ...DarkTheme,
@@ -70,15 +68,6 @@ function findPreset(presets, query) {
   });
 }
 
-function FavoritesStack() {
-  return (
-    <FavStack.Navigator screenOptions={{ headerShown: false }}>
-      <FavStack.Screen name="FavoritesList" component={FavoritesScreen} />
-      <FavStack.Screen name="Settings" component={SettingsScreen} />
-    </FavStack.Navigator>
-  );
-}
-
 export default function App() {
   const navigationRef = useNavigationContainerRef();
   const session = useSession();
@@ -96,11 +85,11 @@ export default function App() {
   const timerRef = useRef(null);
 
   // Timer commands stay put on Training (its clock shows the timer) and on the
-  // Timer tab; from Favorites they switch to the Timer tab.
+  // Timer tab; from Favorites and Settings they switch to the Timer tab.
   const showTimer = useCallback(() => {
     if (!navigationRef.isReady()) return;
     const route = navigationRef.getCurrentRoute()?.name;
-    if (route === 'FavoritesList' || route === 'Settings') navigationRef.navigate('Timer');
+    if (route === 'Favorites' || route === 'Settings') navigationRef.navigate('Timer');
   }, [navigationRef]);
 
   // Voice timer commands (voice/timerGrammar.js). Returns the confirmation line;
@@ -277,11 +266,21 @@ export default function App() {
               />
               <Tab.Screen
                 name="Favorites"
-                component={FavoritesStack}
+                component={FavoritesScreen}
                 options={{
                   tabBarLabel: 'Favorites',
                   tabBarIcon: ({ color, size }) => (
                     <Ionicons name="heart-outline" color={color} size={size} />
+                  ),
+                }}
+              />
+              <Tab.Screen
+                name="Settings"
+                component={SettingsScreen}
+                options={{
+                  tabBarLabel: 'Settings',
+                  tabBarIcon: ({ color, size }) => (
+                    <Ionicons name="settings-outline" color={color} size={size} />
                   ),
                 }}
               />

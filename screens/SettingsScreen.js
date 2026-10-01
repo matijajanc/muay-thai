@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, fontSize, spacing } from '../constants/theme';
@@ -11,14 +11,11 @@ const GETTING_STARTED = [
   'It keeps listening — and keeps the screen on — until you tap the mic again. It pauses while the app is in the background.',
 ];
 
-export default function SettingsScreen({ navigation }) {
+export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>Voice & Settings</Text>
-        <Pressable onPress={() => navigation.goBack()} hitSlop={10}>
-          <Ionicons name="chevron-back" size={22} color={colors.accent} />
-        </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>

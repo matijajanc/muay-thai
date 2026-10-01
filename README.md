@@ -64,7 +64,7 @@ scripts/               generate-sounds.js (writes assets/sounds/*.wav, no depend
 
 Voice runs inside the app (`expo-speech-recognition`), on-device when the offline English
 model is available. One shared mic works from the Training and Timer tabs: tap the mic
-button (or the "listening" pill on a running timer). The **?** next to the mic (and Settings)
+button (or the "listening" pill on a running timer). The **?** next to the mic (and the Settings tab)
 lists every command from `voice/commandHelp.js`; a test checks each listed phrase parses.
 
 | Say | Does |

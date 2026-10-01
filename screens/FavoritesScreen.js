@@ -1,4 +1,4 @@
-import { View, Text, Pressable, FlatList, StyleSheet } from 'react-native';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, fontSize, spacing } from '../constants/theme';
@@ -6,7 +6,7 @@ import { COMBOS } from '../data/combos';
 import ComboCard from '../components/ComboCard';
 import { useFavoritesContext } from '../contexts/AppContext';
 
-export default function FavoritesScreen({ navigation }) {
+export default function FavoritesScreen() {
   const { favorites, toggleFavorite } = useFavoritesContext();
 
   const favoriteCombos = COMBOS.filter(c => favorites.has(c.id));
@@ -18,9 +18,6 @@ export default function FavoritesScreen({ navigation }) {
           <Text style={styles.title}>Favorites</Text>
           <Text style={styles.subtitle}>{favoriteCombos.length} saved combos</Text>
         </View>
-        <Pressable onPress={() => navigation.navigate('Settings')} hitSlop={10}>
-          <Ionicons name="settings-outline" size={22} color={colors.textSecondary} />
-        </Pressable>
       </View>
 
       {favoriteCombos.length === 0 ? (
