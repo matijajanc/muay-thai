@@ -1,4 +1,5 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, fontSize, spacing } from '../constants/theme';
 
 const DIFFICULTIES = [
@@ -9,6 +10,7 @@ const DIFFICULTIES = [
 
 const STD = { bg: colors.typeBg, text: colors.typeText, border: colors.typeBorder };
 const DEAD = { bg: colors.deadBg, text: colors.deadText, border: colors.deadBorder };
+const FAV = { bg: colors.chipOnBg, text: colors.accent, border: colors.accent, icon: 'heart' };
 
 const TYPES = [
   { key: 'punches', label: 'Punches', ...STD },
@@ -20,25 +22,36 @@ const TYPES = [
   { key: 'deadliest', label: 'Deadliest', ...DEAD },
 ];
 
-function Chip({ option, active, onPress }) {
+function Chip({ option, active, disabled = false, onPress }) {
+  const textColor = active ? option.text : colors.chipInactiveText;
   return (
     <Pressable
       onPress={onPress}
+      disabled={disabled}
       style={[
         styles.chip,
         active
           ? { backgroundColor: option.bg, borderColor: option.border }
           : { backgroundColor: colors.chipInactiveBg, borderColor: colors.chipInactiveBorder },
+        disabled && styles.chipDisabled,
       ]}
     >
-      <Text style={[styles.chipText, { color: active ? option.text : colors.chipInactiveText }]}>
+      {option.icon && (
+        <Ionicons name={active ? option.icon : `${option.icon}-outline`} size={fontSize.md} color={textColor} />
+      )}
+      <Text style={[styles.chipText, { color: textColor }]}>
         {option.label}
       </Text>
     </Pressable>
   );
 }
 
-export default function FilterChips({ selectedDiffs, selectedTypes, onToggleDiff, onToggleType }) {
+// favoriteCount: saved favorites; mixFavorites/onToggleFavorites: the
+// "mix 2–3 of them into the session" chip (off while there are none).
+export default function FilterChips({
+  selectedDiffs, selectedTypes, onToggleDiff, onToggleType,
+  favoriteCount = 0, mixFavorites = false, onToggleFavorites,
+}) {
   return (
     <View>
       <Text style={styles.sectionLabel}>DIFFICULTY</Text>
@@ -54,6 +67,19 @@ export default function FilterChips({ selectedDiffs, selectedTypes, onToggleDiff
           <Chip key={t.key} option={t} active={selectedTypes.has(t.key)} onPress={() => onToggleType(t.key)} />
         ))}
       </View>
+
+      <Text style={[styles.sectionLabel, styles.sectionLabelSpaced]}>FAVORITES</Text>
+      <View style={styles.row}>
+        <Chip
+          option={{ ...FAV, label: favoriteCount > 0 ? `Mix in favorites · ${favoriteCount}` : 'Mix in favorites' }}
+          active={mixFavorites && favoriteCount > 0}
+          disabled={favoriteCount === 0}
+          onPress={onToggleFavorites}
+        />
+      </View>
+      {favoriteCount === 0 && (
+        <Text style={styles.hint}>Tap the heart on a combo to save it, then mix favorites into a session.</Text>
+      )}
     </View>
   );
 }
@@ -76,6 +102,9 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     borderWidth: 1,
     borderRadius: radius.pill,
     paddingVertical: 5,
@@ -85,4 +114,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     fontWeight: '500',
   },
+  chipDisabled: { opacity: 0.4 },
+  hint: { fontSize: fontSize.sm, color: colors.textMuted, marginTop: 6 },
 });

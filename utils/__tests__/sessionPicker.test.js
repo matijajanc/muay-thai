@@ -1,5 +1,5 @@
 import { COMBOS } from '../../data/combos';
-import { filterCombos, pickSession, SESSION_SIZE } from '../sessionPicker';
+import { filterCombos, pickSession, favoriteMixCount, SESSION_SIZE } from '../sessionPicker';
 
 const set = (...keys) => new Set(keys);
 
@@ -52,5 +52,37 @@ describe('pickSession', () => {
     const previous = new Set(small.slice(0, 10).map(c => c.id));
     const session = pickSession(small, previous);
     expect(session.filter(c => !previous.has(c.id))).toHaveLength(2);
+  });
+});
+
+describe('mixing in favorites', () => {
+  const pool = COMBOS.filter(c => c.diff === 'beg');
+  const favorites = COMBOS.filter(c => c.diff === 'adv').slice(0, 5);
+  const favIds = new Set(favorites.map(c => c.id));
+
+  it('mixes in 2 or 3, or all of them when there are fewer than 3', () => {
+    expect(favoriteMixCount(0)).toBe(0);
+    expect(favoriteMixCount(1)).toBe(1);
+    expect(favoriteMixCount(2)).toBe(2);
+    expect(favoriteMixCount(5, () => 0.1)).toBe(2);
+    expect(favoriteMixCount(5, () => 0.9)).toBe(3);
+  });
+
+  it.each([2, 3])('keeps the session at SESSION_SIZE with %d favorites in it', (count) => {
+    const session = pickSession(pool, new Set(), favorites, count);
+    expect(session).toHaveLength(SESSION_SIZE);
+    expect(new Set(session.map(c => c.id)).size).toBe(SESSION_SIZE);
+    expect(session.filter(c => favIds.has(c.id))).toHaveLength(count);
+  });
+
+  it('takes favorites outside the filters, without duplicating one already in the pool', () => {
+    const session = pickSession(favorites, new Set(), favorites, 3);
+    expect(session).toHaveLength(favorites.length);
+    expect(new Set(session.map(c => c.id)).size).toBe(favorites.length);
+  });
+
+  it('changes nothing when no favorites are mixed in', () => {
+    const session = pickSession(pool, new Set(), favorites, 0);
+    expect(session.some(c => favIds.has(c.id))).toBe(false);
   });
 });

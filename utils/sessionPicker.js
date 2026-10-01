@@ -20,10 +20,27 @@ function shuffle(list) {
   return out;
 }
 
-// Up to SESSION_SIZE combos from the pool in random order, preferring ones the
-// previous session didn't have.
-export function pickSession(pool, previousIds = new Set()) {
-  const fresh = shuffle(pool.filter(c => !previousIds.has(c.id)));
-  const repeats = shuffle(pool.filter(c => previousIds.has(c.id)));
-  return shuffle([...fresh, ...repeats].slice(0, SESSION_SIZE));
+// Shuffled, with combos the previous session didn't have first.
+function freshFirst(list, previousIds) {
+  return [
+    ...shuffle(list.filter(c => !previousIds.has(c.id))),
+    ...shuffle(list.filter(c => previousIds.has(c.id))),
+  ];
+}
+
+// How many saved favorites to mix into a session: 2 or 3 at random, or all of
+// them when there are fewer than 3.
+export function favoriteMixCount(available, random = Math.random) {
+  if (available < 3) return available;
+  return random() < 0.5 ? 2 : 3;
+}
+
+// Up to SESSION_SIZE combos in random order, preferring ones the previous
+// session didn't have. `favoriteCount` of `favorites` are always in it (they
+// take their place within SESSION_SIZE); the rest come from the pool.
+export function pickSession(pool, previousIds = new Set(), favorites = [], favoriteCount = 0) {
+  const mixed = freshFirst(favorites, previousIds).slice(0, favoriteCount);
+  const mixedIds = new Set(mixed.map(c => c.id));
+  const rest = freshFirst(pool.filter(c => !mixedIds.has(c.id)), previousIds);
+  return shuffle([...mixed, ...rest].slice(0, SESSION_SIZE));
 }

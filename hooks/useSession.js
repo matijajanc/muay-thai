@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { COMBOS } from '../data/combos';
 import { loadJSON, saveJSON, removeKey } from '../utils/storage';
-import { filterCombos, pickSession } from '../utils/sessionPicker';
+import { filterCombos, pickSession, favoriteMixCount } from '../utils/sessionPicker';
 
 const TIMER_SECONDS = 60;
 // A combo open for less than this before moving on counts as skipped (or a
@@ -106,13 +106,15 @@ export function useSession() {
     }, 1000);
   };
 
+  // mixIn: saved favorite combos, 2–3 of which go into the session (any
+  // difficulty or type) without making it longer.
   // Returns false, and changes nothing, when no combo matches the filters.
-  const generate = (selectedDiffs, selectedTypes) => {
+  const generate = (selectedDiffs, selectedTypes, mixIn = []) => {
     const pool = filterCombos(selectedDiffs, selectedTypes);
     if (pool.length === 0) return false;
     touchedRef.current = true;
     clearProgress();
-    setSession(pickSession(pool, previousIdsRef.current));
+    setSession(pickSession(pool, previousIdsRef.current, mixIn, favoriteMixCount(mixIn.length)));
     setGenerated(true);
     return true;
   };

@@ -11,6 +11,7 @@ import TimerIcon from '../components/timer/TimerIcon';
 import TrainingClock, { useTrainingClockVisible } from '../components/timer/TrainingClock';
 import { useSessionContext, useFavoritesContext, useTimerContext } from '../contexts/AppContext';
 import { filterCombos } from '../utils/sessionPicker';
+import { COMBOS } from '../data/combos';
 import { pillLabel } from '../utils/timerLabels';
 
 function toggleInSet(setState, key) {
@@ -66,8 +67,14 @@ export default function TrainingScreen({ navigation }) {
   // Chip selection lives here so it is preserved across "New session".
   const [selectedDiffs, setSelectedDiffs] = useState(new Set());
   const [selectedTypes, setSelectedTypes] = useState(new Set());
+  const [mixFavorites, setMixFavorites] = useState(false);
   // Some mixes have no combos (e.g. Beginner + Elbows): say so instead of generating.
   const matching = filterCombos(selectedDiffs, selectedTypes).length;
+  // "Mix in favorites": 2–3 saved favorites join the session, which stays 10 long.
+  const favoriteCombos = COMBOS.filter(c => favorites.has(c.id));
+  const mixing = mixFavorites && favoriteCombos.length > 0;
+  const mixNote = favoriteCombos.length >= 3 ? '2–3 of your favorites'
+    : favoriteCombos.length === 2 ? 'your 2 favorites' : 'your favorite';
 
   // One tap at the top of the list mustn't throw away a session in progress.
   const confirmNewSession = () => {
@@ -132,16 +139,19 @@ export default function TrainingScreen({ navigation }) {
             selectedTypes={selectedTypes}
             onToggleDiff={k => toggleInSet(setSelectedDiffs, k)}
             onToggleType={k => toggleInSet(setSelectedTypes, k)}
+            favoriteCount={favoriteCombos.length}
+            mixFavorites={mixFavorites}
+            onToggleFavorites={() => setMixFavorites(on => !on)}
           />
           <Text style={[styles.matchCount, matching === 0 && styles.matchNone]}>
             {matching === 0
               ? 'No combos match — try another difficulty or type'
-              : `${matching} ${matching === 1 ? 'combo matches' : 'combos match'}`}
+              : `${matching} ${matching === 1 ? 'combo matches' : 'combos match'}${mixing ? ` · plus ${mixNote}` : ''}`}
           </Text>
           <Pressable
             style={[styles.generateBtn, matching === 0 && styles.generateDisabled]}
             disabled={matching === 0}
-            onPress={() => generate(selectedDiffs, selectedTypes)}
+            onPress={() => generate(selectedDiffs, selectedTypes, mixing ? favoriteCombos : [])}
             onLayout={e => setGenerateBottom(e.nativeEvent.layout.y + e.nativeEvent.layout.height)}
           >
             <Text style={styles.generateText}>Generate session</Text>

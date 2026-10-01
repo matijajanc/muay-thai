@@ -11,7 +11,8 @@ hands-free via in-app voice commands during training.
   elbows, knees, clinch, mixed, deadliest).
 - **Filtered sessions** — pick any combination of difficulties and types (the screen shows
   how many combos match; a mix with none can't be generated), generate a fresh random
-  10-combo session that avoids the previous one's combos. The current session survives the
+  10-combo session that avoids the previous one's combos. **Mix in favorites** swaps 2–3 of
+  your saved favorites (any difficulty or type) into it — still 10 combos. The current session survives the
   app being closed for 12 hours.
 - **Hands-free training** — say "combo 3", "combo next" or "combo favorite" while the mic
   is on (see [Voice commands](#voice-commands)).
