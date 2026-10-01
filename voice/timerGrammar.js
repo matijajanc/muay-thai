@@ -11,7 +11,9 @@
 //
 // A bare "pause" / "stop" is ignored on purpose (gym chatter): controls need
 // "timer", durations need countdown / timer / rounds / rest / delay. "set" is
-// optional, since it's often misheard as "said" or "sit". None of the timer's
+// optional, since it's often misheard as "said" or "sit". Set/duration commands
+// must open the utterance (or follow another command), so "I need a rest for two
+// minutes" or "I did 5 rounds yesterday" change nothing. None of the timer's
 // spoken lines ("Round 2", "Rest", "Ten seconds", …) parse as a command.
 
 import {
@@ -36,10 +38,18 @@ const PRESET_WORDS = new Set(['preset', 'presets']);
 const INFINITE_WORDS = new Set(['infinite', 'infinity', 'unlimited', 'endless', 'forever']);
 const OFF_WORDS = new Set(['off', 'none', 'zero']);
 // "set" and its mis-hearings, plus glue words between a keyword and its value.
-const FILLERS = new Set(['set', 'said', 'sit', 'sat', 'sets', 'the', 'of', 'is', 'at', 'an']);
+const SET_WORDS = new Set(['set', 'said', 'sit', 'sat', 'sets']);
+const FILLERS = new Set([...SET_WORDS, 'the', 'of', 'is', 'at', 'an']);
 
 // Commands that wait for the final result, so "2 minutes… 30 seconds" can finish.
 const FINAL_ONLY = new Set(['countdown', 'workout', 'set', 'preset']);
+
+// What may come before a set/duration command: "set" (then "a"/"an"/"the"),
+// a short lead-in, the glue between two commands, and "start" ("start delay …").
+const LEAD_WORDS = new Set([
+  ...SET_WORDS, 'ok', 'okay', 'hey', 'um', 'uh', 'so', 'now', 'and', 'then', 'also', 'please', 'start',
+]);
+const ARTICLES = new Set(['a', 'an', 'the']);
 
 // Join two-word spellings: "count down" → countdown, "pre set" → preset.
 function tokens(transcript) {
@@ -153,10 +163,19 @@ export function parseTimerCommands(transcript) {
     return null;
   }
 
+  // Only lead words between `from` and `to`.
+  const leadOnly = (from, to) => {
+    for (let k = from; k < to; k++) {
+      if (!LEAD_WORDS.has(ws[k]) && !(ARTICLES.has(ws[k]) && SET_WORDS.has(ws[k - 1]))) return false;
+    }
+    return true;
+  };
+
   const commands = [];
+  let anchor = 0; // where the previous command ended
   for (let i = 0; i < n;) {
     const match = matchAt(i);
-    if (!match) {
+    if (!match || (FINAL_ONLY.has(match.cmd.type) && !leadOnly(anchor, i))) {
       i += 1;
       continue;
     }
@@ -166,6 +185,7 @@ export function parseTimerCommands(transcript) {
       .join(':');
     commands.push({ ...cmd, domain: 'timer', key, final: FINAL_ONLY.has(cmd.type), pos: toks[i].pos });
     i = Math.max(match.end, i + 1);
+    anchor = i;
   }
   return commands;
 }

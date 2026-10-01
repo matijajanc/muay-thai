@@ -25,7 +25,7 @@ export const COMMAND_HELP = [
   },
   {
     title: 'Quick timers',
-    note: 'Start right away. Your saved settings don’t change.',
+    note: 'Start right away while the timer is stopped. Your saved settings don’t change.',
     commands: [
       { say: ['set 2 minutes countdown', 'countdown 90 seconds'], does: 'One-off countdown, up to 60 minutes' },
       { say: ['set 5 rounds of 3 minutes'], does: 'Rounds with your saved rest and bells' },

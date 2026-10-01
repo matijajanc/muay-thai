@@ -7,6 +7,7 @@
     "icon": "./assets/icon.png",
     "scheme": "muaythai",
     "userInterfaceStyle": "dark",
+    "backgroundColor": "#111111",
     "ios": {
       "supportsTablet": true
     },
@@ -53,6 +54,15 @@
         "expo-audio",
         {
           "enableBackgroundPlayback": false
+        }
+      ],
+      "expo-asset",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#111111",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200
         }
       ]
     ],

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  Modal, View, Text, TextInput, Pressable, Animated, Easing, Keyboard, Dimensions, StyleSheet,
+  Modal, View, Text, TextInput, Pressable, Animated, Easing, Keyboard, Dimensions, Platform,
+  StyleSheet,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../../constants/theme';
@@ -32,9 +33,11 @@ export function Sheet({ visible, onClose, title, meta, children }) {
   useEffect(() => {
     // The modal covers the whole screen (edge to edge), so lift the sheet to the
     // keyboard's top edge; endCoordinates.height leaves out the navigation bar.
-    const show = Keyboard.addListener('keyboardDidShow', e =>
+    // iOS announces the keyboard before it slides in, so the sheet moves with it.
+    const ios = Platform.OS === 'ios';
+    const show = Keyboard.addListener(ios ? 'keyboardWillShow' : 'keyboardDidShow', e =>
       setKeyboard(Math.max(0, Dimensions.get('screen').height - e.endCoordinates.screenY)));
-    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboard(0));
+    const hide = Keyboard.addListener(ios ? 'keyboardWillHide' : 'keyboardDidHide', () => setKeyboard(0));
     return () => {
       show.remove();
       hide.remove();

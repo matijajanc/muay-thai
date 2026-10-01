@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { Vibration } from 'react-native';
+import { Platform, Vibration } from 'react-native';
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import * as Speech from 'expo-speech';
 
@@ -20,7 +20,11 @@ const ECHO_MS = { bell: 1500, 'bell-x3': 2150 };
 const SPEECH_TAIL_MS = 500;
 const speechEstimateMs = (text) => 600 + text.length * 90;
 
-const VIBRATION = { bell: 400, 'bell-x3': [0, 250, 70, 250, 70, 250] };
+// iOS ignores durations (every buzz is ~0.4 s) and reads a pattern as the
+// pauses between buzzes, so the triple bell needs its own pattern there.
+const VIBRATION = Platform.OS === 'ios'
+  ? { bell: 400, 'bell-x3': [0, 450, 450] }
+  : { bell: 400, 'bell-x3': [0, 250, 70, 250, 70, 250] };
 
 // Plays the timer's cues: preloaded bells/clap/beeps (expo-audio), spoken lines
 // (expo-speech) and optional vibration. suppress(untilMs) is the voice

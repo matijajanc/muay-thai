@@ -1,13 +1,18 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState, useEffect, useRef } from 'react';
 import {
   BUILT_IN_PRESETS, DEFAULT_TIMER_SETTINGS, PRESET_FIELDS, PRESET_NAME_MAX, matchesPreset,
 } from '../data/timerPresets';
+import { loadJSON, saveJSON } from '../utils/storage';
 
 const SETTINGS_KEY = '@muaythai_timer_settings';
 const PRESETS_KEY = '@muaythai_timer_presets';
 // How long a row changed by voice stays highlighted.
 const FLASH_MS = 1500;
+
+// A saved preset as read back from storage: rounds may be null (∞).
+const isPreset = (p) =>
+  !!p && typeof p.id === 'string' && typeof p.name === 'string'
+  && PRESET_FIELDS.every(key => (key === 'rounds' && p[key] === null) || Number.isFinite(p[key]));
 
 // Saved round-timer defaults and the user's own presets. Every change is saved
 // to the device right away; there's no Save button for defaults.
@@ -16,23 +21,29 @@ export function useTimerSettings() {
   const [customPresets, setCustomPresets] = useState([]);
   const [flashedField, setFlashedField] = useState(null);
   const flashTimerRef = useRef(null);
+  // Nothing is saved until the stored values have loaded, so an early change
+  // can't overwrite them with the defaults.
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    AsyncStorage.getItem(SETTINGS_KEY).then(raw => {
-      if (raw) setSettings({ ...DEFAULT_TIMER_SETTINGS, ...JSON.parse(raw) });
-    });
-    AsyncStorage.getItem(PRESETS_KEY).then(raw => {
-      if (raw) setCustomPresets(JSON.parse(raw));
+    Promise.all([loadJSON(SETTINGS_KEY), loadJSON(PRESETS_KEY)]).then(([saved, presets]) => {
+      if (saved && typeof saved === 'object' && !Array.isArray(saved)) {
+        setSettings({ ...DEFAULT_TIMER_SETTINGS, ...saved });
+      }
+      if (Array.isArray(presets)) setCustomPresets(presets.filter(isPreset));
+      setLoaded(true);
     });
   }, []);
 
-  const update = (patch) => {
-    setSettings(prev => {
-      const next = { ...prev, ...patch };
-      AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
-      return next;
-    });
-  };
+  useEffect(() => {
+    if (loaded) saveJSON(SETTINGS_KEY, settings);
+  }, [settings, loaded]);
+
+  useEffect(() => {
+    if (loaded) saveJSON(PRESETS_KEY, customPresets);
+  }, [customPresets, loaded]);
+
+  const update = (patch) => setSettings(prev => ({ ...prev, ...patch }));
 
   const applyPreset = (preset) => {
     const patch = { presetId: preset.id };
@@ -52,16 +63,11 @@ export function useTimerSettings() {
       ? customPresets.map(p => (p.id === existing.id ? preset : p))
       : [...customPresets, preset];
     setCustomPresets(next);
-    AsyncStorage.setItem(PRESETS_KEY, JSON.stringify(next));
     update({ presetId: preset.id });
     return preset;
   };
 
-  const deletePreset = (id) => {
-    const next = customPresets.filter(p => p.id !== id);
-    setCustomPresets(next);
-    AsyncStorage.setItem(PRESETS_KEY, JSON.stringify(next));
-  };
+  const deletePreset = (id) => setCustomPresets(prev => prev.filter(p => p.id !== id));
 
   // Highlight a setup row for a moment (voice edits).
   const flash = (field) => {

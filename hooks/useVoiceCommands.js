@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import {
   ExpoSpeechRecognitionModule,
   useSpeechRecognitionEvent,
@@ -46,6 +46,15 @@ const START_OPTIONS = {
     'countdown', 'minutes countdown', 'seconds countdown', 'rounds of', 'set rest', 'set rounds',
     'set round', 'set delay', 'preset',
   ],
+  // iOS: the library's default session (measurement mode, no mixing) would pause
+  // the user's music every time listening starts or restarts. Mix with it
+  // instead, keep the bells on the speaker, and let AirPods stay in A2DP (music
+  // quality) rather than drop to call audio. Ignored on Android.
+  iosCategory: {
+    category: 'playAndRecord',
+    categoryOptions: ['defaultToSpeaker', 'mixWithOthers', 'allowBluetoothA2DP'],
+    mode: 'default',
+  },
 };
 
 // Silence and our own abort() are expected — the "end" handler just restarts.
@@ -141,6 +150,8 @@ export function useVoiceCommands(onCommand) {
   const prepareOnDevice = async () => {
     try {
       if (!ExpoSpeechRecognitionModule.supportsOnDeviceRecognition()) return false;
+      // iOS has no separate offline models or services to look for.
+      if (Platform.OS !== 'android') return true;
 
       for (const pkg of [GOOGLE_ON_DEVICE, undefined]) {
         const opts = pkg ? { androidRecognitionServicePackage: pkg } : undefined;

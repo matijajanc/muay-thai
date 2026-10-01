@@ -12,6 +12,7 @@ export default function ComboCard({
   isDone = false,
   isExpanded = false,
   timerPercent = 100,
+  showTimer = true, // the 60-second bar under an open combo (training only)
   expandable = true,
   onToggleFavorite,
   onExpand,
@@ -68,9 +69,11 @@ export default function ComboCard({
               <Text style={styles.stepText}>{step}</Text>
             </View>
           ))}
-          <View style={styles.timerWrap}>
-            <TimerBar percent={timerPercent} />
-          </View>
+          {showTimer && (
+            <View style={styles.timerWrap}>
+              <TimerBar percent={timerPercent} />
+            </View>
+          )}
         </View>
       )}
     </View>

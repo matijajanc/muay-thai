@@ -1,0 +1,56 @@
+import { COMBOS } from '../../data/combos';
+import { filterCombos, pickSession, SESSION_SIZE } from '../sessionPicker';
+
+const set = (...keys) => new Set(keys);
+
+describe('combo data', () => {
+  it('has unique ids and names', () => {
+    expect(new Set(COMBOS.map(c => c.id)).size).toBe(COMBOS.length);
+    expect(new Set(COMBOS.map(c => c.name)).size).toBe(COMBOS.length);
+  });
+});
+
+describe('filterCombos', () => {
+  it('treats an empty selection as "any"', () => {
+    expect(filterCombos(set(), set())).toHaveLength(COMBOS.length);
+  });
+
+  it('matches difficulty and type together', () => {
+    const pool = filterCombos(set('adv'), set('deadliest'));
+    expect(pool.length).toBeGreaterThan(0);
+    expect(pool.every(c => c.diff === 'adv' && c.type === 'deadliest')).toBe(true);
+  });
+
+  it('returns nothing for a mix with no combos, never the whole library', () => {
+    expect(filterCombos(set('beg'), set('elbows'))).toEqual([]);
+    expect(filterCombos(set('beg'), set('deadliest'))).toEqual([]);
+  });
+});
+
+describe('pickSession', () => {
+  const pool = COMBOS.slice(0, 20);
+
+  it('picks up to SESSION_SIZE distinct combos from the pool', () => {
+    const session = pickSession(pool);
+    expect(session).toHaveLength(SESSION_SIZE);
+    expect(new Set(session.map(c => c.id)).size).toBe(SESSION_SIZE);
+    expect(session.every(c => pool.includes(c))).toBe(true);
+  });
+
+  it('uses the whole pool when it is small', () => {
+    expect(pickSession(pool.slice(0, 4))).toHaveLength(4);
+  });
+
+  it('avoids the previous session while there are enough other combos', () => {
+    const previous = new Set(pool.slice(0, 10).map(c => c.id));
+    const session = pickSession(pool, previous);
+    expect(session.some(c => previous.has(c.id))).toBe(false);
+  });
+
+  it('tops up with repeats only when it must', () => {
+    const small = pool.slice(0, 12);
+    const previous = new Set(small.slice(0, 10).map(c => c.id));
+    const session = pickSession(small, previous);
+    expect(session.filter(c => !previous.has(c.id))).toHaveLength(2);
+  });
+});

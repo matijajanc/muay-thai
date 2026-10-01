@@ -33,7 +33,7 @@ const BASELINE = [
   ['combo to', [{ type: 'slot', slot: 2, key: 'slot:2' }]],
   ['combo seven', [{ type: 'slot', slot: 7, key: 'slot:7' }]],
   ['kombo 6', [{ type: 'slot', slot: 6, key: 'slot:6' }]],
-  ['number 4', [{ type: 'slot', slot: 4, key: 'slot:4' }]],
+  ['number 4', []], // "number" alone stopped triggering (gym chatter, 2026-10-01)
   ['combo 0', []],
   ['combo zero', []],
   ['combo twenty', []],
@@ -61,6 +61,20 @@ const strip = ({ pos, ...rest }) => rest;
 describe('combo grammar (regression)', () => {
   it.each(BASELINE)('parses %j as before', (transcript, expected) => {
     expect(parseCommands(transcript).map(strip)).toEqual(expected);
+  });
+
+  // Song lyrics and coaching cues that start like "combo".
+  it.each([
+    'come back', 'come to me', 'come next', 'coming for you', 'come on come on', 'comes back to',
+    'number one', 'number two', 'complete one more', 'company two', 'commit for it',
+  ])('ignores the everyday phrase %j', (transcript) => {
+    expect(parseCommands(transcript)).toEqual([]);
+  });
+
+  it.each([
+    ['kombo 6', 6], ['combos 4', 4], ['compo 3', 3], ['combat 8', 8], ['combo number 2', 2],
+  ])('still hears the near-miss %j', (transcript, slot) => {
+    expect(parseCommands(transcript).map(c => c.slot)).toEqual([slot]);
   });
 
   it('reports where each command starts', () => {

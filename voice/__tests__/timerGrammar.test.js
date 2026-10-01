@@ -123,6 +123,36 @@ describe('timer grammar', () => {
     expect(parseTimerCommands('timer stop')[0].key).toBe('timer:stop');
   });
 
+  // Set/duration commands must open the utterance; the same words inside
+  // conversation change nothing.
+  it.each([
+    'I need a rest for two minutes', 'take a rest 2 minutes', 'the timer is 3 minutes',
+    'I did 5 rounds yesterday', 'I did 5 rounds of 3 minutes', 'we went 6 rounds',
+    'after the round 2 minutes later', 'my favorite preset boxing',
+  ])('ignores conversation %j', (transcript) => {
+    expect(parse(transcript)).toEqual([]);
+  });
+
+  it.each([
+    ['okay set rest 30 seconds', { type: 'set', field: 'restSec', value: 30 }],
+    ['set the rest to 30 seconds', { type: 'set', field: 'restSec', value: 30 }],
+    ['hey countdown 90 seconds', { type: 'countdown', sec: 90 }],
+    ['please set 6 rounds', { type: 'set', field: 'rounds', value: 6 }],
+  ])('accepts a short lead-in: %j', (transcript, expected) => {
+    expect(parse(transcript)).toEqual([expected]);
+  });
+
+  it('accepts a set command right after a control', () => {
+    expect(parse('timer stop set rest 30 seconds')).toEqual([
+      { type: 'stop' },
+      { type: 'set', field: 'restSec', value: 30 },
+    ]);
+  });
+
+  it('keeps controls anywhere in the sentence', () => {
+    expect(parse('okay I think timer pause')).toEqual([{ type: 'pause' }]);
+  });
+
   it('finds several commands in one transcript', () => {
     expect(parse('set rest 30 seconds and then set rounds 6')).toEqual([
       { type: 'set', field: 'restSec', value: 30 },

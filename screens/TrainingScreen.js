@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { View, Text, Pressable, FlatList, StyleSheet } from 'react-native';
+import { View, Text, Pressable, FlatList, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, fontSize, spacing } from '../constants/theme';
@@ -10,6 +10,7 @@ import FinishCelebration from '../components/FinishCelebration';
 import TimerIcon from '../components/timer/TimerIcon';
 import TrainingClock, { useTrainingClockVisible } from '../components/timer/TrainingClock';
 import { useSessionContext, useFavoritesContext, useTimerContext } from '../contexts/AppContext';
+import { filterCombos } from '../utils/sessionPicker';
 import { pillLabel } from '../utils/timerLabels';
 
 function toggleInSet(setState, key) {
@@ -34,7 +35,7 @@ function TimerPill({ onOpenTimer }) {
 
 export default function TrainingScreen({ navigation }) {
   const {
-    session, generated, expandedId, timerPercent, jumpTarget, doneIds, summary,
+    session, generated, expandedId, timerPercent, jumpTarget, doneIds, summary, activeIndex,
     generate, reset, expandCombo, unmarkDone, finish, dismissSummary,
   } = useSessionContext();
   const { favorites, toggleFavorite } = useFavoritesContext();
@@ -65,6 +66,20 @@ export default function TrainingScreen({ navigation }) {
   // Chip selection lives here so it is preserved across "New session".
   const [selectedDiffs, setSelectedDiffs] = useState(new Set());
   const [selectedTypes, setSelectedTypes] = useState(new Set());
+  // Some mixes have no combos (e.g. Beginner + Elbows): say so instead of generating.
+  const matching = filterCombos(selectedDiffs, selectedTypes).length;
+
+  // One tap at the top of the list mustn't throw away a session in progress.
+  const confirmNewSession = () => {
+    if (doneIds.size === 0 && activeIndex == null) {
+      reset();
+      return;
+    }
+    Alert.alert('Start a new session?', 'Progress in this session will be lost.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'New session', style: 'destructive', onPress: reset },
+    ]);
+  };
 
   const subtitle = generated ? `${session.length} combos · ${doneIds.size} done` : 'Pick filters, then generate';
   // The Top clock band replaces the title while a timer runs (L).
@@ -118,8 +133,14 @@ export default function TrainingScreen({ navigation }) {
             onToggleDiff={k => toggleInSet(setSelectedDiffs, k)}
             onToggleType={k => toggleInSet(setSelectedTypes, k)}
           />
+          <Text style={[styles.matchCount, matching === 0 && styles.matchNone]}>
+            {matching === 0
+              ? 'No combos match — try another difficulty or type'
+              : `${matching} ${matching === 1 ? 'combo matches' : 'combos match'}`}
+          </Text>
           <Pressable
-            style={styles.generateBtn}
+            style={[styles.generateBtn, matching === 0 && styles.generateDisabled]}
+            disabled={matching === 0}
             onPress={() => generate(selectedDiffs, selectedTypes)}
             onLayout={e => setGenerateBottom(e.nativeEvent.layout.y + e.nativeEvent.layout.height)}
           >
@@ -145,7 +166,7 @@ export default function TrainingScreen({ navigation }) {
             listRef.current?.scrollToOffset({ offset: index * averageItemLength, animated: true })
           }
           ListHeaderComponent={
-            <Pressable style={styles.newSessionBtn} onPress={reset}>
+            <Pressable style={styles.newSessionBtn} onPress={confirmNewSession}>
               <Text style={styles.newSessionText}>New session</Text>
             </Pressable>
           }
@@ -202,13 +223,16 @@ const styles = StyleSheet.create({
   },
   tpillText: { color: colors.accent, fontSize: 11, fontWeight: '600', fontVariant: ['tabular-nums'] },
 
+  matchCount: { marginTop: spacing.xl, fontSize: fontSize.sm, color: colors.textSecondary },
+  matchNone: { color: colors.advText },
   generateBtn: {
-    marginTop: spacing.xl,
+    marginTop: spacing.sm,
     backgroundColor: colors.accent,
     borderRadius: radius.md,
     paddingVertical: spacing.md,
     alignItems: 'center',
   },
+  generateDisabled: { opacity: 0.4 },
   generateText: { color: '#ffffff', fontSize: 14, fontWeight: '500' },
 
   newSessionBtn: {

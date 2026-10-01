@@ -57,12 +57,14 @@ const PRESET_ALIASES = {
   bag: ['back', 'bags', 'bagwork'],
 };
 
-// "preset boxing" → the matching built-in or saved preset, or undefined.
+// "preset boxing" → the matching built-in or saved preset, or undefined. A saved
+// name with no a–z/0–9 at all ("💪") can't be said, so it never matches.
 function findPreset(presets, query) {
   const q = compact(query);
   if (!q) return undefined;
   return presets.find(p => {
     const name = compact(p.name);
+    if (!name) return false;
     return name === q || name.startsWith(q) || q.startsWith(name)
       || (PRESET_ALIASES[p.id] ?? []).some(alias => q.startsWith(alias));
   });
@@ -106,12 +108,16 @@ export default function App() {
     const running = timer.status === 'running' || timer.status === 'paused';
 
     switch (command.type) {
+      // Quick timers don't replace a run in progress: a stray "…3 minutes timer"
+      // overheard mid-workout mustn't end it.
       case 'countdown': {
+        if (running) return 'Stop the timer first';
         const sec = clamp(command.sec, COUNTDOWN_LIMITS);
         timer.start({ kind: 'countdown', roundSec: sec });
         return `✓ ${formatClock(sec)} countdown`;
       }
       case 'workout': {
+        if (running) return 'Stop the timer first';
         const rounds = clamp(command.rounds, LIMITS.rounds);
         const roundSec = clamp(command.roundSec, LIMITS.roundSec);
         timer.start({ kind: 'workout', rounds, roundSec });

@@ -6,8 +6,14 @@ import {
   resumeClock, seekClock, cueIndexAt, dueCues, formatClock, isInfinite,
 } from '../utils/roundTimer';
 import { matchesPreset } from '../data/timerPresets';
+import { loadJSON, saveJSON, removeKey } from '../utils/storage';
 
 const KEEP_AWAKE_TAG = 'round-timer';
+// A run in progress is saved (kind, config and clock) so it survives the app
+// being killed; the position is wall-clock time, so it comes back exactly where
+// it is now. A run left paused longer than this is dropped instead.
+const RUN_KEY = '@muaythai_timer_run';
+const PAUSED_TTL_MS = 2 * 60 * 60 * 1000;
 
 // Top-left label of the run screens: "Muay Thai · 5 × 3:00" / "Countdown · 2:00".
 function runLabel(kind, config, presetName) {
@@ -15,6 +21,30 @@ function runLabel(kind, config, presetName) {
   const rounds = isInfinite(config.rounds) ? '∞' : config.rounds;
   return `${presetName} · ${rounds} × ${formatClock(config.roundSec)}`;
 }
+
+function buildRun(kind, config, presetName) {
+  const frozen = Object.freeze({ ...config });
+  const segments = buildSegments(frozen);
+  return {
+    kind,
+    config: frozen,
+    presetName,
+    label: runLabel(kind, frozen, presetName),
+    segments,
+    cues: buildCues(segments, frozen, kind),
+    totalMs: totalMsOf(segments),
+    doneAt: null,
+  };
+}
+
+const isNum = (v, min) => Number.isFinite(v) && v >= min;
+// A saved run as read back from storage.
+const isSavedRun = (s) =>
+  !!s && (s.kind === 'workout' || s.kind === 'countdown') && !!s.config && !!s.clock
+  && isNum(s.config.roundSec, 1) && isNum(s.config.restSec, 0) && isNum(s.config.delaySec, 0)
+  && (s.config.rounds === null || (Number.isInteger(s.config.rounds) && s.config.rounds >= 1))
+  && isNum(s.clock.startedAt, 0) && isNum(s.clock.pausedTotal, 0)
+  && (s.clock.pausedAt === null || isNum(s.clock.pausedAt, 0));
 
 // Run state of the round timer. The UI derives the live position from `clock`
 // (see TimerTickProvider); this hook only re-renders on status changes. Cues fire
@@ -36,9 +66,21 @@ export function useRoundTimer(timerSettings, cues) {
   const cuesRef = useRef(cues);
   cuesRef.current = cues;
 
+  // Saves the run in progress, or clears the saved one when there's none.
+  const persist = () => {
+    const r = runRef.current;
+    const c = clockRef.current;
+    if (r && c && !r.doneAt) {
+      saveJSON(RUN_KEY, { kind: r.kind, config: r.config, presetName: r.presetName, clock: c });
+    } else {
+      removeKey(RUN_KEY);
+    }
+  };
+
   const commitClock = (next) => {
     clockRef.current = next;
     setClock(next);
+    persist();
   };
 
   const finish = () => {
@@ -50,6 +92,7 @@ export function useRoundTimer(timerSettings, cues) {
       setRun(done);
     }
     setStatus('done');
+    persist();
   };
 
   // Fire whatever is due, then aim a timeout at the next cue (or the end).
@@ -75,18 +118,7 @@ export function useRoundTimer(timerSettings, cues) {
   const launch = (kind, config, presetName) => {
     clearTimeout(cueTimerRef.current);
     cuesRef.current.stopSpeech();
-    const frozen = Object.freeze({ ...config });
-    const segments = buildSegments(frozen);
-    const next = {
-      kind,
-      config: frozen,
-      presetName,
-      label: runLabel(kind, frozen, presetName),
-      segments,
-      cues: buildCues(segments, frozen, kind),
-      totalMs: totalMsOf(segments),
-      doneAt: null,
-    };
+    const next = buildRun(kind, config, presetName);
     runRef.current = next;
     setRun(next);
     commitClock(startClock(Date.now()));
@@ -179,11 +211,42 @@ export function useRoundTimer(timerSettings, cues) {
     setRun(null);
     setClock(null);
     setStatus('idle');
+    persist();
   }, []);
 
   const dismissDone = useCallback(() => {
     if (runRef.current?.doneAt) stop();
   }, [stop]);
+
+  // Bring back a run the app was killed in the middle of. Nothing to do if one
+  // was started meanwhile, if it would have ended by now, or if it sat paused
+  // for hours.
+  useEffect(() => {
+    loadJSON(RUN_KEY).then(saved => {
+      if (runRef.current) return;
+      const now = Date.now();
+      if (!isSavedRun(saved)) {
+        removeKey(RUN_KEY);
+        return;
+      }
+      const name = typeof saved.presetName === 'string' ? saved.presetName : 'Custom';
+      const r = buildRun(saved.kind, saved.config, saved.kind === 'countdown' ? null : name);
+      const c = saved.clock;
+      const e = elapsedMs(c, now);
+      if (e >= r.totalMs || (c.pausedAt != null && now - c.pausedAt > PAUSED_TTL_MS)) {
+        removeKey(RUN_KEY);
+        return;
+      }
+      runRef.current = r;
+      setRun(r);
+      clockRef.current = c;
+      setClock(c);
+      // Cues already behind us stay silent.
+      cueIndexRef.current = cueIndexAt(r.cues, e);
+      setStatus(c.pausedAt != null ? 'paused' : 'running');
+      if (c.pausedAt == null) scheduleRef.current();
+    });
+  }, []);
 
   // Timers don't run in the background: catch up (dropping stale cues) on return.
   useEffect(() => {

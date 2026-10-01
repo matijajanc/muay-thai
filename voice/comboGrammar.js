@@ -43,8 +43,18 @@ function mergedCommand(word) {
   return digits ? slotCommand(parseInt(digits[1], 10)) : null;
 }
 
-// Trigger: "combo" or near-misses starting with "com"/"kom", or "number".
-const isTrigger = (word) => /^(com|kom)/.test(word) || word === 'number';
+// Everyday words that start like "combo". Songs and coaches say "come back",
+// "come to me" and "coming for you" all the time, so these never trigger.
+const NOT_TRIGGERS = new Set([
+  'come', 'comes', 'coming', 'comin', 'comeback', 'comebacks', 'comedy', 'comic', 'comfort',
+  'comfortable', 'command', 'comment', 'comments', 'commercial', 'commit', 'committed', 'common',
+  'community', 'company', 'compare', 'compete', 'competition', 'complete', 'completely',
+  'computer', 'kommen', 'komm',
+]);
+
+// Trigger: "combo" or a near-miss starting with "com"/"kom" that isn't an
+// everyday word. ("number" only works after it: "combo number 3".)
+const isTrigger = (word) => /^(com|kom)/.test(word) && !NOT_TRIGGERS.has(word);
 
 // Number words that are also how interim results spell the start of "favorite"
 // ("combo for…"). As the last word of an interim result they're tentative.

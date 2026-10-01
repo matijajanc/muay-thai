@@ -9,19 +9,23 @@ hands-free via in-app voice commands during training.
 
 - **107 combos** across beginner / intermediate / advanced and 7 types (punches, kicks,
   elbows, knees, clinch, mixed, deadliest).
-- **Filtered sessions** — pick any combination of difficulties and types, generate a fresh
-  random 10-combo session. Sessions are never persisted.
+- **Filtered sessions** — pick any combination of difficulties and types (the screen shows
+  how many combos match; a mix with none can't be generated), generate a fresh random
+  10-combo session that avoids the previous one's combos. The current session survives the
+  app being closed for 12 hours.
 - **Hands-free training** — say "combo 3", "combo next" or "combo favorite" while the mic
   is on (see [Voice commands](#voice-commands)).
 - **Progress** — combos you move on from are ticked off; **Finish session** shows a summary
   with a little celebration.
-- **Favorites** — tap the heart to save a combo; favorites persist via AsyncStorage.
+- **Favorites** — tap the heart to save a combo; favorites persist via AsyncStorage. Tap a
+  favorite's name to read its steps.
 - **Round timer** — a Timer tab with presets (Muay Thai, Boxing, MMA, Tabata, Bag, plus your
   own), editable round time, rest, rounds (1–20 or ∞) and start delay, and cues: start bell,
   3× end bell, a clap before the round ends, a double beep before the rest ends, 3-2-1 beeps,
   spoken announcements and optional vibration. While it runs, the Training tab shows a clock
   (center, top or bottom band, or off — a setting) and the Timer tab label shows the live
-  time. Foreground only: the screen stays on while a timer runs.
+  time. Foreground only: the screen stays on while a timer runs. A run in progress survives
+  the app being killed and comes back at its real position (dropped if paused over 2 hours).
 - **Dark theme only.**
 
 ## Setup
@@ -53,6 +57,8 @@ hooks/                 useSession, useFavorites, useVoiceCommands, useTimerSetti
                        useRoundTimer (run state), useTimerCues (bells, TTS, vibration)
 utils/roundTimer.js    Pure timer engine: segments, cue timeline, wall-clock position
 utils/timerLabels.js   All derived timer copy (phase labels, tab label, hints)
+utils/sessionPicker.js Filtering and picking a session (pure, tested)
+utils/storage.js       AsyncStorage JSON helpers that never throw
 voice/                 numbers, comboGrammar, timerGrammar, commandHelp (+ tests)
 components/            ComboCard, FilterChips, TimerBar, MicButton, FinishCelebration
 components/timer/      TimerRing, TimerDial, TrainingClock, sheets, run/done views, icons
@@ -80,8 +86,12 @@ lists every command from `voice/commandHelp.js`; a test checks each listed phras
 | `timer start` / `pause` / `resume` / `skip` / `stop` | Control the running timer |
 
 Timer controls need the word "timer" — a bare "pause" or "stop" is ignored. Setting and
-duration commands act on the final result, so "2 minutes… 30 seconds" can finish. The
-timer's own bells and spoken lines never trigger commands.
+duration commands act on the final result, so "2 minutes… 30 seconds" can finish. They must
+open the sentence (after "set", "okay", "hey" and the like, or right after another command),
+so "I need a rest for two minutes" changes nothing, and quick timers don't replace a run in
+progress. A combo command needs "combo" (or a close mis-hearing) — everyday words such as
+"come back" or "number two" are ignored. The timer's own bells and spoken lines never
+trigger commands.
 
 While listening, the screen stays on and the opened combo scrolls into view; the mic pauses
 when the app goes to the background and resumes when it returns.

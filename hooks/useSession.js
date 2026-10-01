@@ -1,11 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
 import { COMBOS } from '../data/combos';
+import { loadJSON, saveJSON, removeKey } from '../utils/storage';
+import { filterCombos, pickSession } from '../utils/sessionPicker';
 
-const SESSION_SIZE = 10;
 const TIMER_SECONDS = 60;
 // A combo open for less than this before moving on counts as skipped (or a
 // misheard command), not done.
 const MIN_DONE_MS = 5000;
+// The current session is saved so it survives the app being closed or killed;
+// one left untouched this long is "today's training" no more.
+const SESSION_KEY = '@muaythai_session';
+const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+
+const COMBO_BY_ID = new Map(COMBOS.map(c => [c.id, c]));
 
 export function useSession() {
   const [session, setSession] = useState([]);
@@ -26,6 +33,53 @@ export function useSession() {
   const [doneIds, setDoneIds] = useState(new Set());
   // Non-null while the "session complete" celebration is showing.
   const [summary, setSummary] = useState(null);
+  // Combo ids of the last session, so the next one can avoid repeating them.
+  const previousIdsRef = useRef(new Set());
+  // Nothing is saved until the stored session has been read back.
+  const [loaded, setLoaded] = useState(false);
+  // Set once the user generates or resets, so a slow restore can't replace that.
+  const touchedRef = useRef(false);
+
+  useEffect(() => {
+    loadJSON(SESSION_KEY).then(saved => {
+      if (!touchedRef.current) restore(saved);
+      setLoaded(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!loaded) return;
+    if (!generated) {
+      removeKey(SESSION_KEY);
+      return;
+    }
+    saveJSON(SESSION_KEY, {
+      ids: session.map(c => c.id),
+      doneIds: [...doneIds],
+      activeIndex,
+      startedAt: startedAtRef.current,
+      savedAt: Date.now(),
+    });
+  }, [loaded, generated, session, doneIds, activeIndex]);
+
+  // Brings back a saved session (no combo is open, and no celebration).
+  const restore = (saved) => {
+    if (!saved || !Array.isArray(saved.ids)) return;
+    if (!(Date.now() - saved.savedAt < SESSION_TTL_MS)) return;
+    const combos = saved.ids.map(id => COMBO_BY_ID.get(id)).filter(Boolean);
+    if (combos.length === 0) return;
+    const ids = new Set(combos.map(c => c.id));
+    const slot = Number.isInteger(saved.activeIndex) && saved.activeIndex < combos.length
+      ? saved.activeIndex
+      : null;
+    activeSlotRef.current = slot;
+    openedAtRef.current = Date.now();
+    startedAtRef.current = Number.isFinite(saved.startedAt) ? saved.startedAt : null;
+    setActiveIndex(slot);
+    setDoneIds(new Set((saved.doneIds ?? []).filter(id => ids.has(id))));
+    setSession(combos);
+    setGenerated(true);
+  };
 
   const clearActiveTimer = () => {
     if (intervalRef.current) {
@@ -52,19 +106,20 @@ export function useSession() {
     }, 1000);
   };
 
+  // Returns false, and changes nothing, when no combo matches the filters.
   const generate = (selectedDiffs, selectedTypes) => {
-    let pool = [...COMBOS];
-    if (selectedDiffs.size > 0) pool = pool.filter(c => selectedDiffs.has(c.diff));
-    if (selectedTypes.size > 0) pool = pool.filter(c => selectedTypes.has(c.type));
-    if (pool.length === 0) pool = [...COMBOS];
-    pool.sort(() => Math.random() - 0.5);
-    const newSession = pool.slice(0, Math.min(SESSION_SIZE, pool.length));
+    const pool = filterCombos(selectedDiffs, selectedTypes);
+    if (pool.length === 0) return false;
+    touchedRef.current = true;
     clearProgress();
-    setSession(newSession);
+    setSession(pickSession(pool, previousIdsRef.current));
     setGenerated(true);
+    return true;
   };
 
   const reset = () => {
+    touchedRef.current = true;
+    if (session.length > 0) previousIdsRef.current = new Set(session.map(c => c.id));
     clearProgress();
     setGenerated(false);
     setSession([]);

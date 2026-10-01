@@ -25,12 +25,13 @@ export default function SettingsScreen() {
         <View style={styles.infoCard}>
           <View style={styles.infoTitleRow}>
             <Ionicons name="mic" size={fontSize.lg} color={colors.voiceTitle} />
-            <Text style={styles.infoTitle}>Hands-free, fully on-device</Text>
+            <Text style={styles.infoTitle}>Hands-free voice commands</Text>
           </View>
           <Text style={styles.infoBody}>
             Voice commands run inside the app — no Google Assistant or Google Home setup needed.
-            Recognition runs on-device (offline) when available, so it keeps working without Wi-Fi.
-            The mic only listens while you have it switched on in the Training or Timer tab.
+            Recognition runs on-device (offline) when your phone supports it, so it keeps working
+            without Wi-Fi; otherwise your phone's speech service may process the audio online. The
+            mic only listens while you have it switched on in the Training or Timer tab.
           </Text>
         </View>
 

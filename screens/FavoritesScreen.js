@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +9,9 @@ import { useFavoritesContext } from '../contexts/AppContext';
 
 export default function FavoritesScreen() {
   const { favorites, toggleFavorite } = useFavoritesContext();
+  // Tap a name to read its steps; tap again to close. No timer here.
+  const [expandedId, setExpandedId] = useState(null);
+  const toggleExpanded = (id) => setExpandedId(prev => (prev === id ? null : id));
 
   const favoriteCombos = COMBOS.filter(c => favorites.has(c.id));
 
@@ -38,7 +42,9 @@ export default function FavoritesScreen() {
               combo={item}
               index={index + 1}
               isFavorite={true}
-              expandable={false}
+              isExpanded={expandedId === item.id}
+              showTimer={false}
+              onExpand={toggleExpanded}
               onToggleFavorite={toggleFavorite}
             />
           )}

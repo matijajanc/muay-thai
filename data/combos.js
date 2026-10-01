@@ -1146,13 +1146,14 @@ export const COMBOS = [
   },
   {
     id: 100,
-    name: "Teep - Teep → High kick → Spinning heel kick",
+    name: "Teep → Fake high kick → Spinning back elbow → Knee",
     diff: "adv",
     type: "deadliest",
     steps: [
-      "Double teep — set rhythm and range",
-      "High kick — rear leg to head",
-      "Spinning heel kick — pivot and drive heel to temple"
+      "Teep — push them to the edge of range",
+      "Fake high kick — lift the knee, make them shell up",
+      "Spinning back elbow — step through and turn into it",
+      "Knee — grab the neck and drive up"
     ]
   },
   {
