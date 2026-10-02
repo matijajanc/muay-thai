@@ -3,14 +3,12 @@ import { View, Text, Pressable, Platform, StyleSheet } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { colors } from '../constants/theme';
 import { usePrefsContext } from '../contexts/AppContext';
-import { isAvailable, addProximityListener } from '../modules/proximity';
+import { isAvailable, addProximityListener, sensorDetails } from '../modules/proximity';
 import { createWaveDetector } from '../utils/waveGestures';
 import { GESTURE_HELP } from '../voice/commandHelp';
 import { Toggle } from './timer/TimerUI';
 
-// A sensor that sends nothing this long after we start listening only runs
-// during calls (some "virtual" sensors do): treat it as missing.
-const SILENT_MS = 3000;
+const DETAILS_MS = 1000;
 const GESTURE_NAMES = { wave: 'wave', doubleWave: 'double wave', hold: 'hold' };
 
 // .sense: Covered (accent dot with a ring) / Clear (grey dot).
@@ -26,6 +24,17 @@ function Sense({ near }) {
   );
 }
 
+const num = v => Number(v.toFixed(1));
+
+// "TMD4912 Proximity (wake-up): 3 readings, last 5 of max 5"
+function describe(s) {
+  const kind = s.wakeUp ? 'wake-up' : 'non-wake-up';
+  const seen = s.value == null
+    ? 'no readings'
+    : `${s.readings} ${s.readings === 1 ? 'reading' : 'readings'}, last ${num(s.value)} of max ${num(s.maxRange)}`;
+  return `${s.name} (${kind}${s.chosen ? ', in use' : ''}): ${seen}`;
+}
+
 // Settings "Wave gestures" (G1, G2): the on/off toggle, the gesture cheat
 // sheet and a live sensor test. Android only. Gestures recognised here only
 // show in the test; App ignores them while Settings is open.
@@ -35,42 +44,46 @@ export default function WaveGesturesCard() {
   const focused = useIsFocused();
   const [near, setNear] = useState(false);
   const [last, setLast] = useState(null);
-  const [silent, setSilent] = useState(false);
+  const [covered, setCovered] = useState(false); // the test has seen a cover
+  const [details, setDetails] = useState([]);
 
   useEffect(() => {
     if (!available || !focused) return undefined;
-    let heard = false;
     const detector = createWaveDetector({
       emit: ({ type }) => {
         if (type !== 'armed') setLast(type);
       },
     });
     const sub = addProximityListener((reading) => {
-      heard = true;
-      setSilent(false);
       setNear(reading.near);
+      if (reading.near) setCovered(true);
       detector.feed(reading);
     });
-    const timer = setTimeout(() => {
-      if (!heard) setSilent(true);
-    }, SILENT_MS);
     return () => {
-      clearTimeout(timer);
       sub.remove();
       detector.reset();
       setNear(false);
     };
   }, [available, focused]);
 
+  // Until the test sees a cover, show what each sensor has reported: a sensor
+  // that never changes (some only run during calls) vs one not waved at yet.
+  useEffect(() => {
+    if (!available || !focused || covered) return undefined;
+    const poll = () => setDetails(sensorDetails());
+    poll();
+    const timer = setInterval(poll, DETAILS_MS);
+    return () => clearInterval(timer);
+  }, [available, focused, covered]);
+
   if (Platform.OS !== 'android') return null;
 
   const on = prefs.waveGestures;
-  const usable = available && !silent;
 
   return (
     <>
       <Text style={styles.label}>Wave gestures</Text>
-      {usable ? (
+      {available ? (
         <>
           <View style={styles.card}>
             <Pressable style={[styles.r, styles.rTall]} onPress={() => update({ waveGestures: !on })}>
@@ -100,6 +113,11 @@ export default function WaveGesturesCard() {
             Covering the sensor longer than 4 s does nothing, so a pocket or a face-down phone won’t
             set anything off.
           </Text>
+          {!covered && details.length > 0 && (
+            <Text style={styles.tip}>
+              {`No cover seen yet. Sensors on this phone:\n${details.map(describe).join('\n')}`}
+            </Text>
+          )}
         </>
       ) : (
         <View style={styles.card}>

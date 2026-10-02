@@ -13,6 +13,16 @@ export function isAvailable() {
   }
 }
 
+// Every proximity sensor the phone lists, with what it has reported so far
+// (Settings diagnostics): [{ name, wakeUp, maxRange, readings, value, chosen }].
+export function sensorDetails() {
+  try {
+    return Native?.sensors?.() ?? [];
+  } catch {
+    return [];
+  }
+}
+
 // listener({ near, t }): t is epoch ms. → a subscription with remove().
 export function addProximityListener(listener) {
   if (!Native) return { remove() {} };

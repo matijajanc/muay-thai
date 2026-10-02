@@ -15,30 +15,51 @@ private const val CHANGE_EVENT = "onChange"
 private const val NEAR_CM = 5f
 
 // Proximity sensor near/far for wave gestures (hooks/useWaveGestures.js).
-// The listener is only registered while JS listens and the activity is in the
+// The listeners are only registered while JS listens and the activity is in the
 // foreground. Reading the sensor needs no permission and doesn't turn the
 // screen off (that's a separate wake lock the app never takes).
+//
+// Some phones list more than one proximity sensor (a wake-up and a non-wake-up
+// one) and only one of them ever changes for apps. We listen to all of them
+// and, once one changes between near and far, forward only that one.
 class ProximityModule : Module() {
+  // Per sensor, for the Settings diagnostics.
+  private class Stats {
+    var readings = 0
+    var value = 0f
+    var near: Boolean? = null
+  }
+
   private var observing = false
   private var registered = false
+  private val stats = HashMap<Sensor, Stats>() // guarded by itself
+  @Volatile private var chosen: Sensor? = null
 
   private val sensorManager: SensorManager?
     get() = appContext.reactContext?.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
 
-  // The default proximity sensor is often a wake-up sensor; prefer the plain one.
-  private val sensor: Sensor?
-    get() = sensorManager?.let {
-      it.getDefaultSensor(Sensor.TYPE_PROXIMITY, false) ?: it.getDefaultSensor(Sensor.TYPE_PROXIMITY)
-    }
+  private val sensors: List<Sensor>
+    get() = sensorManager?.getSensorList(Sensor.TYPE_PROXIMITY).orEmpty()
 
   private val listener = object : SensorEventListener {
     override fun onSensorChanged(event: SensorEvent) {
-      val maxRange = event.sensor.maximumRange
+      val sensor = event.sensor
+      val value = event.values[0]
+      val maxRange = sensor.maximumRange
       val threshold = if (maxRange > 0f) min(maxRange, NEAR_CM) else NEAR_CM
-      sendEvent(
-        CHANGE_EVENT,
-        mapOf("near" to (event.values[0] < threshold), "t" to System.currentTimeMillis().toDouble())
-      )
+      val near = value < threshold
+      val changed = synchronized(stats) {
+        val s = stats.getOrPut(sensor) { Stats() }
+        val before = s.near
+        s.readings++
+        s.value = value
+        s.near = near
+        before != null && before != near
+      }
+      if (chosen == null && changed) chosen = sensor
+      val c = chosen
+      if (c != null && c !== sensor) return
+      sendEvent(CHANGE_EVENT, mapOf("near" to near, "t" to System.currentTimeMillis().toDouble()))
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
@@ -47,8 +68,9 @@ class ProximityModule : Module() {
   private fun register() {
     if (registered) return
     val manager = sensorManager ?: return
-    val s = sensor ?: return
-    registered = manager.registerListener(listener, s, SensorManager.SENSOR_DELAY_UI)
+    // Not any { }: it would stop registering at the first success.
+    registered = sensors.map { manager.registerListener(listener, it, SensorManager.SENSOR_DELAY_UI) }
+      .contains(true)
   }
 
   private fun unregister() {
@@ -63,11 +85,23 @@ class ProximityModule : Module() {
     Events(CHANGE_EVENT)
 
     Function("isAvailable") {
-      sensor != null
+      sensors.isNotEmpty()
     }
 
-    Function("maxRange") {
-      sensor?.maximumRange?.toDouble() ?: 0.0
+    // [{ name, wakeUp, maxRange, readings, value, chosen }]: value is null
+    // before the first reading.
+    Function("sensors") {
+      sensors.map { sensor ->
+        val s = synchronized(stats) { stats[sensor]?.let { Pair(it.readings, it.value) } }
+        mapOf(
+          "name" to sensor.name,
+          "wakeUp" to sensor.isWakeUpSensor,
+          "maxRange" to sensor.maximumRange.toDouble(),
+          "readings" to (s?.first ?: 0),
+          "value" to s?.second?.toDouble(),
+          "chosen" to (sensor === chosen)
+        )
+      }
     }
 
     OnStartObserving(CHANGE_EVENT) {

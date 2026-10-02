@@ -299,7 +299,11 @@ None. Ready to build from task 2.
   hold, a cover starting within 0.6 s is ignored (a third pass, a hand bouncing as it lifts);
   a wave followed by a too-long cover drops the wave; a cover already there on the first
   reading is ignored until it clears.
-- The Settings card treats a sensor that sends no reading within 3 s as missing (G2).
+- The module listens to every proximity sensor the phone lists and, once one changes between
+  near and far, forwards only that one (some phones list a wake-up and a non-wake-up sensor).
+  G2's "no sensor" state means none is listed. Until the Settings test sees a cover, the card
+  lists each sensor and what it has reported. The earlier "no reading within 3 s = missing"
+  rule was dropped: on a Galaxy S25 Ultra it showed "no sensor" (2026-10-01).
 - Timer activity is tracked as pieces (wall time ↔ elapsed), so skips and pauses are left out
   of round time and spans. A skipped round isn't counted as done. ∞ runs show "7 rounds".
 - Combo spans: each activation counts 60 s; gaps up to 5 min join; finishing cuts the last

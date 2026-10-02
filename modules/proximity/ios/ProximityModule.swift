@@ -12,8 +12,8 @@ public class ProximityModule: Module {
       return false
     }
 
-    Function("maxRange") {
-      return 0.0
+    Function("sensors") {
+      return [[String: Any]]()
     }
   }
 }
