@@ -56,6 +56,10 @@ const NOT_TRIGGERS = new Set([
 // everyday word. ("number" only works after it: "combo number 3".)
 const isTrigger = (word) => /^(com|kom)/.test(word) && !NOT_TRIGGERS.has(word);
 
+// Words that also work before the trigger: "next combo", "previous combo".
+// ("back combo" isn't said, and "back" + a com- word is everyday speech.)
+const LEAD_WORDS = new Set(['next', 'nexts', 'necks', 'neck', 'nest', 'text', 'previous', 'prev']);
+
 // Number words that are also how interim results spell the start of "favorite"
 // ("combo for…"). As the last word of an interim result they're tentative.
 const PREFIX_AMBIGUOUS = new Set(['for', 'far', 'fore', 'faux', 'foe']);
@@ -72,17 +76,30 @@ export function parseCommands(transcript) {
       commands.push({ ...merged, pos: i });
       continue;
     }
+    // "next combo", unless the trigger has its own command ("next, combo 3").
+    if (LEAD_WORDS.has(ws[i]) && isTrigger(ws[i + 1]) && !commandAfter(ws, i + 1)) {
+      commands.push({ ...wordToCommand(ws[i]), pos: i });
+      i += 1;
+      continue;
+    }
     if (!isTrigger(ws[i])) continue;
-    // Allow one filler word between trigger and command ("combo number 3").
-    for (const j of [i + 1, i + 2]) {
-      const cmd = wordToCommand(ws[j]);
-      if (cmd) {
-        const tentative = j === ws.length - 1 && PREFIX_AMBIGUOUS.has(ws[j]);
-        commands.push(tentative ? { ...cmd, tentative, pos: i } : { ...cmd, pos: i });
-        i = j;
-        break;
-      }
+    const found = commandAfter(ws, i);
+    if (found) {
+      const { cmd, j } = found;
+      const tentative = j === ws.length - 1 && PREFIX_AMBIGUOUS.has(ws[j]);
+      commands.push(tentative ? { ...cmd, tentative, pos: i } : { ...cmd, pos: i });
+      i = j;
     }
   }
   return commands;
+}
+
+// The command after the trigger at ws[i] → { cmd, j } (j: its word), or null.
+// Allows one filler word between them ("combo number 3").
+function commandAfter(ws, i) {
+  for (const j of [i + 1, i + 2]) {
+    const cmd = wordToCommand(ws[j]);
+    if (cmd) return { cmd, j };
+  }
+  return null;
 }

@@ -77,7 +77,24 @@ describe('combo grammar (regression)', () => {
     expect(parseCommands(transcript).map(c => c.slot)).toEqual([slot]);
   });
 
+  it.each([
+    ['next combo', ['next']],
+    ['previous combo', ['previous']],
+    ['necks combo', ['next']],
+    ['ok next combo please', ['next']],
+    ['next combo 3', ['slot']], // "next, combo 3": the slot wins
+    ['next combo next combo', ['next']],
+    ['combo next combo', ['next']],
+    ['back combo', []],
+    ['next come', []],
+    ['next comment', []],
+    ['next', []],
+  ])('parses the command before the trigger in %j', (transcript, types) => {
+    expect(parseCommands(transcript).map(c => c.type)).toEqual(types);
+  });
+
   it('reports where each command starts', () => {
     expect(parseCommands('hey combo 2 and combo next').map(c => c.pos)).toEqual([1, 4]);
+    expect(parseCommands('ok next combo').map(c => c.pos)).toEqual([1]);
   });
 });
