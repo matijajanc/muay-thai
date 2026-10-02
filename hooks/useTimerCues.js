@@ -10,12 +10,11 @@ const SOURCES = {
   clap: require('../assets/sounds/clap.wav'),
   beep: require('../assets/sounds/beep.wav'),
   'rest-warn': require('../assets/sounds/rest-warn.wav'),
-  blip: require('../assets/sounds/blip.wav'), // a wave gesture was recognised
 };
 
 // The recognizer ignores results this long after a bell, so our own bells never
 // turn into commands. bell-x3 spans 0.64 s of strikes before the ring-out.
-const ECHO_MS = { bell: 1500, 'bell-x3': 2150, blip: 400 };
+const ECHO_MS = { bell: 1500, 'bell-x3': 2150 };
 // While TTS speaks (+0.5 s after it's done). The start estimate is generous;
 // onDone extends the window if the line runs longer.
 const SPEECH_TAIL_MS = 500;
@@ -28,8 +27,8 @@ const VIBRATION = Platform.OS === 'ios'
   : { bell: 400, 'bell-x3': [0, 250, 70, 250, 70, 250] };
 
 // Plays the timer's cues: preloaded bells/clap/beeps (expo-audio), spoken lines
-// (expo-speech) and optional vibration, plus the wave-gesture blip (play).
-// suppress(untilMs) is the voice recognizer's echo guard.
+// (expo-speech) and optional vibration. suppress(untilMs) is the voice
+// recognizer's echo guard.
 export function useTimerCues(suppress) {
   const playersRef = useRef(null);
   const suppressRef = useRef(suppress);
@@ -92,5 +91,5 @@ export function useTimerCues(suppress) {
 
   const stopSpeech = useCallback(() => Speech.stop(), []);
 
-  return { fire, test, play, stopSpeech };
+  return { fire, test, stopSpeech };
 }

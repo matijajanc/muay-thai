@@ -41,5 +41,3 @@ yarn-error.*
 /ios
 /android
 
-# local Expo modules: native build output
-/modules/*/android/build/

@@ -1,9 +1,8 @@
-import { View, Text, ScrollView, Platform, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, fontSize, spacing } from '../constants/theme';
 import VoiceCommandList from '../components/VoiceCommandList';
-import WaveGesturesCard from '../components/WaveGesturesCard';
 
 const GETTING_STARTED = [
   'Tap the mic on the Training or Timer tab and allow the microphone the first time. Android may also prompt once to download the small offline voice model.',
@@ -20,11 +19,7 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <WaveGesturesCard />
-
-        <Text style={[styles.sectionLabel, Platform.OS === 'android' && styles.afterGestures]}>
-          VOICE COMMANDS
-        </Text>
+        <Text style={styles.sectionLabel}>VOICE COMMANDS</Text>
 
         {/* Info card */}
         <View style={styles.infoCard}>
@@ -98,7 +93,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   sectionLabelSpaced: { marginTop: spacing.xl },
-  afterGestures: { marginTop: 18 },
 
   infoCard: {
     backgroundColor: colors.voiceBg,

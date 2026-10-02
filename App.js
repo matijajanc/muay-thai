@@ -1,5 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Vibration, StyleSheet } from 'react-native';
+import { useEffect, useRef, useCallback } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import * as Linking from 'expo-linking';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -20,12 +19,10 @@ import TimerTickProvider from './components/timer/TimerTickProvider';
 import { TimerTabLabel, TimerTabIcon } from './components/timer/TimerTab';
 import {
   SessionContext, FavoritesContext, VoiceContext, TimerContext, HistoryContext, PrefsContext,
-  GestureContext,
 } from './contexts/AppContext';
 import { useSession } from './hooks/useSession';
 import { useHistory } from './hooks/useHistory';
 import { usePrefs } from './hooks/usePrefs';
-import { useWaveGestures } from './hooks/useWaveGestures';
 import { useFavorites } from './hooks/useFavorites';
 import { useVoiceCommands } from './hooks/useVoiceCommands';
 import { useTimerSettings } from './hooks/useTimerSettings';
@@ -35,7 +32,6 @@ import { formatClock, isInfinite } from './utils/roundTimer';
 import { optionLabel } from './utils/timerLabels';
 import { LIMITS } from './data/timerPresets';
 import { colors } from './constants/theme';
-import { isAvailable as hasProximitySensor } from './modules/proximity';
 
 const Tab = createBottomTabNavigator();
 
@@ -54,16 +50,6 @@ const navTheme = {
 const clamp = (v, [min, max]) => Math.max(min, Math.min(max, v));
 // A voice countdown can be longer than a saved round.
 const COUNTDOWN_LIMITS = [5, 3600];
-// A gesture's line replaces the run label this long on the Timer tab (F2).
-const GESTURE_LINE_MS = 2000;
-const GESTURE_BUZZ_MS = 40;
-
-// Wave gestures run the same commands as voice (wireframe section 3).
-const GESTURE_COMMANDS = {
-  wave: () => ({ domain: 'timer', type: 'start' }),
-  doubleWave: () => ({ domain: 'combo', type: 'next' }),
-  hold: (session) => ({ domain: 'combo', type: 'slot', slot: (session.activeSlot() ?? 0) + 1 }),
-};
 
 const compact = (text) => text.toLowerCase().replace(/[^a-z0-9]/g, '');
 // Common mis-hearings of the built-in preset names.
@@ -237,49 +223,6 @@ export default function App() {
   timerRef.current = timer;
   const timerContext = { ...timer, ...timerSettings, testCue: cues.test };
 
-  // Wave gestures: the line under the mic ("✋ Combo 5"), and on a run screen
-  // in place of the run label. One that did something also blips and buzzes;
-  // one that didn't is text only.
-  const [gestureLine, setGestureLine] = useState(null);
-  const gestureLineTimerRef = useRef(null);
-  useEffect(() => () => clearTimeout(gestureLineTimerRef.current), []);
-  const voiceRef = useRef(voice);
-  voiceRef.current = voice;
-  const cuesRef = useRef(cues);
-  cuesRef.current = cues;
-  // When the screen was last touched, for the gestures' touch guard.
-  const lastTouchRef = useRef(0);
-
-  const onGesture = useCallback((type) => {
-    const command = GESTURE_COMMANDS[type](sessionRef.current);
-    const message = onCommand(command);
-    // Unlike voice, a gesture that did nothing still goes to its tab, so its
-    // line can be seen there: Timer for timer gestures, Training for combos.
-    if (command.domain === 'timer') showTimer();
-    else if (navigationRef.isReady()) navigationRef.navigate('Training');
-    const line = message == null
-      ? '✋ Timer is already running'
-      : `✋ ${message.startsWith('✓ ') ? message.slice(2) : message}`;
-    if (message != null && message !== 'Generate a session first') {
-      cuesRef.current.play('blip');
-      Vibration.vibrate(GESTURE_BUZZ_MS);
-    }
-    voiceRef.current.flash(line);
-    clearTimeout(gestureLineTimerRef.current);
-    setGestureLine(line);
-    gestureLineTimerRef.current = setTimeout(() => setGestureLine(null), GESTURE_LINE_MS);
-  }, [onCommand, showTimer, navigationRef]);
-
-  const [sensor] = useState(hasProximitySensor);
-  useWaveGestures({
-    enabled: prefs.prefs.waveGestures && sensor,
-    onGesture,
-    // Settings shows the sensor test instead: gestures there control nothing.
-    ignore: () => navigationRef.isReady() && navigationRef.getCurrentRoute()?.name === 'Settings',
-    lastTouchRef,
-  });
-  const gestureContext = { feedback: gestureLine };
-
   useEffect(() => {
     const handleUrl = ({ url }) => {
       if (!url) return;
@@ -300,14 +243,12 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      <View style={styles.root} onTouchStartCapture={() => { lastTouchRef.current = Date.now(); }}>
       <SessionContext.Provider value={session}>
         <FavoritesContext.Provider value={favorites}>
           <VoiceContext.Provider value={voice}>
           <TimerContext.Provider value={timerContext}>
           <HistoryContext.Provider value={history}>
           <PrefsContext.Provider value={prefs}>
-          <GestureContext.Provider value={gestureContext}>
           <TimerTickProvider timer={timer}>
           <NavigationContainer ref={navigationRef} theme={navTheme}>
             <Tab.Navigator
@@ -371,18 +312,12 @@ export default function App() {
             </Tab.Navigator>
           </NavigationContainer>
           </TimerTickProvider>
-          </GestureContext.Provider>
           </PrefsContext.Provider>
           </HistoryContext.Provider>
           </TimerContext.Provider>
           </VoiceContext.Provider>
         </FavoritesContext.Provider>
       </SessionContext.Provider>
-      </View>
     </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-});

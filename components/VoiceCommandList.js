@@ -1,8 +1,6 @@
 import { View, Text, ScrollView, useWindowDimensions, StyleSheet } from 'react-native';
 import { colors, radius, fontSize, spacing } from '../constants/theme';
-import { COMMAND_HELP, GESTURE_HELP } from '../voice/commandHelp';
-import { usePrefsContext } from '../contexts/AppContext';
-import { isAvailable as hasProximitySensor } from '../modules/proximity';
+import { COMMAND_HELP } from '../voice/commandHelp';
 import { Sheet } from './timer/TimerSheets';
 import { Btn } from './timer/TimerUI';
 
@@ -33,36 +31,12 @@ export default function VoiceCommandList() {
   ));
 }
 
-// The wave gestures, listed in the help sheet while they're on.
-function GestureList() {
-  return (
-    <View style={styles.section}>
-      <Text style={styles.sectionLabel}>Wave gestures</Text>
-      <View style={styles.card}>
-        {GESTURE_HELP.map((row, i) => (
-          <View key={row.gesture} style={[styles.row, i === GESTURE_HELP.length - 1 && styles.rowLast]}>
-            <View style={styles.phrases}>
-              <View style={styles.phrase}>
-                <Text style={styles.phraseText}>{row.gesture}</Text>
-              </View>
-            </View>
-            <Text style={styles.does}>{row.does}</Text>
-          </View>
-        ))}
-      </View>
-    </View>
-  );
-}
-
 // The "?" next to the mic opens this.
 export function VoiceHelpSheet({ visible, onClose }) {
   const { height } = useWindowDimensions();
-  const { prefs } = usePrefsContext();
-  const gestures = prefs.waveGestures && hasProximitySensor();
   return (
     <Sheet visible={visible} onClose={onClose} title="Voice commands" meta="Tap the mic, then say…">
       <ScrollView style={{ maxHeight: height * 0.65 }} showsVerticalScrollIndicator={false}>
-        {gestures && <GestureList />}
         <VoiceCommandList />
       </ScrollView>
       <Btn label="Done" onPress={onClose} style={styles.done} />

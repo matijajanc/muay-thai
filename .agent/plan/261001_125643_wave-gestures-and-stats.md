@@ -1,5 +1,11 @@
 # Wave Gestures + Stats Screen
 
+> **Wave gestures were cut on 2026-10-02 (user).** The Galaxy S25 Ultra's only proximity
+> sensor ("Palm Proximity sensor version 2", a virtual one) reports "far" once and never
+> changes for apps. All gesture code, `modules/proximity`, `blip.wav` and the `waveGestures`
+> pref are removed. The gesture sections below are kept as a record; Stats and the training
+> log stay.
+
 ## Context
 
 The user asked for two features (2026-10-01):
@@ -273,6 +279,8 @@ None. Ready to build from task 2.
 - 2026-10-01 (wireframes): the training-day threshold is 5 min. Week-over-week deltas compare
   up to the same weekday. Technique mix and most drilled cover the last 30 days. History
   pages 30 entries at a time.
+- 2026-10-02 (user): Wave gestures cut ("remove this gestures part"). A light-sensor fallback
+  was offered and declined.
 
 ## Execution status
 
@@ -291,6 +299,9 @@ None. Ready to build from task 2.
     line (gestures now always go to their tab, per the section 3 note), the gesture line
     hidden by a voice error under the mic, and the day-dot check weight (2.8). G2 checked by
     forcing the no-sensor state.
+
+- 2026-10-02: Gestures removed (see the note at the top). Task 8 is now log entries after a
+  real workout only.
 
 ## Implementation notes
 

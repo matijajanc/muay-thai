@@ -48,7 +48,7 @@ const ICONS = {
     <Path d="M4 5h16v11H10l-5 4v-4H4z" {...stroke(c, 2, { strokeLinecap: undefined, strokeLinejoin: 'round' })} />
   ),
   check: (c) => <Path d="M5 12.5l4.5 4.5L19 7.5" {...stroke(c, 2.6, { strokeLinejoin: 'round' })} />,
-  // The Stats day dots draw it bolder (gestures wireframe).
+  // The Stats day dots draw it bolder (Stats wireframe).
   checkBold: (c) => <Path d="M5 12.5l4.5 4.5L19 7.5" {...stroke(c, 2.8, { strokeLinejoin: 'round' })} />,
   chev: (c) => <Path d="M9 6l6 6-6 6" {...stroke(c, 2.4)} />,
   barbell: (c) => <Path d="M3 9v6M6.5 6.5v11M17.5 6.5v11M21 9v6M6.5 12h11" {...stroke(c, 2)} />,

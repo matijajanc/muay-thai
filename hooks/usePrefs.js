@@ -4,20 +4,18 @@ import { loadJSON, saveJSON } from '../utils/storage';
 const PREFS_KEY = '@muaythai_prefs';
 
 export const DEFAULT_PREFS = {
-  waveGestures: false, // off until switched on in Settings
   weeklyGoal: 3, // training days per week for the streak (1–7)
 };
 
 const sanitize = (saved) => {
   const prefs = { ...DEFAULT_PREFS };
-  if (typeof saved?.waveGestures === 'boolean') prefs.waveGestures = saved.waveGestures;
   if (Number.isInteger(saved?.weeklyGoal) && saved.weeklyGoal >= 1 && saved.weeklyGoal <= 7) {
     prefs.weeklyGoal = saved.weeklyGoal;
   }
   return prefs;
 };
 
-// App preferences outside the timer: wave gestures and the weekly goal.
+// App preferences outside the timer: the weekly goal.
 export function usePrefs() {
   const [prefs, setPrefs] = useState(DEFAULT_PREFS);
   // Nothing is saved until the stored values have loaded; a value changed

@@ -43,11 +43,3 @@ export const COMMAND_HELP = [
     ],
   },
 ];
-
-// Wave gestures (Android, opt-in in Settings): the Settings card and the mic's
-// help sheet while they're on. Wireframe G1.
-export const GESTURE_HELP = [
-  { gesture: 'Wave', does: 'Start the timer' },
-  { gesture: 'Double wave', does: 'Next combo' },
-  { gesture: 'Hold 2 s', does: 'Open the current combo' },
-];
