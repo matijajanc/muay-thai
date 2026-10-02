@@ -19,7 +19,6 @@ Branch `main`.
 
 ## Waiting on the user
 
-- Package id + store name (suggested: `com.matijajanc.nakmuay`, "Nak Muay: Combos & Round Timer").
 - GitHub Pages on for `main` /docs, so the privacy URL in `constants/links.js` resolves.
 - A new phone build, then: lock the phone mid-round (bells + countdown notification).
 - Play Console: foreground-service declaration (mediaPlayback) with a short video.
@@ -37,7 +36,7 @@ Branch `main`.
 - Headless AVD `Medium_Phone_API_36.0`; build with `npx expo run:android --no-bundler` and
   JAVA_HOME = Android Studio's jbr (gradle directly also needs ANDROID_HOME).
 - The debug build reads its bundler from the app's `debug_http_host` pref (no dev-client):
-  set it with `run-as com.yourname.muaythaiapp` in `shared_prefs/…_preferences.xml`.
+  set it with `run-as com.matijajanc.glovemode` in `shared_prefs/…_preferences.xml`.
 - To screenshot Stats with data, pull `databases/RKStorage` via `run-as`, write
   `@muaythai_history` with host sqlite3, push it back (app stopped).
 

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Muay Thai",
+    "name": "Glove Mode",
     "slug": "muaythai-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -9,10 +9,11 @@
     "userInterfaceStyle": "dark",
     "backgroundColor": "#111111",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.matijajanc.glovemode"
     },
     "android": {
-      "package": "com.yourname.muaythaiapp",
+      "package": "com.matijajanc.glovemode",
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
@@ -47,8 +48,8 @@
       [
         "expo-speech-recognition",
         {
-          "microphonePermission": "Muay Thai listens for \"combo\" voice commands during training.",
-          "speechRecognitionPermission": "Muay Thai uses speech recognition to detect \"combo\" voice commands.",
+          "microphonePermission": "Glove Mode listens for \"combo\" and \"timer\" voice commands while you switch the mic on.",
+          "speechRecognitionPermission": "Glove Mode uses speech recognition to understand your \"combo\" and \"timer\" voice commands.",
           "androidSpeechServicePackages": [
             "com.google.android.googlequicksearchbox",
             "com.samsung.android.bixby.agent"

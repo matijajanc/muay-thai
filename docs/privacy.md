@@ -2,11 +2,11 @@
 title: Privacy Policy
 ---
 
-# Privacy Policy — Muay Thai Combo Trainer
+# Privacy Policy — Glove Mode: Muay Thai
 
 _Effective 2 October 2026_
 
-Muay Thai Combo Trainer ("the app") is a personal training app: combos, a round timer, voice
+Glove Mode: Muay Thai ("the app") is a personal training app: combos, a round timer, voice
 commands and a training log. This policy explains what happens to your data. In short: it stays
 on your phone.
 

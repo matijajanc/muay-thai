@@ -1,7 +1,7 @@
-# Muay Thai Combo Trainer
+# Glove Mode: Muay Thai
 
 A personal Android training app built with Expo (React Native, JavaScript). It shows 107
-curated Muay Thai combos, filters by difficulty and type, generates a 10-combo training
+curated Muay Thai combos, filters by difficulty and type, generates a 5–20 combo training
 session, saves favorites, runs a boxing round timer with bells, expands combo details
 hands-free via in-app voice commands during training, and keeps a training log with weekly
 streaks and stats.
