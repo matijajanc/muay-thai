@@ -1,7 +1,6 @@
 // "combo …" voice commands.
 import { WORD_TO_NUM, words } from './numbers';
-
-const SESSION_SIZE = 10;
+import { MAX_SESSION_SIZE } from '../utils/sessionPicker';
 
 // Non-numeric commands and their common mis-hearings.
 const ACTION_WORDS = {
@@ -13,7 +12,7 @@ const ACTION_WORDS = {
 };
 
 const slotCommand = (n) =>
-  n >= 1 && n <= SESSION_SIZE ? { type: 'slot', slot: n, key: `slot:${n}` } : null;
+  n >= 1 && n <= MAX_SESSION_SIZE ? { type: 'slot', slot: n, key: `slot:${n}` } : null;
 const actionCommand = (type) => ({ type, key: type });
 
 // A word that directly follows the trigger → command, or null.

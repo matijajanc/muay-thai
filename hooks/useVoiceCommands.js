@@ -41,6 +41,7 @@ const START_OPTIONS = {
   contextualStrings: [
     'combo', 'combo one', 'combo two', 'combo three', 'combo four', 'combo five',
     'combo six', 'combo seven', 'combo eight', 'combo nine', 'combo ten',
+    'combo eleven', 'combo twelve', 'combo fifteen', 'combo twenty',
     'combo next', 'combo back', 'combo previous', 'combo favorite', 'combo finish',
     'next combo', 'previous combo',
     'timer start', 'timer pause', 'timer resume', 'timer skip', 'timer stop', 'timer reset',

@@ -5,9 +5,9 @@
 export const COMMAND_HELP = [
   {
     title: 'Combos',
-    note: 'Numbers are the combo’s slot in your current session (1–10). Generate a session first.',
+    note: 'Numbers are the combo’s slot in your current session (1–20, up to its size). Generate a session first.',
     commands: [
-      { say: ['combo 3', 'combo number 3'], does: 'Open that combo for 60 seconds' },
+      { say: ['combo 3', 'combo number 3'], does: 'Open that combo (it hides again after the time set in Settings)' },
       { say: ['combo next', 'combo back', 'next combo', 'previous combo'], does: 'Open the next / previous combo (starts at combo 1)' },
       { say: ['combo favorite'], does: 'Save the last opened combo to favorites' },
       { say: ['combo finish'], does: 'Finish the session and see your summary' },

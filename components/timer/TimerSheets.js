@@ -163,13 +163,17 @@ export function DurationSheet({ visible, kind, value, onChange, onClose }) {
 
 // ---- B2: round-end warning / rest-end warning / start delay ----
 
-// hint(value) → the line under the chips.
-export function OptionSheet({ visible, title, meta, value, hint, onChange, onClose }) {
+// hint(value) → the line under the chips. options: the values to pick from
+// (the timer's warning/delay seconds by default); label(value) → chip text.
+export function OptionSheet({
+  visible, title, meta, value, hint, onChange, onClose,
+  options = OPTION_SECONDS, label = optionLabel,
+}) {
   return (
     <Sheet visible={visible} onClose={onClose} title={title} meta={meta}>
       <View style={[styles.chips, styles.optionChips]}>
-        {OPTION_SECONDS.map(sec => (
-          <Chip key={sec} label={optionLabel(sec)} on={value === sec} onPress={() => onChange(sec)} />
+        {options.map(v => (
+          <Chip key={v} label={label(v)} on={value === v} onPress={() => onChange(v)} />
         ))}
       </View>
       <Text style={[styles.hint, styles.optionHint]}>{hint(value)}</Text>

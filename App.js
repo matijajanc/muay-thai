@@ -28,6 +28,7 @@ import { useVoiceCommands } from './hooks/useVoiceCommands';
 import { useTimerSettings } from './hooks/useTimerSettings';
 import { useTimerCues } from './hooks/useTimerCues';
 import { useRoundTimer } from './hooks/useRoundTimer';
+import { useRoundBells } from './hooks/useRoundBells';
 import { formatClock, isInfinite } from './utils/roundTimer';
 import { optionLabel } from './utils/timerLabels';
 import { LIMITS } from './data/timerPresets';
@@ -77,7 +78,7 @@ export default function App() {
   const navigationRef = useNavigationContainerRef();
   const history = useHistory();
   const prefs = usePrefs();
-  const session = useSession(history.upsert);
+  const session = useSession(history.upsert, prefs.prefs.comboHoldSec);
   const favorites = useFavorites();
   const timerSettings = useTimerSettings();
 
@@ -221,6 +222,7 @@ export default function App() {
   const cues = useTimerCues(voice.suppress);
   const timer = useRoundTimer(timerSettings, cues, history.upsert);
   timerRef.current = timer;
+  useRoundBells(timer);
   const timerContext = { ...timer, ...timerSettings, testCue: cues.test };
 
   useEffect(() => {

@@ -20,8 +20,10 @@ const BASELINE = [
   ['combo 10', [{ type: 'slot', slot: 10, key: 'slot:10' }]],
   ['combo ten', [{ type: 'slot', slot: 10, key: 'slot:10' }]],
   ['combo then', [{ type: 'slot', slot: 10, key: 'slot:10' }]],
-  ['combo 11', []],
-  ['combo eleven', []],
+  // Slots go up to 20 since the session size became a setting (2026-10-02).
+  ['combo 11', [{ type: 'slot', slot: 11, key: 'slot:11' }]],
+  ['combo eleven', [{ type: 'slot', slot: 11, key: 'slot:11' }]],
+  ['combo 21', []],
   ['combo number 3', [{ type: 'slot', slot: 3, key: 'slot:3' }]],
   ['combo number', []],
   ['comboten', [{ type: 'slot', slot: 10, key: 'slot:10' }]],
@@ -36,7 +38,8 @@ const BASELINE = [
   ['number 4', []], // "number" alone stopped triggering (gym chatter, 2026-10-01)
   ['combo 0', []],
   ['combo zero', []],
-  ['combo twenty', []],
+  ['combo twenty', [{ type: 'slot', slot: 20, key: 'slot:20' }]],
+  ['combo thirty', []],
   ['combo half', []],
   ['combo 2:30', [{ type: 'slot', slot: 2, key: 'slot:2' }]],
   ['combo far', [{ type: 'slot', slot: 4, key: 'slot:4', tentative: true }]],

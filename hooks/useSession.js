@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { COMBOS } from '../data/combos';
 import { loadJSON, saveJSON, removeKey } from '../utils/storage';
-import { filterCombos, pickSession, favoriteMixCount } from '../utils/sessionPicker';
+import {
+  filterCombos, pickSession, favoriteMixCount, SESSION_SIZE,
+} from '../utils/sessionPicker';
 import { comboEntry } from '../utils/history';
 
-const TIMER_SECONDS = 60;
+const DEFAULT_HOLD_SEC = 60;
 // A combo open for less than this before moving on counts as skipped (or a
 // misheard command), not done.
 const MIN_DONE_MS = 5000;
@@ -19,12 +21,17 @@ const COMBO_BY_ID = new Map(COMBOS.map(c => [c.id, c]));
 
 // Sessions are logged through onLog(entry) (utils/history.js comboEntry) when
 // finished, and on "New session" or expiry if there's activity not logged yet.
-// onLog: useHistory().upsert.
-export function useSession(onLog) {
+// onLog: useHistory().upsert. holdSec: how long an opened combo stays open
+// before it collapses, 0 = until closed (Settings; read when a combo opens).
+export function useSession(onLog, holdSec = DEFAULT_HOLD_SEC) {
   const [session, setSession] = useState([]);
   const [generated, setGenerated] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
-  const [timerSec, setTimerSec] = useState(TIMER_SECONDS);
+  const holdSecRef = useRef(holdSec);
+  holdSecRef.current = holdSec;
+  // The open combo's countdown and its full length (0 = no countdown).
+  const [timerSec, setTimerSec] = useState(holdSec);
+  const [timerTotal, setTimerTotal] = useState(holdSec);
   // Bumped whenever a slot is opened hands-free, so the list can scroll to it.
   const [jumpTarget, setJumpTarget] = useState(null);
   const intervalRef = useRef(null);
@@ -150,13 +157,16 @@ export function useSession(onLog) {
 
   const startTimer = () => {
     clearActiveTimer();
-    setTimerSec(TIMER_SECONDS);
+    const total = holdSecRef.current;
+    setTimerTotal(total);
+    setTimerSec(total);
+    if (total <= 0) return; // stays open until closed or another combo opens
     intervalRef.current = setInterval(() => {
       setTimerSec(prev => {
         if (prev <= 1) {
           clearActiveTimer();
           setExpandedId(null);
-          return TIMER_SECONDS;
+          return total;
         }
         return prev - 1;
       });
@@ -164,15 +174,17 @@ export function useSession(onLog) {
   };
 
   // mixIn: saved favorite combos, 2–3 of which go into the session (any
-  // difficulty or type) without making it longer.
+  // difficulty or type) without making it longer. size: combos per session.
   // Returns false, and changes nothing, when no combo matches the filters.
-  const generate = (selectedDiffs, selectedTypes, mixIn = []) => {
+  const generate = (selectedDiffs, selectedTypes, mixIn = [], size = SESSION_SIZE) => {
     const pool = filterCombos(selectedDiffs, selectedTypes);
     if (pool.length === 0) return false;
     touchedRef.current = true;
     clearProgress();
     sessionIdRef.current = `session-${Date.now()}`;
-    setSession(pickSession(pool, previousIdsRef.current, mixIn, favoriteMixCount(mixIn.length)));
+    setSession(
+      pickSession(pool, previousIdsRef.current, mixIn, favoriteMixCount(mixIn.length), size),
+    );
     setGenerated(true);
     return true;
   };
@@ -295,7 +307,8 @@ export function useSession(onLog) {
 
   const dismissSummary = () => setSummary(null);
 
-  const timerPercent = (timerSec / TIMER_SECONDS) * 100;
+  // null when combos stay open until closed: there's no countdown bar.
+  const timerPercent = timerTotal > 0 ? (timerSec / timerTotal) * 100 : null;
 
   return {
     session,

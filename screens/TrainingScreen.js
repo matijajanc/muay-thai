@@ -9,7 +9,9 @@ import MicButton from '../components/MicButton';
 import FinishCelebration from '../components/FinishCelebration';
 import TimerIcon from '../components/timer/TimerIcon';
 import TrainingClock, { useTrainingClockVisible } from '../components/timer/TrainingClock';
-import { useSessionContext, useFavoritesContext, useTimerContext } from '../contexts/AppContext';
+import {
+  useSessionContext, useFavoritesContext, useTimerContext, usePrefsContext,
+} from '../contexts/AppContext';
 import { filterCombos } from '../utils/sessionPicker';
 import { COMBOS } from '../data/combos';
 import { pillLabel } from '../utils/timerLabels';
@@ -41,6 +43,7 @@ export default function TrainingScreen({ navigation }) {
   } = useSessionContext();
   const { favorites, toggleFavorite } = useFavoritesContext();
   const { settings: timerSettings } = useTimerContext();
+  const { prefs } = usePrefsContext();
   const listRef = useRef(null);
 
   // Round-timer clock: hidden until a timer runs; where it shows is a setting.
@@ -70,7 +73,7 @@ export default function TrainingScreen({ navigation }) {
   const [mixFavorites, setMixFavorites] = useState(false);
   // Some mixes have no combos (e.g. Beginner + Elbows): say so instead of generating.
   const matching = filterCombos(selectedDiffs, selectedTypes).length;
-  // "Mix in favorites": 2–3 saved favorites join the session, which stays 10 long.
+  // "Mix in favorites": 2–3 saved favorites join the session without making it longer.
   const favoriteCombos = COMBOS.filter(c => favorites.has(c.id));
   const mixing = mixFavorites && favoriteCombos.length > 0;
   const mixNote = favoriteCombos.length >= 3 ? '2–3 of your favorites'
@@ -151,7 +154,9 @@ export default function TrainingScreen({ navigation }) {
           <Pressable
             style={[styles.generateBtn, matching === 0 && styles.generateDisabled]}
             disabled={matching === 0}
-            onPress={() => generate(selectedDiffs, selectedTypes, mixing ? favoriteCombos : [])}
+            onPress={() => generate(
+              selectedDiffs, selectedTypes, mixing ? favoriteCombos : [], prefs.sessionSize,
+            )}
             onLayout={e => setGenerateBottom(e.nativeEvent.layout.y + e.nativeEvent.layout.height)}
           >
             <Text style={styles.generateText}>Generate session</Text>

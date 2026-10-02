@@ -118,7 +118,8 @@ function NowCard({ onLayout }) {
   const label = activeIndex == null
     ? `NEXT UP · COMBO ${index + 1} OF ${session.length}`
     : `NOW · COMBO ${index + 1} OF ${session.length}`;
-  const percent = expandedId === combo.id ? timerPercent : 0;
+  // Full while open when combos stay open until closed (no countdown).
+  const percent = expandedId === combo.id ? (timerPercent ?? 100) : 0;
 
   return (
     <View style={styles.nowcard} onLayout={onLayout}>

@@ -1,7 +1,7 @@
 # Handoff
 
-_Last updated: 2026-10-02. Wave gestures cut; Stats + training log stay. "next combo" /
-"previous combo" voice commands added._
+_Last updated: 2026-10-02. Tester readiness built (uncommitted): Settings rows, background bells
+service, privacy policy, safety note. Plan: `.agent/plan/261002_101000_tester-readiness.md`._
 
 ## Where we left off
 
@@ -10,20 +10,25 @@ Branch `main`.
 - Wave gestures were removed (plan note at the top of
   `.agent/plan/261001_125643_wave-gestures-and-stats.md`): the user's Galaxy S25 Ultra only
   exposes a virtual "Palm Proximity sensor version 2" that reports "far" once and never changes.
-  `modules/` is gone, so the next phone build has no local native modules.
 - Voice: "next combo" / "previous combo" parse like "combo next" / "combo previous"; a slot
-  after the trigger wins ("next combo 3" → slot 3).
-- `npm test`: 319 passing.
+  after the trigger wins ("next combo 3" → slot 3). Slots go up to 20 (session size setting).
+- New local module `modules/round-bells` (foreground service): bells with the screen off,
+  verified on the emulator. Scheduled notifications were tried first and dropped (Android 16
+  silences them; see the plan's decisions log).
+- `npm test`: 331 passing.
 
 ## Waiting on the user
 
-- A new phone build (`eas build --profile preview -p android`) to pick up the cut and the
-  voice phrases.
+- Package id + store name (suggested: `com.matijajanc.nakmuay`, "Nak Muay: Combos & Round Timer").
+- GitHub Pages on for `main` /docs, so the privacy URL in `constants/links.js` resolves.
+- A new phone build, then: lock the phone mid-round (bells + countdown notification).
+- Play Console: foreground-service declaration (mediaPlayback) with a short video.
 
 ## Active plans
 
 | Plan | Status |
 |---|---|
+| 261002_101000_tester-readiness | built; device check + Pages + package id open |
 | 261001_125643_wave-gestures-and-stats | gestures cut; task 8 (log entries after a real workout) open |
 | 260930_185109_boxing-round-timer | built; task 9 (device QA) still with the user |
 

@@ -286,10 +286,12 @@ export function useRoundTimer(timerSettings, cues, onLog) {
     });
   }, []);
 
-  // Timers don't run in the background: catch up (dropping stale cues) on return.
+  // In the background the cues ring from a native service (useRoundBells), so
+  // the in-app ones stop there and catch up (dropping stale cues) on return.
   useEffect(() => {
     const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') scheduleRef.current();
+      if (state === 'background') clearTimeout(cueTimerRef.current);
+      else if (state === 'active') scheduleRef.current();
     });
     return () => sub.remove();
   }, []);

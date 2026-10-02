@@ -41,6 +41,12 @@ describe('pickSession', () => {
     expect(pickSession(pool.slice(0, 4))).toHaveLength(4);
   });
 
+  it.each([5, 15, 20])('picks %d combos when asked to', (size) => {
+    const session = pickSession(COMBOS, new Set(), [], 0, size);
+    expect(session).toHaveLength(size);
+    expect(new Set(session.map(c => c.id)).size).toBe(size);
+  });
+
   it('avoids the previous session while there are enough other combos', () => {
     const previous = new Set(pool.slice(0, 10).map(c => c.id));
     const session = pickSession(pool, previous);
@@ -79,6 +85,12 @@ describe('mixing in favorites', () => {
     const session = pickSession(favorites, new Set(), favorites, 3);
     expect(session).toHaveLength(favorites.length);
     expect(new Set(session.map(c => c.id)).size).toBe(favorites.length);
+  });
+
+  it('keeps a 5-combo session at 5 with favorites in it', () => {
+    const session = pickSession(pool, new Set(), favorites, 3, 5);
+    expect(session).toHaveLength(5);
+    expect(session.filter(c => favIds.has(c.id))).toHaveLength(3);
   });
 
   it('changes nothing when no favorites are mixed in', () => {

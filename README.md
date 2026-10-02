@@ -12,9 +12,11 @@ streaks and stats.
   elbows, knees, clinch, mixed, deadliest).
 - **Filtered sessions** — pick any combination of difficulties and types (the screen shows
   how many combos match; a mix with none can't be generated), generate a fresh random
-  10-combo session that avoids the previous one's combos. **Mix in favorites** swaps 2–3 of
-  your saved favorites (any difficulty or type) into it — still 10 combos. The current session survives the
-  app being closed for 12 hours.
+  session (5, 10, 15 or 20 combos — a setting, default 10) that avoids the previous one's
+  combos. **Mix in favorites** swaps 2–3 of your saved favorites (any difficulty or type) into
+  it without making it longer. An opened combo collapses after 30 s, 1 min (default), 90 s or
+  2 min, or stays open until closed (a setting). The current session survives the app being
+  closed for 12 hours.
 - **Hands-free training** — say "combo 3", "combo next" or "combo favorite" while the mic
   is on (see [Voice commands](#voice-commands)).
 - **Progress** — combos you move on from are ticked off; **Finish session** shows a summary
@@ -26,14 +28,19 @@ streaks and stats.
   3× end bell, a clap before the round ends, a double beep before the rest ends, 3-2-1 beeps,
   spoken announcements and optional vibration. While it runs, the Training tab shows a clock
   (center, top or bottom band, or off — a setting) and the Timer tab label shows the live
-  time. Foreground only: the screen stays on while a timer runs. A run in progress survives
-  the app being killed and comes back at its real position (dropped if paused over 2 hours).
+  time. The screen stays on while a timer runs. With the screen locked or the app in the
+  background (Android), a foreground service keeps ringing the bells, warnings and 3-2-1 beeps
+  on time (spoken lines stay in the app) and shows the phase with a live countdown in a
+  notification. A run in progress survives the app being killed and comes back at its real
+  position (dropped if paused over 2 hours).
 - **Stats** — every finished timer run (and one stopped after at least a minute of rounds) and
   every combo session with a combo done is logged on the device. The Stats tab shows a weekly
   streak against a training-days goal (default 3; a day counts after 5 minutes), this week vs
   last week, a 12-week chart, technique mix and most drilled combos (last 30 days), the history
   (long-press to delete) and all-time totals. Training time leaves out lead-ins, pauses and
   idle gaps, and overlapping timer and combo time counts once.
+- **Settings** — session size, how long an opened combo stays open, a training-safety note
+  and the [privacy policy](docs/privacy.md) (published with GitHub Pages from `docs/`).
 - **Dark theme only.**
 
 ## Setup
@@ -60,11 +67,16 @@ app.json               Expo config + muaythai:// deep-link scheme
 data/combos.js         All 107 combos (single source of truth)
 data/timerPresets.js   Round-timer presets and defaults
 constants/theme.js     Colors (incl. timer phase colors), spacing, radius, font sizes
+constants/sounds.js    The cue sounds (in-app player and background service)
+constants/links.js     Privacy policy URL
 contexts/AppContext.js Session, Favorites, Voice, Timer, History and Prefs contexts
 hooks/                 useSession, useFavorites, useVoiceCommands, useTimerSettings,
                        useRoundTimer (run state), useTimerCues (bells, TTS, vibration),
-                       useHistory (training log), usePrefs
+                       useHistory (training log), usePrefs, useRoundBells (background bells)
+modules/round-bells/   Local Expo module: foreground service that rings a run's cues while
+                       the app isn't visible (Kotlin; iOS stub)
 utils/roundTimer.js    Pure timer engine: segments, cue timeline, wall-clock position
+utils/backgroundBells.js What's left of a run, in wall-clock time, for the service (pure, tested)
 utils/timerLabels.js   All derived timer copy (phase labels, tab label, hints)
 utils/history.js       Training-log entries: builders, validation, activity spans (pure, tested)
 utils/stats.js         Streaks, weeks, chart, technique mix, totals (pure, tested)
@@ -76,6 +88,7 @@ components/            ComboCard, FilterChips, TimerBar, MicButton, FinishCelebr
 components/timer/      TimerRing, TimerDial, TrainingClock, sheets, run/done views, icons
 screens/               TrainingScreen, TimerScreen, FavoritesScreen, StatsScreen, SettingsScreen
 scripts/               generate-sounds.js (writes assets/sounds/*.wav, no dependencies)
+docs/privacy.md        Privacy policy (GitHub Pages)
 ```
 
 ## Voice commands
@@ -87,8 +100,8 @@ lists every command from `voice/commandHelp.js`; a test checks each listed phras
 
 | Say | Does |
 | --- | --- |
-| `combo 3` | Open slot 3 of the current session for 60 seconds |
-| `combo next` / `combo back` | Open the next / previous slot (wraps; starts at slot 1) |
+| `combo 3` | Open slot 3 of the current session (1–20, up to its size) |
+| `combo next` / `combo back` (or `next combo` / `previous combo`) | Open the next / previous slot (wraps; starts at slot 1) |
 | `combo favorite` | Save the last opened combo to favorites (never removes) |
 | `combo finish` | Finish the session (same as the **Finish session** button) |
 | `set 2 minutes countdown` / `countdown 90 seconds` | One-off countdown after the lead-in; saved settings don't change |
@@ -121,8 +134,8 @@ combo in progress and shows a summary: combos done and time trained.
 
 ## Not in v1
 
-Custom combo creation, timer bells with the screen locked or the app in the background,
-custom timer sounds, combo search, on-card difficulty/type badges (removed intentionally for
+Custom combo creation, timer bells with the screen locked or the app in the background on
+iOS, custom timer sounds, combo search, on-card difficulty/type badges (removed intentionally for
 training readability), and Play Store release config. Hands-free gestures (proximity-sensor
 waves were built and cut: the Galaxy S25 Ultra's proximity sensor is virtual and never reports
 to apps). Exporting or sharing stats, heart rate and watch data, training reminders, and
