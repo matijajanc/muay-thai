@@ -3,6 +3,7 @@
 // and the plan's copy rules for states the wireframes only describe in notes.
 
 import { runLabel } from './timerLabels';
+import { formatClock } from './roundTimer';
 import { addDays, startOfDay, weekStart, entryTime } from './stats';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -101,6 +102,28 @@ export function entryMeta(entry) {
   }
   const lead = `${entry.roundsDone}/${entry.rounds} rounds`;
   return { lead, rest: entry.completed ? [minutes] : ['stopped', minutes] };
+}
+
+// Session sheet subtitle: "Today · 18:05", "Sat 10 Oct · 18:05".
+export const entryWhen = (entry, now) => `${dayLabel(entry.at, now)} · ${clockTime(entry.at)}`;
+
+// Session sheet rows: [{ label, value }].
+export function entryRows(entry) {
+  const time = { label: 'Training time', value: formatDuration(entryTime(entry)) };
+  if (entry.type === 'combos') {
+    return [{ label: 'Combos done', value: `${entry.comboIds.length} of ${entry.total}` }, time];
+  }
+  const result = { label: 'Result', value: entry.completed ? 'Finished' : 'Stopped early' };
+  if (entry.kind === 'countdown') {
+    return [{ label: 'Countdown', value: formatClock(entry.roundSec) }, time, result];
+  }
+  const rounds = entry.rounds == null ? `${entry.roundsDone}` : `${entry.roundsDone} of ${entry.rounds}`;
+  return [
+    { label: 'Rounds', value: rounds },
+    { label: 'Time in rounds', value: formatDuration(entry.workMs) },
+    time,
+    result,
+  ];
 }
 
 // Delete alert (S7): "Countdown · 2:00, yesterday at 17:58. Your stats will be

@@ -585,15 +585,14 @@ td q { font-weight: 600; quotes: "“" "”"; }
         <div class="chartcard"><svg class="bars" data-values="40,65,0,80,95,70,110,120,85,130,140,52" data-labels="Jul,,,,Aug,,,,Sep,,,Oct" data-avg="82" viewBox="0 0 262 118"></svg></div>
         <span class="pin" style="top:40px;right:4px">1</span>
 
-        <div class="lbl">Technique mix <span>combos done · last 30 days</span></div>
+        <div class="lbl">Technique mix <span>techniques in combos · last 30 days</span></div>
         <div class="mix">
-          <div class="mx">Punches<div class="bar"><div style="width:100%"></div></div><b>31%</b></div>
-          <div class="mx">Kicks<div class="bar"><div style="width:71%"></div></div><b>22%</b></div>
-          <div class="mx">Mixed<div class="bar"><div style="width:48%"></div></div><b>15%</b></div>
-          <div class="mx">Knees<div class="bar"><div style="width:35%"></div></div><b>11%</b></div>
-          <div class="mx">Elbows<div class="bar"><div style="width:29%"></div></div><b>9%</b></div>
-          <div class="mx">Clinch<div class="bar"><div style="width:23%"></div></div><b>7%</b></div>
-          <div class="mx">Deadliest<div class="bar"><div style="width:16%"></div></div><b>5%</b></div>
+          <div class="mx">Punches<div class="bar"><div style="width:100%"></div></div><b>44%</b></div>
+          <div class="mx">Kicks<div class="bar"><div style="width:75%"></div></div><b>33%</b></div>
+          <div class="mx">Elbows<div class="bar"><div style="width:30%"></div></div><b>13%</b></div>
+          <div class="mx">Knees<div class="bar"><div style="width:12%"></div></div><b>5%</b></div>
+          <div class="mx">Clinch<div class="bar"><div style="width:12%"></div></div><b>5%</b></div>
+          <div style="font-size:11px;color:var(--t2);margin-top:10px">Combo difficulty</div>
           <div class="diff"><div style="flex:30;background:var(--beg)"></div><div style="flex:52;background:var(--int)"></div><div style="flex:18;background:var(--adv)"></div></div>
           <div class="diffleg"><span style="color:var(--beg)">Beginner 30%</span><span style="color:var(--int)">Intermediate 52%</span><span style="color:var(--adv)">Advanced 18%</span></div>
           <div style="height:6px"></div>
@@ -611,7 +610,7 @@ td q { font-weight: 600; quotes: "“" "”"; }
     </div>
     <ol class="notes pins">
       <li><span class="pn">1</span>Bars show training minutes per week, oldest to newest. The current week is in accent and past weeks are faded accent. The dashed line is the 12-week average (“avg 82”). Months are labelled under the first week that starts in them. A week with no training has no bar. The chart is drawn with <code>react-native-svg</code>, with no chart library.</li>
-      <li><span class="pn">2</span>The mix counts combos marked done in the <b>last 30 days</b>, by combo type. Bars are scaled to the biggest type, in the type-chip blue, and sorted high to low. The thin bar under them is the difficulty split, in the chip colours. If fewer than 5 combos were done, the card reads “Do a few combos to see your mix.”</li>
+      <li><span class="pn">2</span>The mix counts <b>every technique inside</b> the combos marked done in the <b>last 30 days</b>: “Cross - Elbow → Knee” adds a punch, an elbow and a knee. Five families (punches, kicks, elbows, knees, clinch); footwork and feints count as nothing. Bars are scaled to the biggest, in the type-chip blue, and sorted high to low. Under them, “Combo difficulty” splits the combos (not techniques) in the chip colours. (Changed 2026-10-12; was one bar per combo type.) If fewer than 5 combos were done, the card reads “Do a few combos to see your mix.”</li>
     </ol>
   </div>
 
@@ -655,7 +654,7 @@ td q { font-weight: 600; quotes: "“" "”"; }
       <li><span class="pn">2</span><b>History</b> is newest first, grouped by day: “Today”, “Yesterday”, then “Mon 28 Sep”. Each row has the timer icon in the work colour or the barbell icon in accent, a title, a meta line and the start time.
         <br>Timer titles are the run label. Meta reads “5/5 rounds”, “4/12 rounds · stopped” or “Done” for a countdown.
         <br>Combo meta reads “8/10 done”. Minutes are active time (pauses and idle gaps left out).
-        <br>Rows aren’t tappable in v1, and long-press deletes (S7).</li>
+        <br>Tap a row for the session sheet (its numbers; for a combo session also its techniques and the combos done, added 2026-10-12), and long-press deletes (S7).</li>
     </ol>
   </div>
 

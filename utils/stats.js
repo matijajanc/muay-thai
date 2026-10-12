@@ -13,8 +13,59 @@ export const RECENT_DAYS = 30; // technique mix and most drilled
 export const MIN_MIX_COMBOS = 5;
 export const TOP_DRILLED = 5;
 
-export const TYPE_ORDER = ['punches', 'kicks', 'elbows', 'knees', 'clinch', 'mixed', 'deadliest'];
 const COMBO_BY_ID = new Map(COMBOS.map(c => [c.id, c]));
+
+// ---- Techniques ----
+
+export const TECHNIQUE_ORDER = ['punches', 'kicks', 'elbows', 'knees', 'clinch'];
+
+// The words that put one part of a combo's name ("Body hook", "Clinch knee") in
+// a technique. First match wins, so a "Clinch knee" is a knee and a "Push kick"
+// a kick. Feints and kick catches aren't thrown, and footwork (step back,
+// pivot, roll) matches nothing.
+const TECHNIQUE_WORDS = [
+  [null, /\b(fake|catch)\b/],
+  ['knees', /\bknee/],
+  ['elbows', /\belbow/],
+  ['kicks', /\b(kick|teep)/],
+  ['punches', /\b(jab|cross|hook|uppercut|overhand)\b/],
+  ['clinch', /\b(clinch|push|pull|throw|dump|sweep|trip|hip bump|arm drag)\b/],
+];
+
+// "Teep → Clinch → Knee - Knee" → ["Teep", "Clinch", "Knee", "Knee"]
+export const nameParts = (name) => name.split(/\s+-\s+|\s*→\s*/).filter(Boolean);
+
+// One part's technique, or null.
+export function partTechnique(part) {
+  const p = part.toLowerCase();
+  const hit = TECHNIQUE_WORDS.find(([, re]) => re.test(p));
+  return hit ? hit[0] : null;
+}
+
+// Every technique in a combo, in order: "Double jab → Low kick" → punches ×2, kicks.
+function techniquesOf(combo) {
+  const out = [];
+  for (const part of nameParts(combo.name)) {
+    const technique = partTechnique(part);
+    if (!technique) continue;
+    out.push(technique);
+    if (/^double\s/i.test(part)) out.push(technique);
+  }
+  return out;
+}
+const TECHNIQUES_BY_ID = new Map(COMBOS.map(c => [c.id, techniquesOf(c)]));
+
+export const comboTechniques = (id) => TECHNIQUES_BY_ID.get(id) ?? [];
+
+// Techniques in these combos: [{ technique, count }] in TECHNIQUE_ORDER, zeros
+// included.
+export function countTechniques(comboIds) {
+  const counts = new Map(TECHNIQUE_ORDER.map(t => [t, 0]));
+  for (const id of comboIds) {
+    for (const t of comboTechniques(id)) counts.set(t, counts.get(t) + 1);
+  }
+  return TECHNIQUE_ORDER.map(technique => ({ technique, count: counts.get(technique) }));
+}
 
 // ---- Local calendar ----
 
@@ -191,25 +242,38 @@ const recentComboIds = (entries, now) => {
   return done;
 };
 
-// → { total, types: [{ type, count, pct }] high to low (all seven types),
-//     diffs: [{ diff, count, pct }] beg, int, adv }
+// Every technique inside the combos done counts, so a "Cross - Elbow → Knee"
+// adds a punch, an elbow and a knee. Difficulty counts whole combos.
+// → { total: combos done,
+//     techniques: [{ technique, count, pct }] high to low (all five, pct of
+//       all techniques),
+//     diffs: [{ diff, count, pct }] beg, int, adv (pct of combos) }
 export function techniqueMix(entries, now) {
-  const done = recentComboIds(entries, now);
-  const byType = new Map(TYPE_ORDER.map(t => [t, 0]));
+  const ids = recentComboIds(entries, now).map(d => d.id);
   const byDiff = new Map([['beg', 0], ['int', 0], ['adv', 0]]);
-  for (const { id } of done) {
-    const combo = COMBO_BY_ID.get(id);
-    byType.set(combo.type, (byType.get(combo.type) ?? 0) + 1);
-    byDiff.set(combo.diff, (byDiff.get(combo.diff) ?? 0) + 1);
+  for (const id of ids) {
+    const { diff } = COMBO_BY_ID.get(id);
+    byDiff.set(diff, (byDiff.get(diff) ?? 0) + 1);
   }
-  const total = done.length;
-  const pct = (n) => (total ? Math.round((n / total) * 100) : 0);
-  const types = TYPE_ORDER
-    .map((type, i) => ({ type, count: byType.get(type), pct: pct(byType.get(type)), i }))
+  const counts = countTechniques(ids);
+  const thrown = counts.reduce((n, t) => n + t.count, 0);
+  const pct = (n, of) => (of ? Math.round((n / of) * 100) : 0);
+  const techniques = counts
+    .map((t, i) => ({ ...t, pct: pct(t.count, thrown), i }))
     .sort((a, b) => b.count - a.count || a.i - b.i)
     .map(({ i, ...t }) => t);
-  const diffs = [...byDiff].map(([diff, count]) => ({ diff, count, pct: pct(count) }));
-  return { total, types, diffs };
+  const total = ids.length;
+  const diffs = [...byDiff].map(([diff, count]) => ({ diff, count, pct: pct(count, total) }));
+  return { total, techniques, diffs };
+}
+
+// A logged combo session: its combos still in the list, in the order done, and
+// the techniques in them that were thrown at least once.
+export function sessionCombos(entry) {
+  return {
+    combos: entry.comboIds.map(id => COMBO_BY_ID.get(id)).filter(Boolean),
+    techniques: countTechniques(entry.comboIds).filter(t => t.count > 0),
+  };
 }
 
 // Top combos by times done: [{ combo, count }], ties to the most recent.

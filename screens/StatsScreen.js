@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { View, Text, Pressable, ScrollView, Alert, StyleSheet } from 'react-native';
+import { View, Text, Pressable, ScrollView, Alert, StyleSheet, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import Svg, { G, Line, Rect, Text as SvgText } from 'react-native-svg';
@@ -10,18 +10,18 @@ import { Chip, Btn } from '../components/timer/TimerUI';
 import { Sheet } from '../components/timer/TimerSheets';
 import {
   weekStreak, weekCompare, weeklyMinutes, techniqueMix, mostDrilled, allTime, startOfDay,
-  MIN_MIX_COMBOS,
+  sessionCombos, MIN_MIX_COMBOS,
 } from '../utils/stats';
 import {
   DAY_LETTERS, weekRange, formatDuration, streakLine, goalChip, goalHint, timeDelta, countDelta,
-  dayLabel, clockTime, entryTitle, entryMeta, deleteMessage, monthLabel, longDate,
+  dayLabel, clockTime, entryTitle, entryMeta, entryWhen, entryRows, deleteMessage, monthLabel,
+  longDate,
 } from '../utils/statsLabels';
 
 const PAGE = 30; // history rows per "Show older"
 const GOALS = [1, 2, 3, 4, 5, 6, 7];
-const TYPE_LABELS = {
+const TECHNIQUE_LABELS = {
   punches: 'Punches', kicks: 'Kicks', elbows: 'Elbows', knees: 'Knees', clinch: 'Clinch',
-  mixed: 'Mixed', deadliest: 'Deadliest',
 };
 const DIFFS = {
   beg: { label: 'Beginner', color: colors.begText },
@@ -160,7 +160,22 @@ function WeekChart({ bars }) {
   );
 }
 
-// .mix: combo types (scaled to the biggest) and the difficulty split.
+// .mx rows, scaled to the biggest: [{ technique, count }] with a pct, or the
+// count when there's no pct.
+function TechniqueBars({ rows }) {
+  const top = Math.max(1, ...rows.map(t => t.count));
+  return rows.map(t => (
+    <View key={t.technique} style={styles.mx}>
+      <Text style={styles.mxLabel}>{TECHNIQUE_LABELS[t.technique]}</Text>
+      <View style={styles.mxBar}>
+        <View style={[styles.mxFill, { width: `${(t.count / top) * 100}%` }]} />
+      </View>
+      <Text style={styles.mxPct}>{t.pct != null ? `${t.pct}%` : t.count}</Text>
+    </View>
+  ));
+}
+
+// .mix: every technique inside the combos done, and the combos' difficulty split.
 function MixCard({ mix }) {
   if (mix.total < MIN_MIX_COMBOS) {
     return (
@@ -169,18 +184,10 @@ function MixCard({ mix }) {
       </View>
     );
   }
-  const top = Math.max(1, mix.types[0].count);
   return (
     <View style={styles.mix}>
-      {mix.types.map(t => (
-        <View key={t.type} style={styles.mx}>
-          <Text style={styles.mxLabel}>{TYPE_LABELS[t.type]}</Text>
-          <View style={styles.mxBar}>
-            <View style={[styles.mxFill, { width: `${(t.count / top) * 100}%` }]} />
-          </View>
-          <Text style={styles.mxPct}>{`${t.pct}%`}</Text>
-        </View>
-      ))}
+      <TechniqueBars rows={mix.techniques} />
+      <Text style={styles.diffTitle}>Combo difficulty</Text>
       <View style={styles.diff}>
         {mix.diffs.map(d => (d.count > 0 ? (
           <View key={d.diff} style={{ flex: d.count, backgroundColor: DIFFS[d.diff].color }} />
@@ -198,14 +205,19 @@ function MixCard({ mix }) {
   );
 }
 
-// .hrow
-function HistoryRow({ entry, held, last, onLongPress }) {
+// .hrow: tap for the session sheet, long-press to delete.
+function HistoryRow({ entry, held, last, onPress, onLongPress }) {
   const timer = entry.type === 'timer';
   const meta = entryMeta(entry);
   return (
     <Pressable
+      onPress={onPress}
       onLongPress={onLongPress}
-      style={[styles.hrow, last && styles.rowLast, held && styles.hrowHeld]}
+      style={({ pressed }) => [
+        styles.hrow,
+        last && styles.rowLast,
+        (held || pressed) && styles.hrowHeld,
+      ]}
     >
       <View style={styles.hi}>
         <TimerIcon
@@ -222,7 +234,46 @@ function HistoryRow({ entry, held, last, onLongPress }) {
         </Text>
       </View>
       <Text style={styles.htTime}>{clockTime(entry.at)}</Text>
+      <TimerIcon name="chev" size={12} color={colors.textMuted} />
     </Pressable>
+  );
+}
+
+// A history entry's details: its numbers, and for a combo session the
+// techniques thrown and the combos done.
+function SessionSheet({ visible, entry, now, onClose }) {
+  const { height } = useWindowDimensions();
+  if (!entry) return null;
+  const combos = entry.type === 'combos' ? sessionCombos(entry) : null;
+  return (
+    <Sheet visible={visible} onClose={onClose} title={entryTitle(entry)} meta={entryWhen(entry, now)}>
+      <ScrollView style={{ maxHeight: height * 0.62 }} showsVerticalScrollIndicator={false}>
+        <View style={styles.sheetRows}>
+          {entryRows(entry).map((row, i, rows) => (
+            <TotalRow key={row.label} label={row.label} value={row.value} last={i === rows.length - 1} />
+          ))}
+        </View>
+        {combos && combos.techniques.length > 0 && (
+          <>
+            <Label note="in the combos done">Techniques</Label>
+            <TechniqueBars rows={combos.techniques} />
+          </>
+        )}
+        {combos && combos.combos.length > 0 && (
+          <>
+            <Label>Combos done</Label>
+            {combos.combos.map((combo, i) => (
+              <View key={`${combo.id}-${i}`} style={[styles.sc, i === combos.combos.length - 1 && styles.rowLast]}>
+                <Text style={styles.rankN}>{i + 1}</Text>
+                <Text style={styles.scName}>{combo.name}</Text>
+                <Text style={[styles.scDiff, { color: DIFFS[combo.diff].color }]}>{DIFFS[combo.diff].label}</Text>
+              </View>
+            ))}
+          </>
+        )}
+      </ScrollView>
+      <Btn label="Close" onPress={onClose} style={styles.sheetBtn} />
+    </Sheet>
   );
 }
 
@@ -249,6 +300,9 @@ export default function StatsScreen() {
   const [goalOpen, setGoalOpen] = useState(false);
   const [shown, setShown] = useState(PAGE);
   const [heldId, setHeldId] = useState(null);
+  // The open session sheet's entry stays set while the sheet slides away.
+  const [detail, setDetail] = useState(null);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   // The week and "today" move on while the app stays open.
   useFocusEffect(useCallback(() => setNow(Date.now()), []));
@@ -340,7 +394,7 @@ export default function StatsScreen() {
             <Label note="minutes per week">Last 12 weeks</Label>
             <WeekChart bars={bars} />
 
-            <Label note="combos done · last 30 days">Technique mix</Label>
+            <Label note="techniques in combos · last 30 days">Technique mix</Label>
             <MixCard mix={mix} />
 
             {drilled.length > 0 && (
@@ -369,6 +423,10 @@ export default function StatsScreen() {
                       entry={entry}
                       held={heldId === entry.id}
                       last={!hasOlder && g === groups.length - 1 && i === group.rows.length - 1}
+                      onPress={() => {
+                        setDetail(entry);
+                        setDetailOpen(true);
+                      }}
                       onLongPress={() => confirmDelete(entry)}
                     />
                   ))}
@@ -394,6 +452,12 @@ export default function StatsScreen() {
         )}
       </ScrollView>
 
+      <SessionSheet
+        visible={detailOpen}
+        entry={detail}
+        now={now}
+        onClose={() => setDetailOpen(false)}
+      />
       <GoalSheet
         visible={goalOpen}
         goal={goal}
@@ -557,7 +621,8 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontVariant: ['tabular-nums'],
   },
-  diff: { flexDirection: 'row', height: 8, borderRadius: 4, overflow: 'hidden', gap: 2, marginTop: 10 },
+  diffTitle: { fontSize: 11, color: colors.textSecondary, marginTop: 10 },
+  diff: { flexDirection: 'row', height: 8, borderRadius: 4, overflow: 'hidden', gap: 2, marginTop: 6 },
   diffLeg: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 5 },
   diffLegText: { fontSize: 10 },
 
@@ -614,6 +679,21 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 2,
   },
+
+  // Session sheet
+  sheetRows: { marginTop: 8 },
+  sc: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    minHeight: 34,
+    paddingVertical: 6,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.border,
+  },
+  scName: { flex: 1, fontSize: 12, color: colors.textPrimary },
+  scDiff: { fontSize: 10.5 },
+  sheetBtn: { marginTop: 14 },
 
   // All time
   r: {

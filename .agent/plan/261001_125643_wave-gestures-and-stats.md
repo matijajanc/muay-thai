@@ -281,6 +281,13 @@ None. Ready to build from task 2.
   pages 30 entries at a time.
 - 2026-10-02 (user): Wave gestures cut ("remove this gestures part"). A light-sensor fallback
   was offered and declined.
+- 2026-10-12 (user): Technique mix counts every technique inside the combos done (a knee in an
+  "elbows" combo counts as a knee), not one bar per combo type. Five families: punches, kicks,
+  elbows, knees, clinch; Mixed and Deadliest are gone from the mix. Difficulty still splits
+  combos, now under a "Combo difficulty" label.
+- 2026-10-12 (user): Tapping a history row opens a session sheet: date and time, the entry's
+  numbers, and for a combo session its techniques and the combos done. Long-press still
+  deletes.
 
 ## Execution status
 
@@ -328,4 +335,13 @@ None. Ready to build from task 2.
   "<1 min"; day headers add the year when it isn't this year's; "1 day" singular in the streak
   line and goal hint. The 12-week chart labels the oldest week plus the first week starting
   in each month (the note's rule; the sample labels in S1 differ). Technique mix shows all
-  seven types, zeros included.
+  five techniques, zeros included.
+- Techniques come from the combo names (`utils/stats.js` TECHNIQUE_WORDS): each part between
+  " - " and "→" is one technique, first match wins ("Clinch knee" is a knee, "Push kick" a
+  kick), "Double jab" counts twice. Feints and kick catches ("Fake high kick", "Catch
+  counter") and footwork (step back/out/behind, pivot, roll) count as nothing; a test fails if
+  a new combo name has any other uncounted part.
+- Session sheet (2026-10-12), no wireframe: title = the history row title, meta = "Sat 10 Oct
+  · 18:02"; rows Combos done / Training time, or Rounds / Time in rounds / Training time /
+  Result ("Finished" / "Stopped early"); countdowns show Countdown / Training time / Result.
+  Combos no longer in the list are left out. History rows gained a chevron.

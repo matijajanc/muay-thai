@@ -36,8 +36,9 @@ streaks and stats.
 - **Stats** — every finished timer run (and one stopped after at least a minute of rounds) and
   every combo session with a combo done is logged on the device. The Stats tab shows a weekly
   streak against a training-days goal (default 3; a day counts after 5 minutes), this week vs
-  last week, a 12-week chart, technique mix and most drilled combos (last 30 days), the history
-  (long-press to delete) and all-time totals. Training time leaves out lead-ins, pauses and
+  last week, a 12-week chart, technique mix (every technique inside the combos done) and most
+  drilled combos (last 30 days), the history (tap a row for the session's details and the
+  combos done, long-press to delete) and all-time totals. Training time leaves out lead-ins, pauses and
   idle gaps, and overlapping timer and combo time counts once.
 - **Settings** — session size, how long an opened combo stays open, a training-safety note
   and the [privacy policy](docs/privacy.md) (published with GitHub Pages from `docs/`).

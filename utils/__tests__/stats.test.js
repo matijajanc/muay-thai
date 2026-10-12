@@ -4,12 +4,14 @@ process.env.TZ = 'Europe/Ljubljana';
 /* eslint-disable import/first */
 import {
   unionSpans, dayTotals, weekStreak, weekCompare, weeklyMinutes, techniqueMix, mostDrilled,
-  allTime, weekStart, addDays, dayKey, entryTime,
+  allTime, weekStart, addDays, dayKey, entryTime, nameParts, partTechnique, comboTechniques,
+  countTechniques, sessionCombos,
 } from '../stats';
 import {
   formatDuration, streakLine, goalHint, timeDelta, countDelta, dayLabel, clockTime, entryTitle,
-  entryMeta, deleteMessage, weekRange, longDate,
+  entryMeta, entryWhen, entryRows, deleteMessage, weekRange, longDate,
 } from '../statsLabels';
+import { COMBOS } from '../../data/combos';
 
 const MIN = 60 * 1000;
 // Local wall-clock time.
@@ -175,21 +177,105 @@ describe('weeklyMinutes', () => {
   });
 });
 
+// A real 10-combo session, all intermediate: 17 punches, 13 kicks, 5 elbows,
+// 2 knees, 2 clinch (the pushes); "Step back" counts as nothing.
+const SESSION = [27, 30, 28, 43, 38, 47, 46, 40, 45, 41];
+
+describe('techniques', () => {
+  const name = (id) => COMBOS.find(c => c.id === id).name;
+
+  it('splits a name on " - " and "→"', () => {
+    expect(nameParts('Cross - Hook - Elbow → Knee → Push out')).toEqual([
+      'Cross', 'Hook', 'Elbow', 'Knee', 'Push out',
+    ]);
+  });
+
+  it('counts every technique inside a combo, in order', () => {
+    expect(name(43)).toBe('Cross - Hook - Elbow → Knee → Push out');
+    expect(comboTechniques(43)).toEqual(['punches', 'punches', 'elbows', 'knees', 'clinch']);
+    expect(name(45)).toBe('Cross - Elbow → Step back → Rear kick');
+    expect(comboTechniques(45)).toEqual(['punches', 'elbows', 'kicks']);
+  });
+
+  it('puts mixed words in the technique thrown', () => {
+    expect(partTechnique('Clinch knee')).toBe('knees');
+    expect(partTechnique('Spinning back elbow')).toBe('elbows');
+    expect(partTechnique('Push kick')).toBe('kicks');
+    expect(partTechnique('Body hook')).toBe('punches');
+    expect(partTechnique('Clinch sweep')).toBe('clinch');
+    expect(partTechnique('Fake high kick')).toBeNull();
+    expect(partTechnique('Pivot')).toBeNull();
+  });
+
+  it('counts a double jab twice', () => {
+    const id = COMBOS.find(c => c.name === 'Double jab → Low kick → Cross').id;
+    expect(comboTechniques(id)).toEqual(['punches', 'punches', 'kicks', 'punches']);
+  });
+
+  it('leaves only footwork and feints uncounted in the combo list', () => {
+    const uncounted = new Set();
+    for (const c of COMBOS) {
+      for (const part of nameParts(c.name)) if (!partTechnique(part)) uncounted.add(part.toLowerCase());
+    }
+    expect([...uncounted].sort()).toEqual([
+      'catch counter', 'fake high kick', 'pivot', 'roll', 'step back', 'step behind', 'step out',
+    ]);
+    for (const c of COMBOS) expect(comboTechniques(c.id).length).toBeGreaterThan(0);
+  });
+
+  it('totals techniques per family, zeros included', () => {
+    expect(countTechniques(SESSION)).toEqual([
+      { technique: 'punches', count: 17 }, { technique: 'kicks', count: 13 },
+      { technique: 'elbows', count: 5 }, { technique: 'knees', count: 2 },
+      { technique: 'clinch', count: 2 },
+    ]);
+    expect(countTechniques([9999])).toEqual([
+      { technique: 'punches', count: 0 }, { technique: 'kicks', count: 0 },
+      { technique: 'elbows', count: 0 }, { technique: 'knees', count: 0 },
+      { technique: 'clinch', count: 0 },
+    ]);
+  });
+});
+
 describe('techniqueMix', () => {
-  it('counts combos done in the last 30 days by type and difficulty', () => {
+  it('counts every technique in the combos done in the last 30 days', () => {
     const entries = [
-      combos(at(2026, 9, 30), 20, [1, 2, 3, 11]), // 3 punches beg, 1 kicks beg
-      combos(at(2026, 9, 20), 20, [43, 97]), // elbows int, deadliest adv
+      combos(at(2026, 9, 30), 20, SESSION),
       combos(at(2026, 8, 20), 20, [12, 13, 14]), // 42 days ago: left out
     ];
     const mix = techniqueMix(entries, NOW);
-    expect(mix.total).toBe(6);
-    expect(mix.types.map(t => [t.type, t.count, t.pct])).toEqual([
-      ['punches', 3, 50], ['kicks', 1, 17], ['elbows', 1, 17], ['deadliest', 1, 17],
-      ['knees', 0, 0], ['clinch', 0, 0], ['mixed', 0, 0],
+    expect(mix.total).toBe(10);
+    expect(mix.techniques.map(t => [t.technique, t.count, t.pct])).toEqual([
+      ['punches', 17, 44], ['kicks', 13, 33], ['elbows', 5, 13], ['knees', 2, 5], ['clinch', 2, 5],
     ]);
     expect(mix.diffs).toEqual([
-      { diff: 'beg', count: 4, pct: 67 }, { diff: 'int', count: 1, pct: 17 }, { diff: 'adv', count: 1, pct: 17 },
+      { diff: 'beg', count: 0, pct: 0 }, { diff: 'int', count: 10, pct: 100 }, { diff: 'adv', count: 0, pct: 0 },
+    ]);
+  });
+
+  it('splits difficulty by combos, and ties keep the technique order', () => {
+    // 1 "Jab - Cross - Hook" is beginner, 43 intermediate.
+    const mix = techniqueMix([combos(at(2026, 9, 30), 20, [1, 43])], NOW);
+    expect(mix.techniques.map(t => [t.technique, t.count])).toEqual([
+      ['punches', 5], ['elbows', 1], ['knees', 1], ['clinch', 1], ['kicks', 0],
+    ]);
+    expect(mix.diffs.map(d => [d.diff, d.pct])).toEqual([['beg', 50], ['int', 50], ['adv', 0]]);
+  });
+
+  it('is all zeros with nothing done', () => {
+    const mix = techniqueMix([], NOW);
+    expect(mix.total).toBe(0);
+    expect(mix.techniques.every(t => t.count === 0 && t.pct === 0)).toBe(true);
+  });
+});
+
+describe('sessionCombos', () => {
+  it('lists the combos done in order with the techniques thrown', () => {
+    const { combos: done, techniques } = sessionCombos(combos(NOW, 5, [43, 9999, 1]));
+    expect(done.map(c => c.id)).toEqual([43, 1]); // 9999 isn't in the list any more
+    expect(techniques).toEqual([
+      { technique: 'punches', count: 5 }, { technique: 'elbows', count: 1 },
+      { technique: 'knees', count: 1 }, { technique: 'clinch', count: 1 },
     ]);
   });
 });
@@ -284,6 +370,27 @@ describe('labels', () => {
     ]);
     expect(entryMeta(timer(at(2026, 9, 28), 0.5, { kind: 'countdown' })).rest).toEqual(['<1 min']);
     expect(entryTime(session)).toBe(24 * MIN);
+  });
+
+  it('writes the session sheet', () => {
+    const session = combos(at(2026, 9, 30, 18, 2), 48, SESSION);
+    expect(entryWhen(session, NOW)).toBe('Yesterday · 18:02');
+    expect(entryWhen(combos(at(2026, 9, 28, 7, 5), 5), NOW)).toBe('Mon 28 Sep · 07:05');
+    expect(entryRows(session)).toEqual([
+      { label: 'Combos done', value: '10 of 10' }, { label: 'Training time', value: '48 m' },
+    ]);
+    expect(entryRows(timer(at(2026, 9, 30), 23))).toEqual([
+      { label: 'Rounds', value: '5 of 5' }, { label: 'Time in rounds', value: '15 m' },
+      { label: 'Training time', value: '23 m' }, { label: 'Result', value: 'Finished' },
+    ]);
+    const endless = timer(at(2026, 9, 30), 30, { rounds: null, roundsDone: 7, completed: false });
+    expect(entryRows(endless)[0]).toEqual({ label: 'Rounds', value: '7' });
+    expect(entryRows(endless)[3]).toEqual({ label: 'Result', value: 'Stopped early' });
+    const countdown = timer(at(2026, 9, 30), 2, { kind: 'countdown', roundSec: 120, rounds: 1 });
+    expect(entryRows(countdown)).toEqual([
+      { label: 'Countdown', value: '2:00' }, { label: 'Training time', value: '2 m' },
+      { label: 'Result', value: 'Finished' },
+    ]);
   });
 
   it('writes the delete alert', () => {
