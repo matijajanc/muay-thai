@@ -45,7 +45,8 @@ const START_OPTIONS = {
     'combo next', 'combo back', 'combo previous', 'combo favorite', 'combo finish',
     'next combo', 'previous combo',
     'timer start', 'timer pause', 'timer resume', 'timer skip', 'timer stop', 'timer reset',
-    'countdown', 'minutes countdown', 'seconds countdown', 'rounds of', 'set rest', 'set rounds',
+    'countdown', 'minutes countdown', 'seconds countdown', 'minute timer', 'minutes counter',
+    'rounds of', 'set rest', 'set rounds',
     'set round', 'set delay', 'preset',
   ],
   // iOS: the library's default session (measurement mode, no mixing) would pause

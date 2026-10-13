@@ -142,6 +142,47 @@ describe('timer grammar', () => {
     expect(parse(transcript)).toEqual([expected]);
   });
 
+  // No new commands: everyday ways to say the existing ones (2026-10-13).
+  it.each([
+    ['set the 2 minutes counter', { type: 'countdown', sec: 120 }],
+    ['set the 2 minutes timer', { type: 'countdown', sec: 120 }],
+    ['set a two minute counter', { type: 'countdown', sec: 120 }],
+    ['set 2 minutes count', { type: 'countdown', sec: 120 }],
+    ['set a counter for 90 seconds', { type: 'countdown', sec: 90 }],
+    ['countdown timer 2 minutes', { type: 'countdown', sec: 120 }],
+    ['set the countdown timer to 2 minutes', { type: 'countdown', sec: 120 }],
+    ['start a 2 minute timer', { type: 'countdown', sec: 120 }],
+    ['start the 2 minute countdown', { type: 'countdown', sec: 120 }],
+    ['start a timer for 2 minutes', { type: 'countdown', sec: 120 }],
+    ['set up a 2 minute timer', { type: 'countdown', sec: 120 }],
+    ['set my timer to 2 minutes', { type: 'countdown', sec: 120 }],
+    ['set the rest time to 30 seconds', { type: 'set', field: 'restSec', value: 30 }],
+    ['set the rest period to 30 seconds', { type: 'set', field: 'restSec', value: 30 }],
+    ['set the round length to 2 minutes', { type: 'set', field: 'roundSec', value: 120 }],
+    ['set round duration 3 minutes', { type: 'set', field: 'roundSec', value: 180 }],
+    ['set delay time 5 seconds', { type: 'set', field: 'delaySec', value: 5 }],
+    ['set the delay to off', { type: 'set', field: 'delaySec', value: 0 }],
+    ['set the number of rounds to 6', { type: 'set', field: 'rounds', value: 6 }],
+    ['set rounds to infinite', { type: 'set', field: 'rounds', value: null }],
+    ['load preset boxing', { type: 'preset', query: 'boxing' }],
+    ['use the preset muay thai', { type: 'preset', query: 'muay thai' }],
+    ['start the timer', { type: 'start' }],
+    ['start a timer', { type: 'start' }],
+    ['pause the timer', { type: 'pause' }],
+    ['resume the timer', { type: 'resume' }],
+    ['skip the timer', { type: 'skip' }],
+    ['stop my timer', { type: 'stop' }],
+  ])('accepts the variant %j', (transcript, expected) => {
+    expect(parse(transcript)).toEqual([expected]);
+  });
+
+  it.each([
+    'so the timer is 3 minutes', 'the counter is 2 minutes', 'counter kick 2 minutes',
+    'the 2 minute timer', 'a 2 minute timer',
+  ])('still ignores %j', (transcript) => {
+    expect(parse(transcript)).toEqual([]);
+  });
+
   it('accepts a set command right after a control', () => {
     expect(parse('timer stop set rest 30 seconds')).toEqual([
       { type: 'stop' },

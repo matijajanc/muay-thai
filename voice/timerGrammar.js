@@ -2,6 +2,7 @@
 //
 //   "set 2 minutes countdown" / "countdown 90 seconds" / "set a 2 minute 30 timer"
 //       → { type: 'countdown', sec }                          (final result only)
+//       ("counter" / "count" work like "countdown": "set the 2 minutes counter")
 //   "set 5 rounds of 3 minutes"  → { type: 'workout', rounds, roundSec }   (final)
 //   "set rest 30 seconds" / "set rounds 6" / "set round 2 minutes" / "set delay 5 seconds"
 //       → { type: 'set', field, value }                                    (final)
@@ -15,6 +16,11 @@
 // must open the utterance (or follow another command), so "I need a rest for two
 // minutes" or "I did 5 rounds yesterday" change nothing. None of the timer's
 // spoken lines ("Round 2", "Rest", "Ten seconds", …) parse as a command.
+//
+// No extra commands, just more ways to say these: "the" / "a" / "my" after
+// "set" or "start" ("start the timer", "set the rest time to 30 seconds",
+// "start a 2 minute timer"), "time" / "length" / "period" / "duration" after
+// the field, "number of rounds", and "load" / "use" before a preset.
 
 import {
   words, parseNumber, parseDuration, isMinuteWord, isSecondWord, AMBIGUOUS_NUMBER_WORDS,
@@ -22,7 +28,7 @@ import {
 
 // Not "time": "next time", "go time" or "in two minutes time" are everyday speech.
 const TIMER_WORDS = new Set(['timer', 'timers', 'tymer', 'timor', 'timar']);
-const COUNTDOWN_WORDS = new Set(['countdown', 'countdowns']);
+const COUNTDOWN_WORDS = new Set(['countdown', 'countdowns', 'counter', 'counters', 'count']);
 const CONTROL_WORDS = {
   start: 'start', started: 'start', starts: 'start',
   pause: 'pause', paused: 'pause', paws: 'pause', pose: 'pause', pours: 'pause',
@@ -34,6 +40,8 @@ const REST_WORDS = new Set(['rest', 'rests', 'wrest']);
 const ROUND_WORDS = new Set(['round']);
 const ROUNDS_WORDS = new Set(['rounds']);
 const DELAY_WORDS = new Set(['delay', 'delays']);
+// "rest time 30 seconds", "round length 2 minutes": skipped after the field word.
+const FIELD_NOUNS = new Set(['time', 'length', 'period', 'duration']);
 const PRESET_WORDS = new Set(['preset', 'presets']);
 const INFINITE_WORDS = new Set(['infinite', 'infinity', 'unlimited', 'endless', 'forever']);
 const OFF_WORDS = new Set(['off', 'none', 'zero']);
@@ -44,22 +52,36 @@ const FILLERS = new Set([...SET_WORDS, 'the', 'of', 'is', 'at', 'an']);
 // Commands that wait for the final result, so "2 minutes… 30 seconds" can finish.
 const FINAL_ONLY = new Set(['countdown', 'workout', 'set', 'preset']);
 
-// What may come before a set/duration command: "set" (then "a"/"an"/"the"),
-// a short lead-in, the glue between two commands, and "start" ("start delay …").
+// What may come before a set/duration command: "set", a short lead-in, the
+// glue between two commands, "start" ("start delay …", "start a 2 minute
+// timer") and "load" / "use" ("load preset boxing").
 const LEAD_WORDS = new Set([
   ...SET_WORDS, 'ok', 'okay', 'hey', 'um', 'uh', 'so', 'now', 'and', 'then', 'also', 'please', 'start',
+  'load', 'use',
 ]);
-const ARTICLES = new Set(['a', 'an', 'the']);
+// "set the …", "start a …", "set up a …", "set my …"; only right after these
+// words, so a sentence like "the timer is 3 minutes" stays conversation.
+const ARTICLES = new Set(['a', 'an', 'the', 'my']);
+const ARTICLE_LEADS = new Set([...SET_WORDS, 'start', 'load', 'use', 'up']);
 
-// Join two-word spellings: "count down" → countdown, "pre set" → preset.
+// Join multi-word spellings: "count down" → countdown, "pre set" → preset,
+// "countdown timer" → countdown, "number of rounds" → rounds.
 function tokens(transcript) {
   const ws = words(transcript);
   const out = [];
   for (let i = 0; i < ws.length; i++) {
+    const pos = i;
     if (ws[i] === 'count' && ws[i + 1] === 'down') {
+      i += 1;
+      if (TIMER_WORDS.has(ws[i + 1])) i += 1;
+      out.push({ w: 'countdown', pos });
+    } else if (COUNTDOWN_WORDS.has(ws[i]) && TIMER_WORDS.has(ws[i + 1])) {
       out.push({ w: 'countdown', pos: i++ });
     } else if (ws[i] === 'pre' && ws[i + 1] === 'set') {
       out.push({ w: 'preset', pos: i++ });
+    } else if (ws[i] === 'number' && ws[i + 1] === 'of' && ROUNDS_WORDS.has(ws[i + 2])) {
+      out.push({ w: 'rounds', pos });
+      i += 2;
     } else {
       out.push({ w: ws[i], pos: i });
     }
@@ -74,17 +96,20 @@ export function parseTimerCommands(transcript) {
 
   const startsNumber = (i) => parseNumber(ws, i) != null || (ws[i] === 'a' && isMinuteWord(ws[i + 1]));
   // Skip glue words; an everyday number word ("to", "for") is glue when a
-  // number follows it ("rest to 30 seconds").
+  // number or a word value follows it ("rest to 30 seconds", "rounds to infinite").
+  const startsValue = (i) => startsNumber(i) || INFINITE_WORDS.has(ws[i]) || OFF_WORDS.has(ws[i]);
   const skip = (i) => {
     while (i < n) {
       const w = ws[i];
       if (FILLERS.has(w)) i++;
       else if (w === 'a' && parseNumber(ws, i + 1)) i++;
-      else if (AMBIGUOUS_NUMBER_WORDS.has(w) && startsNumber(i + 1)) i++;
+      else if (AMBIGUOUS_NUMBER_WORDS.has(w) && startsValue(i + 1)) i++;
       else break;
     }
     return i;
   };
+  // Past the field word and an optional "time" / "length" / … after it.
+  const afterField = (i) => (FIELD_NOUNS.has(ws[i + 1]) ? i + 2 : i + 1);
   const durationAt = (i) => parseDuration(ws, skip(i));
   // A count without a unit ("rounds 6", not "round 2 minutes").
   const countAt = (i) => {
@@ -98,9 +123,13 @@ export function parseTimerCommands(transcript) {
     const w = ws[i];
     const next = ws[i + 1];
 
-    // "timer pause" / "pause timer"
+    // "timer pause" / "pause timer" / "pause the timer", but "start a timer for
+    // 2 minutes" is a countdown (matched at "timer").
     if (TIMER_WORDS.has(w) && CONTROL_WORDS[next]) return { cmd: { type: CONTROL_WORDS[next] }, end: i + 2 };
-    if (CONTROL_WORDS[w] && TIMER_WORDS.has(next)) return { cmd: { type: CONTROL_WORDS[w] }, end: i + 2 };
+    if (CONTROL_WORDS[w]) {
+      const t = ARTICLES.has(next) ? i + 2 : i + 1;
+      if (TIMER_WORDS.has(ws[t]) && !durationAt(t + 1)) return { cmd: { type: CONTROL_WORDS[w] }, end: t + 1 };
+    }
 
     // "preset muay thai"
     if (PRESET_WORDS.has(w)) {
@@ -114,15 +143,15 @@ export function parseTimerCommands(transcript) {
       if (d) return { cmd: { type: 'countdown', sec: d.sec }, end: d.end };
     }
 
-    // "rest 30 seconds"
+    // "rest 30 seconds" / "rest time 30 seconds"
     if (REST_WORDS.has(w)) {
-      const d = durationAt(i + 1);
+      const d = durationAt(afterField(i));
       if (d) return { cmd: { type: 'set', field: 'restSec', value: d.sec }, end: d.end };
     }
 
     // "round 2 minutes" / "round time 3 minutes" (never a bare "round 2")
     if (ROUND_WORDS.has(w)) {
-      const d = durationAt(ws[i + 1] === 'time' ? i + 2 : i + 1);
+      const d = durationAt(afterField(i));
       if (d) return { cmd: { type: 'set', field: 'roundSec', value: d.sec }, end: d.end };
     }
 
@@ -136,11 +165,12 @@ export function parseTimerCommands(transcript) {
 
     // "delay 5 seconds" / "delay 5" / "delay off"
     if (DELAY_WORDS.has(w)) {
-      const j = skip(i + 1);
+      const k = afterField(i);
+      const j = skip(k);
       if (OFF_WORDS.has(ws[j])) return { cmd: { type: 'set', field: 'delaySec', value: 0 }, end: j + 1 };
-      const d = durationAt(i + 1);
+      const d = durationAt(k);
       if (d) return { cmd: { type: 'set', field: 'delaySec', value: d.sec }, end: d.end };
-      const c = countAt(i + 1);
+      const c = countAt(k);
       if (c) return { cmd: { type: 'set', field: 'delaySec', value: c.value }, end: c.end };
     }
 
@@ -166,7 +196,12 @@ export function parseTimerCommands(transcript) {
   // Only lead words between `from` and `to`.
   const leadOnly = (from, to) => {
     for (let k = from; k < to; k++) {
-      if (!LEAD_WORDS.has(ws[k]) && !(ARTICLES.has(ws[k]) && SET_WORDS.has(ws[k - 1]))) return false;
+      const w = ws[k];
+      const prev = k > from ? ws[k - 1] : null;
+      if (LEAD_WORDS.has(w)) continue;
+      if (ARTICLES.has(w) && ARTICLE_LEADS.has(prev)) continue;
+      if (w === 'up' && SET_WORDS.has(prev)) continue; // "set up a 2 minute timer"
+      return false;
     }
     return true;
   };
