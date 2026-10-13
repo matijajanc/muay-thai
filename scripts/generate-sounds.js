@@ -123,10 +123,43 @@ function knock(seed) {
   return fade(out, 0.3, 30);
 }
 
+// Soft clipping (tanh): raises the loudness of a short sound well past what
+// peak normalizing alone allows. drive 1 is nearly clean.
+function saturate(buf, drive) {
+  for (let i = 0; i < buf.length; i++) buf[i] = Math.tanh(buf[i] * drive);
+  return buf;
+}
+
+// A loud knock for the warnings: the clapper's knock with a longer, brighter
+// ring (phone speakers are loudest around 2–3 kHz), driven into soft clipping.
+function loudKnock(seed) {
+  const rand = rng(seed);
+  const out = knock(seed);
+  for (const [f, amp, tau] of [[1250, 0.7, 0.06], [2600, 0.6, 0.04]]) {
+    const p = rand() * 2 * Math.PI;
+    for (let i = 0; i < out.length; i++) {
+      const t = i / SR;
+      out[i] += amp * Math.exp(-t / tau) * Math.sin(2 * Math.PI * f * t + p);
+    }
+  }
+  return fade(saturate(normalize(out), 6), 0.3, 30);
+}
+
 function tone(hz, seconds) {
   const out = buffer(seconds);
   for (let i = 0; i < out.length; i++) out[i] = Math.sin((2 * Math.PI * hz * i) / SR);
   return fade(out, 5, 5);
+}
+
+// A bright, loud beep for the warnings: the tone plus odd harmonics (a soft
+// square wave), driven into soft clipping.
+function loudTone(hz, seconds) {
+  const out = buffer(seconds);
+  for (let i = 0; i < out.length; i++) {
+    const w = (2 * Math.PI * hz * i) / SR;
+    out[i] = Math.sin(w) + Math.sin(3 * w) / 3 + Math.sin(5 * w) / 5;
+  }
+  return fade(saturate(normalize(out), 3), 5, 5);
 }
 
 const SOUNDS = {
@@ -138,20 +171,18 @@ const SOUNDS = {
     [0, 0.32, 0.64].forEach((at, i) => mixInto(out, bellStrike(2.4, 10 + i), at));
     return fade(out, 1, 60);
   },
-  // Round-end warning: two knocks 110 ms apart.
+  // Round-end warning: the clapper, three loud knocks 140 ms apart.
   clap: () => {
-    const out = buffer(0.33);
-    mixInto(out, knock(21), 0);
-    mixInto(out, knock(22), 0.11);
+    const out = buffer(0.28 + 0.2);
+    [0, 0.14, 0.28].forEach((at, i) => mixInto(out, loudKnock(21 + i), at));
     return fade(out, 0.3, 20);
   },
   // 3-2-1 tick.
   beep: () => tone(1000, 0.12),
-  // Rest-end warning: double beep.
+  // Rest-end warning: three loud beeps, higher than the 3-2-1 ticks.
   'rest-warn': () => {
-    const out = buffer(0.33);
-    mixInto(out, tone(1000, 0.12), 0);
-    mixInto(out, tone(1000, 0.12), 0.21);
+    const out = buffer(0.36 + 0.14);
+    [0, 0.18, 0.36].forEach(at => mixInto(out, loudTone(1500, 0.14), at));
     return out;
   },
 };
