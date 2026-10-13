@@ -90,6 +90,8 @@ components/timer/      TimerRing, TimerDial, TrainingClock, sheets, run/done vie
 screens/               TrainingScreen, TimerScreen, FavoritesScreen, StatsScreen, SettingsScreen
 scripts/               generate-sounds.js (writes assets/sounds/*.wav, no dependencies)
 docs/privacy.md        Privacy policy (GitHub Pages)
+promo/                 FB/IG promo video: index.html animation, render.mjs (Chrome → ffmpeg,
+                       no dependencies), videos/*.mp4 — see promo/README.md
 ```
 
 ## Voice commands
