@@ -5,11 +5,12 @@ process.env.TZ = 'Europe/Ljubljana';
 import {
   unionSpans, dayTotals, weekStreak, weekCompare, weeklyMinutes, techniqueMix, mostDrilled,
   allTime, weekStart, addDays, dayKey, entryTime, nameParts, partTechnique, comboTechniques,
-  countTechniques, sessionCombos,
+  countTechniques, sessionCombos, weekDays, dayStats,
 } from '../stats';
 import {
   formatDuration, streakLine, goalHint, timeDelta, countDelta, dayLabel, clockTime, entryTitle,
-  entryMeta, entryWhen, entryRows, deleteMessage, weekRange, longDate,
+  entryMeta, entryWhen, entryRows, deleteMessage, weekRange, longDate, weekSpan, weekTitle,
+  dayCellTime, dayMeta, dayRows,
 } from '../statsLabels';
 import { COMBOS } from '../../data/combos';
 
@@ -297,6 +298,60 @@ describe('mostDrilled', () => {
   });
 });
 
+describe('weekDays', () => {
+  it('marks the days trained, today and the days still ahead', () => {
+    const entries = [
+      timer(at(2026, 9, 28, 18), 30),
+      combos(at(2026, 9, 28, 20), 10),
+      combos(at(2026, 9, 30, 7), 3),
+    ];
+    const days = weekDays(entries, at(2026, 9, 28, 0), NOW);
+    expect(days.map(d => d.key)).toEqual([
+      '2026-09-28', '2026-09-29', '2026-09-30', '2026-10-01', '2026-10-02', '2026-10-03', '2026-10-04',
+    ]);
+    expect(days.map(d => d.timeMs / MIN)).toEqual([40, 0, 3, 0, 0, 0, 0]);
+    expect(days.map(d => d.sessions)).toEqual([2, 0, 1, 0, 0, 0, 0]);
+    expect(days.map(d => d.trained)).toEqual([true, false, false, false, false, false, false]);
+    expect(days.map(d => d.today)).toEqual([false, false, false, true, false, false, false]);
+    expect(days.map(d => d.future)).toEqual([false, false, false, false, true, true, true]);
+  });
+
+  it('shows a past week the same way', () => {
+    const days = weekDays(trainOn([2026, 9, 15]), at(2026, 9, 14, 0), NOW);
+    expect(days.map(d => d.trained)).toEqual([false, true, false, false, false, false, false]);
+    expect(days.some(d => d.today || d.future)).toBe(false);
+  });
+});
+
+describe('dayStats', () => {
+  it("totals the day's sessions and the techniques in its combos", () => {
+    const entries = [
+      combos(at(2026, 9, 30, 19), 20, [43, 45]),
+      timer(at(2026, 9, 30, 18), 30, { roundsDone: 4 }),
+      combos(at(2026, 9, 29, 19), 20, [1, 2]),
+    ];
+    const day = dayStats(entries, at(2026, 9, 30, 9));
+    expect(day).toMatchObject({ start: at(2026, 9, 30, 0), timeMs: 50 * MIN, sessions: 2, rounds: 4, combos: 2 });
+    expect(day.entries.map(e => e.id)).toEqual([entries[0].id, entries[1].id]);
+    expect(day.techniques).toEqual([
+      { technique: 'punches', count: 3 }, { technique: 'kicks', count: 1 },
+      { technique: 'elbows', count: 2 }, { technique: 'knees', count: 1 },
+      { technique: 'clinch', count: 1 },
+    ]);
+  });
+
+  it("counts only the day's part of a session past midnight", () => {
+    const entries = [timer(at(2026, 9, 29, 23, 50), 30)];
+    expect(dayStats(entries, at(2026, 9, 29))).toMatchObject({ timeMs: 10 * MIN, sessions: 1 });
+    expect(dayStats(entries, at(2026, 9, 30))).toMatchObject({ timeMs: 20 * MIN, sessions: 0 });
+  });
+
+  it('has zero techniques without combo sessions', () => {
+    const day = dayStats([timer(at(2026, 9, 30, 18), 30)], at(2026, 9, 30));
+    expect(day.techniques.every(t => t.count === 0)).toBe(true);
+  });
+});
+
 describe('allTime', () => {
   it('totals the whole log', () => {
     const entries = [
@@ -311,6 +366,31 @@ describe('allTime', () => {
 });
 
 describe('labels', () => {
+  it('names the selected week', () => {
+    expect(weekSpan(at(2026, 9, 28, 0))).toBe('28 Sep – 4 Oct');
+    expect(weekTitle(at(2026, 9, 28, 0), NOW)).toBe('This week');
+    expect(weekTitle(at(2026, 9, 21, 0), NOW)).toBe('Last week');
+    expect(weekTitle(at(2026, 9, 14, 0), NOW)).toBe('14 Sep – 20 Sep');
+  });
+
+  it('writes the time under a day', () => {
+    expect(dayCellTime(0)).toBe('');
+    expect(dayCellTime(20 * 1000)).toBe('<1m');
+    expect(dayCellTime(45 * MIN)).toBe('45m');
+    expect(dayCellTime(65 * MIN)).toBe('1h05');
+  });
+
+  it('writes the day sheet', () => {
+    const day = { sessions: 1, timeMs: 52 * MIN, rounds: 5, combos: 0 };
+    expect(dayMeta(day)).toBe('1 session · 52 m');
+    expect(dayMeta({ ...day, sessions: 3 })).toBe('3 sessions · 52 m');
+    expect(dayRows(day)).toEqual([
+      { label: 'Training time', value: '52 m' },
+      { label: 'Rounds', value: '5' },
+      { label: 'Combos done', value: '0' },
+    ]);
+  });
+
   it('formats durations', () => {
     expect(formatDuration(52 * MIN)).toBe('52 m');
     expect(formatDuration(185 * MIN)).toBe('3 h 05 m');

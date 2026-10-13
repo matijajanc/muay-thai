@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { View, Text, Pressable, ScrollView, Alert, StyleSheet, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -10,12 +10,12 @@ import { Chip, Btn } from '../components/timer/TimerUI';
 import { Sheet } from '../components/timer/TimerSheets';
 import {
   weekStreak, weekCompare, weeklyMinutes, techniqueMix, mostDrilled, allTime, startOfDay,
-  sessionCombos, MIN_MIX_COMBOS,
+  sessionCombos, weekStart, weekDays, dayStats, MIN_MIX_COMBOS,
 } from '../utils/stats';
 import {
   DAY_LETTERS, weekRange, formatDuration, streakLine, goalChip, goalHint, timeDelta, countDelta,
   dayLabel, clockTime, entryTitle, entryMeta, entryWhen, entryRows, deleteMessage, monthLabel,
-  longDate,
+  longDate, shortDate, weekTitle, dayCellTime, dayMeta, dayRows,
 } from '../utils/statsLabels';
 
 const PAGE = 30; // history rows per "Show older"
@@ -95,7 +95,9 @@ function Tile({ label, value, delta }) {
 const CHART = { W: 262, H: 118, top: 8, base: 96, gap: 6, right: 40 };
 
 // .chartcard: minutes per week, oldest to newest, with the 12-week average.
-function WeekChart({ bars }) {
+// Tapping a week selects it (accent, with its minutes on top); `children`
+// (the selected week's days) go under the chart.
+function WeekChart({ bars, selected, onSelect, children }) {
   const [width, setWidth] = useState(0);
   const { W, H, top, base, gap, right } = CHART;
   const values = bars.map(b => b.minutes);
@@ -105,57 +107,123 @@ function WeekChart({ bars }) {
   const h = (v) => (v / max) * (base - top);
   const avg = Math.round(values.reduce((a, b) => a + b, 0) / n);
   const avgY = base - h(avg);
-  const last = values[n - 1];
+  const picked = values[selected];
+  const scale = width / W;
 
   return (
     <View style={styles.chartCard} onLayout={e => setWidth(e.nativeEvent.layout.width - 20)}>
       {width > 0 && (
-        <Svg width={width} height={(width * H) / W} viewBox={`0 0 ${W} ${H}`}>
-          <Line x1={0} y1={base} x2={W - right} y2={base} stroke={colors.border} strokeWidth={1} />
-          {bars.map((bar, i) => {
-            const x = i * (bw + gap);
-            return (
-              <G key={bar.start}>
-                {bar.minutes > 0 && (
-                  <Rect
-                    x={x}
-                    y={base - h(bar.minutes)}
-                    width={bw}
-                    height={h(bar.minutes)}
-                    rx={3}
-                    fill={i === n - 1 ? colors.accent : colors.barPast}
-                  />
-                )}
-                {bar.month != null && (
-                  <SvgText x={x} y={base + 14} fontSize={10} fill={colors.textMuted}>
-                    {monthLabel(bar.month)}
-                  </SvgText>
-                )}
-              </G>
-            );
-          })}
-          <Line
-            x1={0}
-            y1={avgY}
-            x2={W - right}
-            y2={avgY}
-            stroke={colors.chartAvg}
-            strokeWidth={1}
-            strokeDasharray="3 3"
-          />
-          <SvgText x={W - 36} y={avgY + 3} fontSize={10} fill={colors.chartAvg}>{`avg ${avg}`}</SvgText>
-          <SvgText
-            x={(n - 1) * (bw + gap) + bw / 2}
-            y={base - h(last) - 4}
-            fontSize={10}
-            fontWeight="600"
-            fill={colors.accent}
-            textAnchor="middle"
-          >
-            {String(last)}
-          </SvgText>
-        </Svg>
+        <View>
+          <Svg width={width} height={(width * H) / W} viewBox={`0 0 ${W} ${H}`}>
+            <Line x1={0} y1={base} x2={W - right} y2={base} stroke={colors.border} strokeWidth={1} />
+            {bars.map((bar, i) => {
+              const x = i * (bw + gap);
+              return (
+                <G key={bar.start}>
+                  {bar.minutes > 0 && (
+                    <Rect
+                      x={x}
+                      y={base - h(bar.minutes)}
+                      width={bw}
+                      height={h(bar.minutes)}
+                      rx={3}
+                      fill={i === selected ? colors.accent : colors.barPast}
+                    />
+                  )}
+                  {bar.month != null && (
+                    <SvgText x={x} y={base + 14} fontSize={10} fill={colors.textMuted}>
+                      {monthLabel(bar.month)}
+                    </SvgText>
+                  )}
+                </G>
+              );
+            })}
+            <Line
+              x1={0}
+              y1={avgY}
+              x2={W - right}
+              y2={avgY}
+              stroke={colors.chartAvg}
+              strokeWidth={1}
+              strokeDasharray="3 3"
+            />
+            <SvgText x={W - 36} y={avgY + 3} fontSize={10} fill={colors.chartAvg}>{`avg ${avg}`}</SvgText>
+            <SvgText
+              x={selected * (bw + gap) + bw / 2}
+              y={base - h(picked) - 4}
+              fontSize={10}
+              fontWeight="600"
+              fill={colors.accent}
+              textAnchor="middle"
+            >
+              {String(picked)}
+            </SvgText>
+          </Svg>
+          {/* One full-height tap target per week, gaps included. */}
+          <View style={StyleSheet.absoluteFill}>
+            {bars.map((bar, i) => (
+              <Pressable
+                key={bar.start}
+                onPress={() => onSelect(bar.start)}
+                accessibilityRole="button"
+                accessibilityLabel={`Week of ${shortDate(bar.start)}, ${bar.minutes} minutes`}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  bottom: 0,
+                  left: (i * (bw + gap) - gap / 2) * scale,
+                  width: (bw + gap) * scale,
+                }}
+              />
+            ))}
+          </View>
+        </View>
       )}
+      {children}
+    </View>
+  );
+}
+
+// The chart's selected week, a day per column: trained (✓), some training
+// (tinted), nothing; with the time trained. Tap a day with training for its
+// day sheet.
+function WeekDays({ start, days, now, onDay }) {
+  const total = days.reduce((ms, d) => ms + d.timeMs, 0);
+  return (
+    <View style={styles.wd}>
+      <View style={styles.wdHead}>
+        <Text style={styles.wdTitle}>{weekTitle(start, now)}</Text>
+        <Text style={styles.wdTotal}>{formatDuration(total)}</Text>
+      </View>
+      <View style={styles.wk}>
+        {days.map((day, i) => {
+          const logged = day.sessions > 0 || day.timeMs > 0;
+          return (
+            <Pressable
+              key={day.key}
+              disabled={!logged}
+              onPress={() => onDay(day.start)}
+              hitSlop={4}
+              accessibilityRole="button"
+              accessibilityLabel={dayLabel(day.start, now)}
+              style={({ pressed }) => [styles.wkDay, day.future && styles.wdFuture, pressed && styles.wdPressed]}
+            >
+              <View
+                style={[
+                  styles.wkDot,
+                  day.today && styles.wkDotToday,
+                  logged && !day.trained && styles.wdDotSome,
+                  day.trained && styles.wkDotOn,
+                ]}
+              >
+                {day.trained && <TimerIcon name="checkBold" size={12} color={colors.bg} />}
+              </View>
+              <Text style={[styles.wkLetter, day.today && styles.wkLetterToday]}>{DAY_LETTERS[i]}</Text>
+              <Text style={styles.wdTime}>{dayCellTime(day.timeMs)}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -206,7 +274,7 @@ function MixCard({ mix }) {
 }
 
 // .hrow: tap for the session sheet, long-press to delete.
-function HistoryRow({ entry, held, last, onPress, onLongPress }) {
+function HistoryRow({ entry, held = false, last, onPress, onLongPress }) {
   const timer = entry.type === 'timer';
   const meta = entryMeta(entry);
   return (
@@ -277,6 +345,47 @@ function SessionSheet({ visible, entry, now, onClose }) {
   );
 }
 
+// One day: its totals, the techniques in its combos and its sessions (tap one
+// for its session sheet). day: utils/stats.js dayStats().
+function DaySheet({ visible, day, now, onClose, onEntry }) {
+  const { height } = useWindowDimensions();
+  if (!day) return null;
+  const thrown = day.techniques.some(t => t.count > 0);
+  return (
+    <Sheet visible={visible} onClose={onClose} title={dayLabel(day.start, now)} meta={dayMeta(day)}>
+      <ScrollView style={{ maxHeight: height * 0.62 }} showsVerticalScrollIndicator={false}>
+        <View style={styles.sheetRows}>
+          {dayRows(day).map((row, i, rows) => (
+            <TotalRow key={row.label} label={row.label} value={row.value} last={i === rows.length - 1} />
+          ))}
+        </View>
+        <Label note="in the combos done">Techniques</Label>
+        {thrown
+          ? <TechniqueBars rows={day.techniques} />
+          : <Text style={styles.mixEmpty}>No combos done this day.</Text>}
+        {day.entries.length > 0 && (
+          <>
+            <Label>Sessions</Label>
+            {day.entries.map((entry, i) => (
+              <HistoryRow
+                key={entry.id}
+                entry={entry}
+                last={i === day.entries.length - 1}
+                onPress={() => onEntry(entry)}
+              />
+            ))}
+          </>
+        )}
+      </ScrollView>
+      <Btn label="Close" onPress={onClose} style={styles.sheetBtn} />
+    </Sheet>
+  );
+}
+
+// From the day sheet to a session's sheet: once the day sheet has slid away
+// (Sheet closes in 160 ms), so two modals never animate at once.
+const SHEET_SWAP_MS = 200;
+
 // S6
 function GoalSheet({ visible, goal, onChange, onClose }) {
   return (
@@ -303,6 +412,13 @@ export default function StatsScreen() {
   // The open session sheet's entry stays set while the sheet slides away.
   const [detail, setDetail] = useState(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  // The chart's selected week (its Monday), null for this week; and the open
+  // day sheet's day, kept while it slides away.
+  const [pickedWeek, setPickedWeek] = useState(null);
+  const [day, setDay] = useState(null);
+  const [dayOpen, setDayOpen] = useState(false);
+  const swapRef = useRef(null);
+  useEffect(() => () => clearTimeout(swapRef.current), []);
 
   // The week and "today" move on while the app stays open.
   useFocusEffect(useCallback(() => setNow(Date.now()), []));
@@ -345,6 +461,26 @@ export default function StatsScreen() {
 
   const { streak, compare, bars, mix, drilled, total } = stats;
   const hasOlder = entries.length > shown;
+
+  // A picked week that has slid out of the 12 falls back to this week.
+  const shownWeek = bars.some(b => b.start === pickedWeek) ? pickedWeek : weekStart(now);
+  const selected = bars.findIndex(b => b.start === shownWeek);
+  const week = useMemo(() => weekDays(entries, shownWeek, now), [entries, shownWeek, now]);
+  const dayDetail = useMemo(() => (day == null ? null : dayStats(entries, day)), [entries, day]);
+
+  const openEntry = (entry) => {
+    setDetail(entry);
+    setDetailOpen(true);
+  };
+  const openDay = (dayStart) => {
+    setDay(dayStart);
+    setDayOpen(true);
+  };
+  const openEntryFromDay = (entry) => {
+    setDayOpen(false);
+    clearTimeout(swapRef.current);
+    swapRef.current = setTimeout(() => openEntry(entry), SHEET_SWAP_MS);
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -391,8 +527,10 @@ export default function StatsScreen() {
               </View>
             </View>
 
-            <Label note="minutes per week">Last 12 weeks</Label>
-            <WeekChart bars={bars} />
+            <Label note="minutes per week · tap a week">Last 12 weeks</Label>
+            <WeekChart bars={bars} selected={selected} onSelect={setPickedWeek}>
+              <WeekDays start={shownWeek} days={week} now={now} onDay={openDay} />
+            </WeekChart>
 
             <Label note="techniques in combos · last 30 days">Technique mix</Label>
             <MixCard mix={mix} />
@@ -416,17 +554,17 @@ export default function StatsScreen() {
             <View style={styles.card}>
               {groups.map((group, g) => (
                 <View key={group.day}>
-                  <Text style={styles.day}>{dayLabel(group.day, now)}</Text>
+                  <Pressable onPress={() => openDay(group.day)} hitSlop={4} style={styles.dayHead}>
+                    <Text style={styles.day}>{dayLabel(group.day, now)}</Text>
+                    <TimerIcon name="chev" size={10} color={colors.sectionLabel} />
+                  </Pressable>
                   {group.rows.map((entry, i) => (
                     <HistoryRow
                       key={entry.id}
                       entry={entry}
                       held={heldId === entry.id}
                       last={!hasOlder && g === groups.length - 1 && i === group.rows.length - 1}
-                      onPress={() => {
-                        setDetail(entry);
-                        setDetailOpen(true);
-                      }}
+                      onPress={() => openEntry(entry)}
                       onLongPress={() => confirmDelete(entry)}
                     />
                   ))}
@@ -452,6 +590,13 @@ export default function StatsScreen() {
         )}
       </ScrollView>
 
+      <DaySheet
+        visible={dayOpen}
+        day={dayDetail}
+        now={now}
+        onClose={() => setDayOpen(false)}
+        onEntry={openEntryFromDay}
+      />
       <SessionSheet
         visible={detailOpen}
         entry={detail}
@@ -599,6 +744,28 @@ const styles = StyleSheet.create({
     paddingBottom: 6,
   },
 
+  // The selected week's days, under the chart
+  wd: {
+    borderTopWidth: 0.5,
+    borderTopColor: colors.border,
+    marginTop: 4,
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  wdHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
+  wdTitle: { fontSize: 11.5, fontWeight: '500', color: colors.textPrimary },
+  wdTotal: { fontSize: 11, color: colors.textSecondary, fontVariant: ['tabular-nums'] },
+  wdFuture: { opacity: 0.45 },
+  wdPressed: { opacity: 0.6 },
+  wdDotSome: { backgroundColor: colors.chipOnBg, borderColor: colors.barPast },
+  wdTime: {
+    fontSize: 9.5,
+    lineHeight: 12,
+    minHeight: 12,
+    color: colors.textSecondary,
+    fontVariant: ['tabular-nums'],
+  },
+
   // Technique mix
   mix: {
     backgroundColor: colors.surface,
@@ -640,14 +807,19 @@ const styles = StyleSheet.create({
   rankCount: { fontSize: 11.5, fontWeight: '600', color: colors.textSecondary, fontVariant: ['tabular-nums'] },
 
   // History
+  dayHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    marginBottom: 5,
+  },
   day: {
     fontSize: 9.5,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
     color: colors.sectionLabel,
     fontWeight: '600',
-    marginTop: 10,
-    marginBottom: 5,
   },
   hrow: {
     flexDirection: 'row',

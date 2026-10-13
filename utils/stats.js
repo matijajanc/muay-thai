@@ -230,6 +230,53 @@ export function weeklyMinutes(entries, now, weeks = CHART_WEEKS) {
   return bars;
 }
 
+// ---- One week, one day ----
+
+// The days of the week starting at `start` (a Monday), Monday first:
+// [{ start, key, timeMs, sessions, trained, today, future }]. A day is trained
+// as in the streak (5 min); sessions are the entries started on it.
+export function weekDays(entries, start, now) {
+  const totals = dayTotals(entries);
+  const started = new Map();
+  for (const e of entries) {
+    const key = dayKey(e.at);
+    started.set(key, (started.get(key) ?? 0) + 1);
+  }
+  const today = startOfDay(now);
+  return Array.from({ length: 7 }, (_, i) => {
+    const day = addDays(start, i);
+    const key = dayKey(day);
+    const timeMs = totals.get(key) ?? 0;
+    return {
+      start: day,
+      key,
+      timeMs,
+      sessions: started.get(key) ?? 0,
+      trained: timeMs >= TRAINING_DAY_MS,
+      today: day === today,
+      future: day > today,
+    };
+  });
+}
+
+// What was logged on the local day of `dayMs`: { start, timeMs, sessions,
+// rounds, combos, techniques, entries }. Training time is the day's share of
+// every span (a session past midnight counts on both days); the rest goes by
+// the entries started that day (newest first). techniques: inside the combos
+// done, all five families, zeros included.
+export function dayStats(entries, dayMs) {
+  const from = startOfDay(dayMs);
+  const to = addDays(from, 1);
+  const dayEntries = entries.filter(e => e.at >= from && e.at < to);
+  return {
+    start: from,
+    timeMs: timeIn(allSpans(entries), from, to),
+    ...countIn(entries, from, to),
+    techniques: countTechniques(dayEntries.flatMap(e => (e.type === 'combos' ? e.comboIds : []))),
+    entries: dayEntries,
+  };
+}
+
 // ---- Combos, last 30 days ----
 
 const recentComboIds = (entries, now) => {

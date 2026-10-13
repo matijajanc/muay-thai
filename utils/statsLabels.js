@@ -23,10 +23,27 @@ export function shortDate(ms) {
 // "12 Jul 2026"
 export const longDate = (ms) => `${shortDate(ms)} ${new Date(ms).getFullYear()}`;
 
+// "28 Sep – 4 Oct" for the week starting at `start`.
+export const weekSpan = (start) => `${shortDate(start)} – ${shortDate(addDays(start, 6))}`;
+
 // Subtitle: "This week · 28 Sep – 4 Oct".
-export function weekRange(now) {
-  const start = weekStart(now);
-  return `This week · ${shortDate(start)} – ${shortDate(addDays(start, 6))}`;
+export const weekRange = (now) => `This week · ${weekSpan(weekStart(now))}`;
+
+// The chart's selected week: "This week", "Last week" or "14 Sep – 20 Sep".
+export function weekTitle(start, now) {
+  const thisWeek = weekStart(now);
+  if (start === thisWeek) return 'This week';
+  if (start === addDays(thisWeek, -7)) return 'Last week';
+  return weekSpan(start);
+}
+
+// Training time under a day of the week strip: "", "<1m", "45m", "1h05".
+export function dayCellTime(ms) {
+  if (ms <= 0) return '';
+  const min = Math.round(ms / 60000);
+  if (min < 1) return '<1m';
+  if (min < 60) return `${min}m`;
+  return `${Math.floor(min / 60)}h${String(min % 60).padStart(2, '0')}`;
 }
 
 // "52 m", "3 h 05 m".
@@ -125,6 +142,17 @@ export function entryRows(entry) {
     result,
   ];
 }
+
+// Day sheet subtitle: "2 sessions · 52 m". day: utils/stats.js dayStats().
+export const dayMeta = (day) =>
+  `${day.sessions} ${plural(day.sessions, 'session')} · ${formatDuration(day.timeMs)}`;
+
+// Day sheet rows: [{ label, value }].
+export const dayRows = (day) => [
+  { label: 'Training time', value: formatDuration(day.timeMs) },
+  { label: 'Rounds', value: String(day.rounds) },
+  { label: 'Combos done', value: String(day.combos) },
+];
 
 // Delete alert (S7): "Countdown · 2:00, yesterday at 17:58. Your stats will be
 // recalculated without it."
