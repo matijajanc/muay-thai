@@ -12,6 +12,8 @@ import { parseCommands } from '../voice/parseCommands';
 const REPEAT_GUARD_MS = 1500;
 // How long the "✓ combo 4" confirmation stays under the mic button.
 const FEEDBACK_MS = 2500;
+// How long a status notice stays there before "heard: …" shows again.
+const NOTICE_MS = 8000;
 // Transient errors restart with exponential backoff; give up after this many in a row.
 const MAX_ERROR_STREAK = 6;
 const MAX_BACKOFF_MS = 4000;
@@ -91,11 +93,13 @@ export function useVoiceCommands(onCommand) {
   const errorStreakRef = useRef(0);
   const restartTimerRef = useRef(null);
   const feedbackTimerRef = useRef(null);
+  const noticeTimerRef = useRef(null);
   // Echo guard: results are ignored until this time (our own bells and TTS).
   const suppressUntilRef = useRef(0);
   const onDeviceRef = useRef(false);
   const onDeviceServiceRef = useRef(undefined); // which service has the model
   const fellBackRef = useRef(false); // guard against on-device→online loop
+  const downloadAskedRef = useRef(false); // offline model download asked for this run
   const onCommandRef = useRef(onCommand);
   onCommandRef.current = onCommand;
 
@@ -112,6 +116,9 @@ export function useVoiceCommands(onCommand) {
       if (onDeviceRef.current && onDeviceServiceRef.current) {
         opts.androidRecognitionServicePackage = onDeviceServiceRef.current;
       }
+      // The "offline" badge follows the session actually running: returning
+      // from the permission dialog can start one before prepareOnDevice decides.
+      setOnDevice(onDeviceRef.current);
       runningRef.current = true;
       segmentRef.current = [];
       ExpoSpeechRecognitionModule.start(opts);
@@ -135,6 +142,12 @@ export function useVoiceCommands(onCommand) {
     clearTimeout(feedbackTimerRef.current);
     setFeedback(message);
     feedbackTimerRef.current = setTimeout(() => setFeedback(null), FEEDBACK_MS);
+  };
+
+  const showNotice = (message) => {
+    clearTimeout(noticeTimerRef.current);
+    setNotice(message);
+    noticeTimerRef.current = setTimeout(() => setNotice(null), NOTICE_MS);
   };
 
   const fire = (command) => {
@@ -167,12 +180,20 @@ export function useVoiceCommands(onCommand) {
         }
       }
 
-      // Genuinely not installed — trigger the one-time system download and use
-      // online recognition in the meantime.
+      // Genuinely not installed — use online recognition, and ask for the
+      // system download (Android's own "Download English (US)" dialog) once per
+      // app run, so someone who cancels isn't asked again at every mic tap.
       onDeviceServiceRef.current = undefined;
-      ExpoSpeechRecognitionModule.androidTriggerOfflineModelDownload({ locale: EN_LOCALE })
-        .catch(() => {});
-      setNotice('Downloading offline voice model — using online recognition until it finishes.');
+      if (!downloadAskedRef.current) {
+        downloadAskedRef.current = true;
+        ExpoSpeechRecognitionModule.androidTriggerOfflineModelDownload({ locale: EN_LOCALE })
+          .then(() => {
+            if (shouldListenRef.current) {
+              showNotice('Getting the offline voice model — online recognition (needs internet) until then.');
+            }
+          })
+          .catch(() => {}); // cancelled, failed, or Android 12 and older
+      }
       return false;
     } catch {
       return false;
@@ -243,8 +264,7 @@ export function useVoiceCommands(onCommand) {
     if (ON_DEVICE_ERRORS.has(code) && onDeviceRef.current && !fellBackRef.current) {
       fellBackRef.current = true;
       onDeviceRef.current = false;
-      setOnDevice(false);
-      setNotice('Offline model not ready yet — using online recognition for now.');
+      showNotice('Offline model not ready yet — using online recognition for now.');
       return;
     }
     const message = `${code}: ${event?.message ?? ''}`.trim();
@@ -281,10 +301,12 @@ export function useVoiceCommands(onCommand) {
   useEffect(() => () => {
     clearTimeout(restartTimerRef.current);
     clearTimeout(feedbackTimerRef.current);
+    clearTimeout(noticeTimerRef.current);
   }, []);
 
   const start = useCallback(async () => {
     setError(null);
+    clearTimeout(noticeTimerRef.current);
     setNotice(null);
     shouldListenRef.current = true;
     setListening(true);
@@ -297,7 +319,6 @@ export function useVoiceCommands(onCommand) {
     const useOnDevice = await prepareOnDevice();
     if (!shouldListenRef.current) return; // stopped while we were preparing
     onDeviceRef.current = useOnDevice;
-    setOnDevice(useOnDevice);
     errorStreakRef.current = 0;
     lastFiredRef.current = { key: null, at: 0 };
     startRecognition();
