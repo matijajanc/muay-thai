@@ -1,9 +1,9 @@
 # Social post (SI) — goes with videos/
 
 ```text
-🥊 Že nekaj časa v prostem času delam svojo aplikacijo za Muay Thai – Glove Mode.
+🥊 Zakaj sem se lotil svoje aplikacije za Muay Thai? Ker nobena, ki sem jo preizkusil, ni imela glasovnega upravljanja. Ko imaš enkrat rokavice na rokah, je vse ostalo muka – tipkanje, drsanje, iskanje naslednje kombinacije, ustavljanje časovnika …
 
-Ideja je preprosta: rokavice ostanejo na rokah. Naslednjo kombinacijo ali časovnik pokličeš kar z glasom (»combo next«, »timer start«), telefona se sploh ne dotikaš.
+Tako je nastal Glove Mode. Rokavice ostanejo na rokah, ti pa samo rečeš »combo next« ali »timer start«.
 
 Notri je 107 kombinacij z razlago, časovnik za runde z gongom in statistika, da vidiš, koliko res treniraš.
 
