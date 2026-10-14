@@ -70,6 +70,14 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 200
         }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "organization": "janclab",
+          "project": "glove-mode"
+        }
       ]
     ],
     "extra": {

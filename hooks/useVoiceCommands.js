@@ -6,6 +6,7 @@ import {
 } from 'expo-speech-recognition';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { parseCommands } from '../voice/parseCommands';
+import { reportVoiceError } from '../utils/errorReporting';
 
 // Safety net against the recognizer delivering the same phrase twice (e.g. once
 // at the end of one segment and again at the start of the next).
@@ -99,6 +100,8 @@ export function useVoiceCommands(onCommand) {
   const onDeviceRef = useRef(false);
   const onDeviceServiceRef = useRef(undefined); // which service has the model
   const fellBackRef = useRef(false); // guard against on-device→online loop
+  // The recognizer the running session uses, for voice error reports.
+  const sessionSetupRef = useRef({ onDevice: false, service: undefined });
   const downloadAskedRef = useRef(false); // offline model download asked for this run
   const onCommandRef = useRef(onCommand);
   onCommandRef.current = onCommand;
@@ -119,12 +122,17 @@ export function useVoiceCommands(onCommand) {
       // The "offline" badge follows the session actually running: returning
       // from the permission dialog can start one before prepareOnDevice decides.
       setOnDevice(onDeviceRef.current);
+      sessionSetupRef.current = {
+        onDevice: onDeviceRef.current, service: opts.androidRecognitionServicePackage,
+      };
       runningRef.current = true;
       segmentRef.current = [];
       ExpoSpeechRecognitionModule.start(opts);
     } catch (e) {
       runningRef.current = false;
-      halt(String(e?.message ?? e));
+      const message = String(e?.message ?? e);
+      reportVoiceError('start-failed', message, sessionSetupRef.current);
+      halt(message);
     }
   };
 
@@ -259,6 +267,7 @@ export function useVoiceCommands(onCommand) {
       halt('Microphone & speech permission denied');
       return;
     }
+    reportVoiceError(code, event?.message, sessionSetupRef.current);
     // Offline model not actually ready → fall back to online once, then the
     // "end" handler restarts using the online recognizer.
     if (ON_DEVICE_ERRORS.has(code) && onDeviceRef.current && !fellBackRef.current) {

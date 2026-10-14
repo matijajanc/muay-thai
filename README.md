@@ -55,6 +55,10 @@ npx expo start
 Voice commands need a development build (`eas build --profile development`) — the speech
 recognition module isn't in Expo Go. The `muaythai://combo/N` deep link still works too.
 
+Release builds send crash and error reports to Sentry (`janclab/glove-mode`) and upload source
+maps during the EAS build, which needs the `SENTRY_AUTH_TOKEN` EAS secret (an org auth token).
+Local release builds without it: `SENTRY_DISABLE_AUTO_UPLOAD=true`.
+
 ```bash
 npm test                          # engine, log, stats + voice grammar tests (jest-expo)
 node scripts/generate-sounds.js   # regenerate the timer sounds in assets/sounds/
@@ -64,7 +68,8 @@ node scripts/generate-sounds.js   # regenerate the timer sounds in assets/sounds
 
 ```
 App.js                 Navigation, voice command router, deep-link handler, context providers
-app.json               Expo config + muaythai:// deep-link scheme
+app.json               Expo config + muaythai:// deep-link scheme, Sentry plugin (janclab/glove-mode)
+metro.config.js        Expo Metro config with Sentry debug IDs (source maps)
 data/combos.js         All 107 combos (single source of truth)
 data/timerPresets.js   Round-timer presets and defaults
 constants/theme.js     Colors (incl. timer phase colors), spacing, radius, font sizes
@@ -84,8 +89,9 @@ utils/stats.js         Streaks, weeks, chart, technique mix, totals (pure, teste
 utils/statsLabels.js   All Stats copy
 utils/sessionPicker.js Filtering and picking a session (pure, tested)
 utils/storage.js       AsyncStorage JSON helpers that never throw
+utils/errorReporting.js Sentry crash/error reports (release builds only) + voice error reports
 voice/                 numbers, comboGrammar, timerGrammar, commandHelp (+ tests)
-components/            ComboCard, FilterChips, TimerBar, MicButton, FinishCelebration
+components/            ComboCard, FilterChips, TimerBar, MicButton, FinishCelebration, CrashScreen
 components/timer/      TimerRing, TimerDial, TrainingClock, sheets, run/done views, icons
 screens/               TrainingScreen, TimerScreen, FavoritesScreen, StatsScreen, SettingsScreen
 scripts/               generate-sounds.js (writes assets/sounds/*.wav, no dependencies)

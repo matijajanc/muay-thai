@@ -33,6 +33,10 @@ import { formatClock, isInfinite } from './utils/roundTimer';
 import { optionLabel } from './utils/timerLabels';
 import { LIMITS } from './data/timerPresets';
 import { colors } from './constants/theme';
+import { initErrorReporting, ErrorBoundary, wrapRoot } from './utils/errorReporting';
+import CrashScreen from './components/CrashScreen';
+
+initErrorReporting();
 
 const Tab = createBottomTabNavigator();
 
@@ -74,7 +78,7 @@ function findPreset(presets, query) {
   });
 }
 
-export default function App() {
+function App() {
   const navigationRef = useNavigationContainerRef();
   const history = useHistory();
   const prefs = usePrefs();
@@ -323,3 +327,14 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
+
+// A render crash shows CrashScreen (and is reported) instead of a blank app.
+function Root() {
+  return (
+    <ErrorBoundary fallback={({ resetError }) => <CrashScreen onRetry={resetError} />}>
+      <App />
+    </ErrorBoundary>
+  );
+}
+
+export default wrapRoot(Root);
