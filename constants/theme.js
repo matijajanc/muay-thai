@@ -29,6 +29,9 @@ export const colors = {
   // Type chips (deadliest)
   deadBg: '#1a0a2e', deadText: '#AFA9EC', deadBorder: '#534AB7',
 
+  // Level marker (components/LevelMarker): the bars a combo's level leaves unlit
+  levelBarIdle: '#333333',
+
   // Inactive chip
   chipInactiveBg: '#1a1a1a', chipInactiveText: '#888888', chipInactiveBorder: '#333333',
 

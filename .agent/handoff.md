@@ -34,7 +34,9 @@ Branch `main`.
 ## Emulator notes
 
 - Headless AVD `Medium_Phone_API_36.0`; build with `npx expo run:android --no-bundler` and
-  JAVA_HOME = Android Studio's jbr (gradle directly also needs ANDROID_HOME).
+  JAVA_HOME = a JDK 17, e.g. `~/.gradle/jdks/eclipse_adoptium-17-aarch64-os_x.2/jdk-17.0.19+10/Contents/Home`
+  (gradle directly also needs ANDROID_HOME). Android Studio's jbr is now JDK 25, and
+  `expo-modules-core:configureCMakeDebug` fails on its "restricted method" warning (2026-10-29).
 - The debug build reads its bundler from the app's `debug_http_host` pref (no dev-client):
   set it with `run-as com.matijajanc.glovemode` in `shared_prefs/…_preferences.xml`.
 - To screenshot Stats with data, pull `databases/RKStorage` via `run-as`, write

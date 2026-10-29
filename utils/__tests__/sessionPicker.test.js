@@ -8,6 +8,15 @@ describe('combo data', () => {
     expect(new Set(COMBOS.map(c => c.id)).size).toBe(COMBOS.length);
     expect(new Set(COMBOS.map(c => c.name)).size).toBe(COMBOS.length);
   });
+
+  // The cards' level marker shows 1–3 bars per difficulty, and a skull in place
+  // of the Advanced bars for the Deadliest.
+  it('gives every combo a known difficulty, and every Deadliest combo is Advanced', () => {
+    expect(COMBOS.every(c => ['beg', 'int', 'adv'].includes(c.diff))).toBe(true);
+    const deadliest = COMBOS.filter(c => c.type === 'deadliest');
+    expect(deadliest.length).toBeGreaterThan(0);
+    expect(deadliest.every(c => c.diff === 'adv')).toBe(true);
+  });
 });
 
 describe('filterCombos', () => {

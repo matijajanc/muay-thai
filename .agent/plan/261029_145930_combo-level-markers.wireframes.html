@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Combo Level Markers</title>
+<style>
+:root {
+  --board: #ecebe6; --ink: #1c1c1a; --ink-2: #5b5a55; --line: #d3d1ca; --note: #fffdf6; --shadow: rgba(0,0,0,.18);
+  /* app tokens — constants/theme.js */
+  --bg: #111111; --surface: #1a1a1a; --border: #2a2a2a; --accent: #E86C3A; --done: #97C459;
+  --t1: #e0e0e0; --t2: #aaaaaa; --t3: #555555; --tab: #161616;
+  /* difficulty + deadliest chip tokens (text / bg / border) */
+  --beg: #97C459; --begBg: #1a2e14; --begBd: #3B6D11;
+  --int: #EF9F27; --intBg: #2e1f00; --intBd: #854F0B;
+  --adv: #F09595; --advBg: #2e0f0f; --advBd: #A32D2D;
+  --dead: #AFA9EC; --deadBg: #1a0a2e; --deadBd: #534AB7;
+  --type: #85B7EB; --typeBg: #1a1a2e; --typeBd: #185FA5;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --board: #1b1b1a; --ink: #ecebe6; --ink-2: #a3a29c; --line: #34332f; --note: #232220; --shadow: rgba(0,0,0,.6); }
+}
+:root[data-theme="dark"] { --board: #1b1b1a; --ink: #ecebe6; --ink-2: #a3a29c; --line: #34332f; --note: #232220; --shadow: rgba(0,0,0,.6); }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--board); color: var(--ink); font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+.wrap { max-width: 1320px; margin: 0 auto; padding: 32px 16px 80px; }
+header h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: -.3px; }
+header p { margin: 0; color: var(--ink-2); max-width: 780px; }
+h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1.2px; margin: 48px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+h2 small { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--ink-2); margin-left: 8px; font-size: 13px; }
+.row { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; }
+.frame { width: 300px; }
+.frame > .cap { font-weight: 600; font-size: 13px; margin: 0 0 8px; }
+.frame > .cap em { font-style: normal; font-weight: 600; font-size: 11px; color: #fff; background: #2b6fff; border-radius: 10px; padding: 1px 7px; margin-left: 6px; vertical-align: 1px; }
+.notes { margin: 10px 0 0; padding: 10px 12px 10px 28px; background: var(--note); border: 1px solid var(--line); border-radius: 8px; font-size: 12.5px; color: var(--ink-2); }
+.notes li { margin: 2px 0; }
+.notes b { color: var(--ink); font-weight: 600; }
+.notes.pins { list-style: none; padding-left: 12px; }
+.notes .pn { display: inline-flex; width: 16px; height: 16px; border-radius: 50%; background: #2b6fff; color: #fff; font-size: 10px; font-weight: 700; align-items: center; justify-content: center; margin-right: 4px; vertical-align: 1px; }
+.pin { position: absolute; width: 18px; height: 18px; border-radius: 50%; background: #2b6fff; color: #fff; font-size: 10.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px var(--bg); z-index: 5; }
+
+/* ---------- phone ---------- */
+.phone { position: relative; width: 300px; height: 640px; background: var(--bg); border: 7px solid #050505; border-radius: 36px; overflow: hidden; display: flex; flex-direction: column; color: var(--t1); font-size: 12.5px; box-shadow: 0 10px 28px var(--shadow); }
+.sb { height: 24px; flex: none; display: flex; justify-content: space-between; align-items: center; padding: 2px 20px 0; font-size: 10.5px; color: var(--t2); }
+.scr { flex: 1; padding: 6px 12px 0; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+.scr > * { flex-shrink: 0; }
+.tabbar { flex: none; height: 54px; background: var(--tab); border-top: 1px solid var(--border); display: grid; grid-template-columns: repeat(5, 1fr); }
+.tabbar div { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 9.5px; color: var(--t3); }
+.tabbar div.on { color: var(--accent); }
+.tabbar svg { width: 20px; height: 20px; }
+.ico { width: 16px; height: 16px; flex: none; }
+.h1 { font-size: 17px; font-weight: 500; color: #fff; }
+.sub { font-size: 11px; color: #666; margin-top: 1px; }
+.lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .6px; color: #555; font-weight: 500; margin: 14px 0 6px; }
+.mic { margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--accent); color: var(--accent); border-radius: 10px; padding: 9px 8px; font-weight: 500; font-size: 12px; }
+.nsb { border: 1px solid var(--accent); color: var(--accent); border-radius: 10px; text-align: center; padding: 7px; font-weight: 500; font-size: 12px; margin: 14px 0 8px; }
+.btn { height: 42px; border-radius: 10px; background: var(--accent); color: #fff; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; justify-content: center; margin-top: 8px; }
+.match { font-size: 11px; color: #666; text-align: center; margin-top: 18px; }
+.fade { position: absolute; left: 0; right: 0; bottom: 0; height: 34px; background: linear-gradient(transparent, var(--bg)); pointer-events: none; }
+
+/* ---------- combo card (components/ComboCard.js) ---------- */
+.lv-beg { --lc: var(--beg); --lbg: var(--begBg); --lbd: var(--begBd); }
+.lv-int { --lc: var(--int); --lbg: var(--intBg); --lbd: var(--intBd); }
+.lv-adv { --lc: var(--adv); --lbg: var(--advBg); --lbd: var(--advBd); }
+.lv-dead { --lc: var(--dead); --lbg: var(--deadBg); --lbd: var(--deadBd); }
+.cc { background: var(--surface); border: .5px solid var(--border); border-radius: 10px; padding: 9px 11px; margin-bottom: 5px; }
+.cc.open { background: #1e1e1e; border-color: #333; }
+.hr { display: flex; align-items: center; }
+.no { color: #444; font-weight: 500; min-width: 16px; font-size: 12px; flex: none; }
+.nm { flex: 1; min-width: 0; color: var(--t1); font-weight: 500; font-size: 12px; line-height: 1.35; }
+.cc.done .nm { color: #666; }
+.ck, .ht { width: 16px; height: 16px; margin-left: 8px; flex: none; }
+.ck { color: var(--done); }
+.ht { color: #444; }
+.ht.on { color: var(--accent); }
+.steps { margin-top: 10px; }
+.st { display: flex; font-size: 11px; color: var(--t2); line-height: 1.5; margin-bottom: 3px; }
+.st i { font-style: normal; color: #555; width: 16px; font-weight: 500; flex: none; }
+.tbar { height: 2px; background: var(--border); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+.tbar div { width: 62%; height: 100%; background: var(--accent); }
+.xmeta { font-size: 10.5px; color: var(--t3); margin: -2px 0 6px; }
+.xmeta b { color: var(--lc); font-weight: 600; }
+
+/* A · level bars */
+.bars { display: inline-flex; align-items: flex-end; gap: 1.5px; height: 11px; width: 12px; margin-right: 7px; flex: none; }
+.bars i { width: 3px; border-radius: 1px; background: #333; }
+.bars i:nth-child(1) { height: 5px; } .bars i:nth-child(2) { height: 8px; } .bars i:nth-child(3) { height: 11px; }
+.bars.b1 i:nth-child(1), .bars.b2 i:nth-child(-n+2), .bars.b3 i { background: var(--lc); }
+.sk { width: 13px; height: 13px; color: var(--dead); margin-right: 6px; flex: none; }
+.cc.done .bars, .cc.done .sk, .cc.done .nb, .cc.done .meta { opacity: .45; }
+
+/* B · edge stripe */
+.stripe { border-left: 3px solid var(--lc); padding-left: 10px; }
+.stripe.lv-dead { background: linear-gradient(90deg, rgba(83,74,183,.24), rgba(26,26,26,0) 70%), var(--surface); border-color: rgba(83,74,183,.6); border-left-color: var(--dead); }
+.stripe.lv-dead.open { background: linear-gradient(90deg, rgba(83,74,183,.24), rgba(30,30,30,0) 70%), #1e1e1e; }
+.stripe.done { border-left-color: #3a3a3a; }
+.sk-i { width: 12px; height: 12px; margin: 0 0 0 5px; vertical-align: -2px; display: inline-block; }
+
+/* C · coloured number */
+.nb { min-width: 20px; height: 20px; padding: 0 3px; border-radius: 6px; border: 1px solid var(--lbd); background: var(--lbg); color: var(--lc); font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; margin-right: 8px; flex: none; font-variant-numeric: tabular-nums; }
+
+/* D · label under the name */
+.meta { display: flex; align-items: center; gap: 4px; margin-top: 2px; font-size: 10px; font-weight: 500; color: var(--lc); }
+.meta .sk { width: 11px; height: 11px; margin: 0; }
+
+/* ---------- filter chips (components/FilterChips.js) ---------- */
+.fcs { display: flex; flex-wrap: wrap; gap: 5px; }
+.fc { display: inline-flex; align-items: center; gap: 5px; border: 1px solid #333; background: #1a1a1a; color: #888; border-radius: 20px; padding: 4px 10px; font-size: 11px; font-weight: 500; }
+.fc .bars { margin-right: 0; }
+.fc .sk { margin: 0; width: 12px; height: 12px; color: #888; }
+.fc:not(.on) .bars { --lc: #888; }
+.fc.on { background: var(--lbg); border-color: var(--lbd); color: var(--lc); }
+.fc.on .sk { color: var(--dead); }
+
+/* ---------- comparison strips ---------- */
+.strip { background: var(--bg); border-radius: 16px; padding: 16px; overflow-x: auto; box-shadow: 0 10px 28px var(--shadow); }
+.grid { display: grid; grid-template-columns: 150px repeat(5, minmax(210px, 1fr)); gap: 10px 12px; align-items: start; min-width: 1240px; }
+.grid .gh { font-size: 10px; text-transform: uppercase; letter-spacing: .6px; color: #666; font-weight: 600; }
+.grid .rl { color: var(--t1); font-size: 12.5px; font-weight: 600; padding-top: 9px; }
+.grid .rl small { display: block; color: #666; font-weight: 400; font-size: 11px; }
+.grid .cc { margin: 0; zoom: 1.15; }
+.icons { display: grid; grid-template-columns: repeat(4, minmax(240px, 1fr)); gap: 16px; min-width: 1000px; }
+.icons .cap { color: var(--t1); font-size: 12px; font-weight: 600; margin: 0 0 8px; }
+.icons .cap span { color: #666; font-weight: 400; }
+.icons .cc { zoom: 1.15; }
+.tablewrap { overflow-x: auto; }
+table { width: 100%; max-width: 980px; border-collapse: collapse; background: var(--note); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; font-size: 13px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; background: rgba(0,0,0,.03); }
+tr:last-child td { border-bottom: 0; }
+td.y { color: #3B6D11; font-weight: 600; } td.n { color: #A32D2D; font-weight: 600; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) td.y { color: var(--beg); } :root:not([data-theme="light"]) td.n { color: var(--adv); } }
+:root[data-theme="dark"] td.y { color: var(--beg); } :root[data-theme="dark"] td.n { color: var(--adv); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+    <symbol id="i-barbell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9v6M6.5 6.5v11M17.5 6.5v11M21 9v6M6.5 12h11"/></symbol>
+    <symbol id="i-timer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 2M9.5 2.5h5"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-7.5-10.2A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/></symbol>
+    <symbol id="i-heart-f" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-7.5-10.2A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z" fill="currentColor"/></symbol>
+    <symbol id="i-stats" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20h16"/><rect x="5.5" y="11" width="3" height="6.5" rx=".8"/><rect x="10.5" y="6.5" width="3" height="11" rx=".8"/><rect x="15.5" y="13.5" width="3" height="4" rx=".8"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.8l1.6 2.3 2.7-.6.6 2.7 2.3 1.6-1.2 2.5 1.2 2.5-2.3 1.6-.6 2.7-2.7-.6L12 21.2l-1.6-2.3-2.7.6-.6-2.7-2.3-1.6L6 12.7 4.8 10.2l2.3-1.6.6-2.7 2.7.6z"/></symbol>
+    <symbol id="i-checkc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M7.5 12.3l3 3 6-6.3" fill="none" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <!-- deadliest candidates (stand-ins for Ionicons skull / skull-outline / flame / flash) -->
+    <symbol id="i-skull" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M12 2.5c-4.7 0-8.5 3.5-8.5 8 0 2.6 1.2 4.6 3 5.8v3.2a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-3.2c1.8-1.2 3-3.2 3-5.8 0-4.5-3.8-8-8.5-8zM6.7 11a2.1 2.1 0 1 0 4.2 0 2.1 2.1 0 1 0-4.2 0zM13.1 11a2.1 2.1 0 1 0 4.2 0 2.1 2.1 0 1 0-4.2 0zM12 13.4l-1.3 2.4h2.6zM9.9 18h1v2.5h-1zM13.1 18h1v2.5h-1z"/></symbol>
+    <symbol id="i-skull-o" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3c-4.4 0-8 3.3-8 7.5 0 2.5 1.2 4.4 3 5.6v3.4a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-3.4c1.8-1.2 3-3.1 3-5.6C20 6.3 16.4 3 12 3z"/><circle cx="9" cy="11" r="1.8" fill="currentColor" stroke="none"/><circle cx="15" cy="11" r="1.8" fill="currentColor" stroke="none"/><path d="M10.5 17.5v3M13.5 17.5v3" stroke-linecap="round"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 2.5c.6 3.2 4.5 5.3 4.5 10.2A4.5 4.5 0 0 1 12 21.5a5.5 5.5 0 0 1-5.5-5.6c0-2.6 1.4-4.2 2.6-5.4.2 1.6.8 2.6 1.9 3.1C10.6 9.8 11.2 6 12 2.5z" fill="currentColor"/></symbol>
+    <symbol id="i-flash" viewBox="0 0 24 24"><path d="M13.5 2 5 13.5h6L10 22l9-12h-6.2z" fill="currentColor"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+<header>
+  <h1>Combo level markers: wireframes</h1>
+  <p>A combo card shows only its number, name and heart today, so you can’t see its level. Each option below adds a small marker for <b>Beginner</b>, <b>Intermediate</b> and <b>Advanced</b>, and a <b>skull</b> for the 11 <b>Deadliest</b> combos (97–107). All Deadliest combos are Advanced, so the skull takes the place of the Advanced marker. The colours are the filter chip colours: green, amber, red and purple. Nothing in the combo data changes, because <code>diff</code> and <code>type</code> are already on every combo.</p>
+</header>
+
+<!-- =============================== 1 · OPTIONS =============================== -->
+<h2>1 · Four options on the Training list <small>Same session in each: #1 is done, #3 (Deadliest) is open.</small></h2>
+<div class="row">
+
+  <div class="frame">
+    <p class="cap">A · Level bars + skull <em>recommended</em></p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 87%</span></div>
+      <div class="scr">
+        <div class="h1">Today's training</div>
+        <div class="sub">9 combos · 1 done</div>
+        <div class="mic"><svg class="ico"><use href="#i-mic"/></svg>Tap to listen for voice commands</div>
+        <div class="nsb">New session</div>
+        <div data-opt="A" data-set="session"></div>
+        <div class="fade"></div>
+      </div>
+      <div class="tabbar">
+        <div class="on"><svg><use href="#i-barbell"/></svg>Training</div>
+        <div><svg><use href="#i-timer"/></svg>Timer</div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+        <div><svg><use href="#i-stats"/></svg>Stats</div>
+        <div><svg><use href="#i-gear"/></svg>Settings</div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li><b>1, 2 or 3 bars</b> before the name, in green, amber or red.</li>
+      <li><b>Deadliest:</b> a purple skull in the same spot.</li>
+      <li>You can read it <b>without colour</b>: count the bars. This matters for red–green colour blindness.</li>
+      <li>Cards stay the same height. All markers line up in one column, so the list is easy to scan.</li>
+    </ul>
+  </div>
+
+  <div class="frame">
+    <p class="cap">B · Edge stripe + glowing Deadliest</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 87%</span></div>
+      <div class="scr">
+        <div class="h1">Today's training</div>
+        <div class="sub">9 combos · 1 done</div>
+        <div class="mic"><svg class="ico"><use href="#i-mic"/></svg>Tap to listen for voice commands</div>
+        <div class="nsb">New session</div>
+        <div data-opt="B" data-set="session"></div>
+        <div class="fade"></div>
+      </div>
+      <div class="tabbar">
+        <div class="on"><svg><use href="#i-barbell"/></svg>Training</div>
+        <div><svg><use href="#i-timer"/></svg>Timer</div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+        <div><svg><use href="#i-stats"/></svg>Stats</div>
+        <div><svg><use href="#i-gear"/></svg>Settings</div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>A <b>3 px stripe</b> on the card’s left edge, in the level colour.</li>
+      <li><b>Deadliest:</b> purple stripe, a purple glow on the card and a skull after the name. Of the four options, this is where Deadliest stands out most.</li>
+      <li>It shows levels <b>by colour only</b>. Green and red look alike to red–green colour blind users.</li>
+      <li>Uses no extra space.</li>
+    </ul>
+  </div>
+
+  <div class="frame">
+    <p class="cap">C · Coloured number</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 87%</span></div>
+      <div class="scr">
+        <div class="h1">Today's training</div>
+        <div class="sub">9 combos · 1 done</div>
+        <div class="mic"><svg class="ico"><use href="#i-mic"/></svg>Tap to listen for voice commands</div>
+        <div class="nsb">New session</div>
+        <div data-opt="C" data-set="session"></div>
+        <div class="fade"></div>
+      </div>
+      <div class="tabbar">
+        <div class="on"><svg><use href="#i-barbell"/></svg>Training</div>
+        <div><svg><use href="#i-timer"/></svg>Timer</div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+        <div><svg><use href="#i-stats"/></svg>Stats</div>
+        <div><svg><use href="#i-gear"/></svg>Settings</div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>The combo <b>number</b> sits in a small badge in the level colours, the same look as the filter chips. The number stays, so “combo 3” still works.</li>
+      <li><b>Deadliest:</b> a purple badge plus a skull after the name.</li>
+      <li>Colour only, like B. The number also becomes louder than the name.</li>
+    </ul>
+  </div>
+
+  <div class="frame">
+    <p class="cap">D · Label under the name</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 87%</span></div>
+      <div class="scr">
+        <div class="h1">Today's training</div>
+        <div class="sub">9 combos · 1 done</div>
+        <div class="mic"><svg class="ico"><use href="#i-mic"/></svg>Tap to listen for voice commands</div>
+        <div class="nsb">New session</div>
+        <div data-opt="D" data-set="session"></div>
+        <div class="fade"></div>
+      </div>
+      <div class="tabbar">
+        <div class="on"><svg><use href="#i-barbell"/></svg>Training</div>
+        <div><svg><use href="#i-timer"/></svg>Timer</div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+        <div><svg><use href="#i-stats"/></svg>Stats</div>
+        <div><svg><use href="#i-gear"/></svg>Settings</div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>A small line under the name, such as <b>“Beginner · Punches”</b>. It also shows the type.</li>
+      <li><b>Deadliest:</b> “☠ Deadliest · Advanced” in purple.</li>
+      <li>The clearest option, but every card is about 14 px taller, so you see 1–2 fewer combos on screen.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- =============================== 2 · CLOSE-UP =============================== -->
+<h2>2 · Close-up: every level, side by side <small>Done combos keep their marker, dimmed like the name.</small></h2>
+<div class="strip"><div class="grid" id="cmp"></div></div>
+
+<!-- =============================== 3 · DEADLIEST ICON =============================== -->
+<h2>3 · Which icon for Deadliest? <small>Shown with option A. All in purple, the Deadliest chip colour.</small></h2>
+<div class="strip">
+  <div class="icons">
+    <div><p class="cap">Skull <span>· Ionicons <code>skull</code> · recommended</span></p><div data-opt="A" data-set="icon" data-icon="i-skull"></div></div>
+    <div><p class="cap">Skull outline <span>· <code>skull-outline</code></span></p><div data-opt="A" data-set="icon" data-icon="i-skull-o"></div></div>
+    <div><p class="cap">Flame <span>· <code>flame</code></span></p><div data-opt="A" data-set="icon" data-icon="i-flame"></div></div>
+    <div><p class="cap">Lightning <span>· <code>flash</code></span></p><div data-opt="A" data-set="icon" data-icon="i-flash"></div></div>
+  </div>
+</div>
+<ul class="notes" style="max-width:760px">
+  <li><b>Skull (filled)</b> is still clear at 12 px. The outline version looks thin and fuzzy at that size.</li>
+  <li><b>Flame</b> is already the Stats streak icon, so it would mean two things.</li>
+  <li><b>Lightning</b> reads as “fast” rather than “deadly”.</li>
+</ul>
+
+<!-- =============================== 4 · EVERYWHERE =============================== -->
+<h2>4 · Same marker in other places <small>Shown with option A. Every option works the same way here.</small></h2>
+<div class="row">
+
+  <div class="frame">
+    <p class="cap">Filters: the chips are the legend</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 87%</span></div>
+      <div class="scr">
+        <div class="h1">Today's training</div>
+        <div class="sub">Pick filters, then generate</div>
+        <div class="mic"><svg class="ico"><use href="#i-mic"/></svg>Tap to listen for voice commands</div>
+        <div class="lbl">Difficulty</div>
+        <div class="fcs">
+          <span class="fc lv-beg"><span class="bars b1"><i></i><i></i><i></i></span>Beginner</span>
+          <span class="fc on lv-int"><span class="bars b2"><i></i><i></i><i></i></span>Intermediate</span>
+          <span class="fc on lv-adv"><span class="bars b3"><i></i><i></i><i></i></span>Advanced</span>
+        </div>
+        <span class="pin" style="top:126px;right:4px">1</span>
+        <div class="lbl">Type</div>
+        <div class="fcs">
+          <span class="fc">Punches</span><span class="fc on" style="--lbg:var(--typeBg);--lbd:var(--typeBd);--lc:var(--type)">Kicks</span><span class="fc">Elbows</span><span class="fc">Knees</span><span class="fc">Clinch</span><span class="fc">Mixed</span>
+          <span class="fc on lv-dead"><svg class="sk"><use href="#i-skull"/></svg>Deadliest</span>
+        </div>
+        <span class="pin" style="top:212px;right:4px">2</span>
+        <div class="lbl">Favorites</div>
+        <div class="fcs"><span class="fc"><svg class="ico" style="width:12px;height:12px"><use href="#i-heart"/></svg>Mix in favorites · 4</span></div>
+        <div class="match">25 combos match</div>
+        <div class="btn">Generate session</div>
+      </div>
+      <div class="tabbar">
+        <div class="on"><svg><use href="#i-barbell"/></svg>Training</div>
+        <div><svg><use href="#i-timer"/></svg>Timer</div>
+        <div><svg><use href="#i-heart"/></svg>Favorites</div>
+        <div><svg><use href="#i-stats"/></svg>Stats</div>
+        <div><svg><use href="#i-gear"/></svg>Settings</div>
+      </div>
+    </div>
+    <ol class="notes pins">
+      <li><span class="pn">1</span>The difficulty chips get the same bars. Chips that are off show grey bars.</li>
+      <li><span class="pn">2</span>The Deadliest chip gets the skull. The screen you start on already explains the markers, so no separate legend is needed.</li>
+    </ol>
+  </div>
+
+  <div class="frame">
+    <p class="cap">Favorites: same card, markers included</p>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>● ● 87%</span></div>
+      <div class="scr">
+        <div class="h1">Favorites</div>
+        <div class="sub">4 saved combos</div>
+        <div style="height:14px"></div>
+        <div data-opt="A" data-set="favs"></div>
+        <span class="pin" style="top:146px;right:4px">3</span>
+        <div class="fade"></div>
+      </div>
+      <div class="tabbar">
+        <div><svg><use href="#i-barbell"/></svg>Training</div>
+        <div><svg><use href="#i-timer"/></svg>Timer</div>
+        <div class="on"><svg><use href="#i-heart"/></svg>Favorites</div>
+        <div><svg><use href="#i-stats"/></svg>Stats</div>
+        <div><svg><use href="#i-gear"/></svg>Settings</div>
+      </div>
+    </div>
+    <ol class="notes pins">
+      <li><span class="pn">3</span><b>Optional:</b> an open combo shows its level and type in words above the steps, for example “Intermediate · Kicks”. You see the full words when the bars aren’t enough.</li>
+      <li>Favorites uses the same <code>ComboCard</code>, so it gets the markers with no extra work.</li>
+    </ol>
+  </div>
+</div>
+
+<!-- =============================== 5 · COMPARE =============================== -->
+<h2>5 · Quick comparison</h2>
+<div class="tablewrap">
+<table>
+  <tr><th></th><th>A · Bars</th><th>B · Stripe</th><th>C · Number</th><th>D · Label</th></tr>
+  <tr><td>Readable without colour</td><td class="y">Yes, count the bars</td><td class="n">No</td><td class="n">No</td><td class="y">Yes, words</td></tr>
+  <tr><td>Card height</td><td>Same</td><td>Same</td><td>Same</td><td>About 14 px taller</td></tr>
+  <tr><td>How much Deadliest stands out</td><td>Skull</td><td>Most: glow and skull</td><td>Purple badge and skull</td><td>Skull and the word</td></tr>
+  <tr><td>Shows the type too</td><td>No</td><td>No</td><td>No</td><td>Yes</td></tr>
+  <tr><td>Files to change</td><td><code>ComboCard</code>, <code>FilterChips</code></td><td><code>ComboCard</code></td><td><code>ComboCard</code></td><td><code>ComboCard</code></td></tr>
+</table>
+</div>
+
+</div>
+
+<script>
+// Renders the combo cards for each option from the data below (wireframe only).
+(function () {
+  const L = { beg: 'Beginner', int: 'Intermediate', adv: 'Advanced' };
+  const T = { punches: 'Punches', kicks: 'Kicks', elbows: 'Elbows', knees: 'Knees', clinch: 'Clinch', mixed: 'Mixed' };
+  const C = {
+    1: { name: 'Jab - Cross - Hook', diff: 'beg', type: 'punches', steps: ['Jab — lead hand straight, snap back fast', 'Cross — rear hand power, rotate hip', 'Hook — lead hand, turn shoulder into it'] },
+    7: { name: 'Jab - Body cross - Hook', diff: 'beg', type: 'punches', steps: ['Jab — draw guard up', 'Body cross — drop and drive rear hand to body', 'Hook — lead hook to head as they react'] },
+    13: { name: 'Jab → Body kick → Head kick', diff: 'beg', type: 'kicks', steps: ['Jab — open the guard', 'Body kick — same side, target floating rib', 'Head kick — elevate same leg immediately'] },
+    39: { name: 'Rear body kick → Lead body kick → Rear head kick', diff: 'int', type: 'kicks', steps: ['Rear body kick — open with power', 'Lead body kick — opposite side', 'Rear head kick — elevate to finish'] },
+    45: { name: 'Cross - Elbow → Step back → Rear kick', diff: 'int', type: 'elbows', steps: ['Cross — straight entry', 'Elbow — follow with upward elbow', 'Step back — reset distance', 'Rear kick — power kick on exit'] },
+    81: { name: 'Cross - Hook → Elbow - Elbow', diff: 'adv', type: 'elbows', steps: ['Cross - Hook — close distance fast', 'Horizontal elbow — slashing cut to open', 'Follow elbow — diagonal downward'] },
+    87: { name: 'Flying knee → Rear kick', diff: 'adv', type: 'knees', steps: ['Flying knee — drive off lead foot, knee to face', 'Rear kick — land and immediately rotate hip'] },
+    97: { name: 'Jab → Spinning elbow → Knee → Rear kick', diff: 'adv', type: 'deadliest', steps: ['Jab — draw guard up', 'Spinning elbow — fast pivot, target temple', 'Knee — on clinch contact', 'Rear kick — exit clean'] },
+    103: { name: 'Low kick → Spinning elbow → Clinch knee → Throw', diff: 'adv', type: 'deadliest', steps: ['Low kick — disrupt base', 'Spinning elbow — pivot and drive to temple', 'Clinch knee — grab and knee to body', 'Throw — dump over hip'] },
+  };
+  const SETS = {
+    session: [[1, { done: true }], [39, {}], [97, { open: true, fav: true }], [81, {}], [13, { fav: true }], [45, {}], [103, {}], [87, {}], [7, {}]],
+    icon: [[97, { n: 3 }], [103, { n: 7 }], [81, { n: 4 }]],
+    favs: [[13, { fav: true }], [39, { fav: true, open: true, xmeta: true, timer: false }], [87, { fav: true }], [97, { fav: true }]],
+  };
+
+  const skull = (icon, cls = 'sk') => `<svg class="${cls}"><use href="#${icon}"/></svg>`;
+  const bars = diff => `<span class="bars b${{ beg: 1, int: 2, adv: 3 }[diff]}"><i></i><i></i><i></i></span>`;
+
+  function card(opt, c, n, s) {
+    const dead = c.type === 'deadliest';
+    const icon = s.icon || 'i-skull';
+    const done = s.done && !s.open;
+    let cls = `cc lv-${dead ? 'dead' : c.diff}${s.open ? ' open' : ''}${done ? ' done' : ''}`;
+    let num = `<span class="no">${n}</span>`, left = '', inline = '', meta = '';
+    if (opt === 'A') left = dead ? skull(icon) : bars(c.diff);
+    if (opt === 'B') { cls += ' stripe'; if (dead) inline = skull(icon, 'sk sk-i'); }
+    if (opt === 'C') { num = `<span class="nb">${n}</span>`; if (dead) inline = skull(icon, 'sk sk-i'); }
+    if (opt === 'D') meta = `<span class="meta">${dead ? `${skull(icon)}Deadliest · Advanced` : `${L[c.diff]} · ${T[c.type]}`}</span>`;
+    let right = done ? '<svg class="ck"><use href="#i-checkc"/></svg>' : '';
+    right += `<svg class="ht${s.fav ? ' on' : ''}"><use href="#${s.fav ? 'i-heart-f' : 'i-heart'}"/></svg>`;
+    let body = '';
+    if (s.open) {
+      const xmeta = s.xmeta ? `<div class="xmeta"><b>${dead ? 'Deadliest' : L[c.diff]}</b> · ${dead ? 'Advanced' : T[c.type]}</div>` : '';
+      const steps = c.steps.map((t, k) => `<div class="st"><i>${k + 1}</i><span>${t}</span></div>`).join('');
+      body = `<div class="steps">${xmeta}${steps}${s.timer === false ? '' : '<div class="tbar"><div></div></div>'}</div>`;
+    }
+    return `<div class="${cls}"><div class="hr">${num}${left}<span class="nm">${c.name}${inline}${meta}</span>${right}</div>${body}</div>`;
+  }
+
+  document.querySelectorAll('[data-opt]').forEach(el => {
+    el.innerHTML = SETS[el.dataset.set].map(([id, s], k) =>
+      card(el.dataset.opt, C[id], s.n ?? k + 1, { ...s, icon: el.dataset.icon })).join('');
+  });
+
+  // Close-up grid: one row per option, one column per level.
+  const COLS = [['Beginner', 1, {}], ['Intermediate', 39, {}], ['Advanced', 87, {}], ['Deadliest', 97, {}], ['Done · Advanced', 81, { done: true }]];
+  const ROWS = [['A', 'Level bars', 'recommended'], ['B', 'Edge stripe', ''], ['C', 'Coloured number', ''], ['D', 'Label under name', '']];
+  let g = '<div></div>' + COLS.map(([h]) => `<div class="gh">${h}</div>`).join('');
+  ROWS.forEach(([opt, label, tag]) => {
+    g += `<div class="rl">${opt} · ${label}${tag ? `<small>${tag}</small>` : ''}</div>`;
+    g += COLS.map(([, id, s], k) => card(opt, C[id], k + 1, s)).join('');
+  });
+  document.getElementById('cmp').innerHTML = g;
+})();
+</script>
+</body>
+</html>

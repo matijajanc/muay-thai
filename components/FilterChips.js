@@ -1,11 +1,13 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, fontSize, spacing } from '../constants/theme';
+import LevelMarker from './LevelMarker';
 
+// marker: the combo cards' level marker, so these chips double as its legend.
 const DIFFICULTIES = [
-  { key: 'beg', label: 'Beginner', bg: colors.begBg, text: colors.begText, border: colors.begBorder },
-  { key: 'int', label: 'Intermediate', bg: colors.intBg, text: colors.intText, border: colors.intBorder },
-  { key: 'adv', label: 'Advanced', bg: colors.advBg, text: colors.advText, border: colors.advBorder },
+  { key: 'beg', label: 'Beginner', bg: colors.begBg, text: colors.begText, border: colors.begBorder, marker: { diff: 'beg' } },
+  { key: 'int', label: 'Intermediate', bg: colors.intBg, text: colors.intText, border: colors.intBorder, marker: { diff: 'int' } },
+  { key: 'adv', label: 'Advanced', bg: colors.advBg, text: colors.advText, border: colors.advBorder, marker: { diff: 'adv' } },
 ];
 
 const STD = { bg: colors.typeBg, text: colors.typeText, border: colors.typeBorder };
@@ -19,7 +21,7 @@ const TYPES = [
   { key: 'knees', label: 'Knees', ...STD },
   { key: 'clinch', label: 'Clinch', ...STD },
   { key: 'mixed', label: 'Mixed', ...STD },
-  { key: 'deadliest', label: 'Deadliest', ...DEAD },
+  { key: 'deadliest', label: 'Deadliest', ...DEAD, marker: { deadliest: true } },
 ];
 
 function Chip({ option, active, disabled = false, onPress }) {
@@ -39,6 +41,7 @@ function Chip({ option, active, disabled = false, onPress }) {
       {option.icon && (
         <Ionicons name={active ? option.icon : `${option.icon}-outline`} size={fontSize.md} color={textColor} />
       )}
+      {option.marker && <LevelMarker {...option.marker} color={textColor} />}
       <Text style={[styles.chipText, { color: textColor }]}>
         {option.label}
       </Text>

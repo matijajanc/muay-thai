@@ -2,6 +2,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, fontSize, spacing } from '../constants/theme';
 import TimerBar from './TimerBar';
+import LevelMarker from './LevelMarker';
 
 const HEART_UNFAVORITED = '#444444';
 
@@ -35,6 +36,11 @@ export default function ComboCard({
           hitSlop={4}
         >
           <Text style={styles.number}>{index}</Text>
+          <LevelMarker
+            diff={combo.diff}
+            deadliest={combo.type === 'deadliest'}
+            style={[styles.level, showDone && styles.levelDone]}
+          />
           <Text style={[styles.name, showDone && styles.nameDone]}>{combo.name}</Text>
         </Pressable>
 
@@ -107,7 +113,13 @@ const styles = StyleSheet.create({
     color: colors.comboNumber,
     fontSize: fontSize.base,
     fontWeight: '500',
-    minWidth: 18,
+    minWidth: 22, // room for "10"–"20" before the level marker
+  },
+  level: {
+    marginRight: spacing.sm,
+  },
+  levelDone: {
+    opacity: 0.45,
   },
   name: {
     flex: 1,
