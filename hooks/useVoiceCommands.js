@@ -7,6 +7,7 @@ import {
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { parseCommands } from '../voice/parseCommands';
 import { reportVoiceError } from '../utils/errorReporting';
+import { appendVoiceLog, micOnLine, phraseLine, errorLine } from '../voice/voiceLog';
 
 // Safety net against the recognizer delivering the same phrase twice (e.g. once
 // at the end of one segment and again at the start of the next).
@@ -77,8 +78,10 @@ const EN_LOCALE = 'en-US';
 const GOOGLE_ON_DEVICE = 'com.google.android.as';
 
 // onCommand(command) is called for every recognized command and may return a
-// short confirmation string to flash under the mic button.
-export function useVoiceCommands(onCommand) {
+// short confirmation string to flash under the mic button. With log on
+// (Settings → "Log voice commands"), every phrase heard and what it did is
+// written to the voice log (voice/voiceLog.js).
+export function useVoiceCommands(onCommand, { log = false } = {}) {
   const [listening, setListening] = useState(false); // user wants the mic on
   const [lastHeard, setLastHeard] = useState('');
   const [error, setError] = useState(null);
@@ -105,6 +108,9 @@ export function useVoiceCommands(onCommand) {
   const downloadAskedRef = useRef(false); // offline model download asked for this run
   const onCommandRef = useRef(onCommand);
   onCommandRef.current = onCommand;
+  const logOnRef = useRef(log);
+  logOnRef.current = log;
+  const phraseRef = useRef(null); // phrase being heard, for the log: { alts, did, note }
 
   const startRecognition = () => {
     if (!shouldListenRef.current || runningRef.current) return;
@@ -164,7 +170,24 @@ export function useVoiceCommands(onCommand) {
     if (last.key === command.key && now - last.at < REPEAT_GUARD_MS) return;
     lastFiredRef.current = { key: command.key, at: now };
     const message = onCommandRef.current?.(command);
+    phraseRef.current?.did.push(message ?? command.key);
     if (message) flash(message);
+  };
+
+  // Voice log: keep the latest alternatives of the phrase being heard, and
+  // write it once the recognizer settles on it (or the session ends first).
+  const trackPhrase = (event, note) => {
+    if (!logOnRef.current) return;
+    const phrase = phraseRef.current ?? { did: [] };
+    phrase.alts = (event.results ?? []).map(r => r?.transcript);
+    phrase.note = note;
+    phraseRef.current = phrase;
+  };
+
+  const writePhrase = (note) => {
+    const phrase = phraseRef.current;
+    phraseRef.current = null;
+    if (phrase) appendVoiceLog(phraseLine(new Date(), { ...phrase, note: phrase.note ?? note }));
   };
 
   // Decide whether to use offline recognition. Look for the installed English
@@ -217,6 +240,7 @@ export function useVoiceCommands(onCommand) {
   // After errors, back off so a persistent failure doesn't spin.
   useSpeechRecognitionEvent('end', () => {
     runningRef.current = false;
+    writePhrase('cut off');
     if (!shouldListenRef.current) return;
     const streak = errorStreakRef.current;
     if (streak === 0) {
@@ -239,9 +263,14 @@ export function useVoiceCommands(onCommand) {
     const transcript = event?.results?.[0]?.transcript;
     if (!transcript) return;
     errorStreakRef.current = 0;
-    if (Date.now() < suppressUntilRef.current) {
+    const echo = Date.now() < suppressUntilRef.current;
+    trackPhrase(event, echo ? 'ignored: during our bell or voice' : undefined);
+    if (echo) {
       // Our own bell or TTS: never a command.
-      if (event.isFinal) segmentRef.current = [];
+      if (event.isFinal) {
+        segmentRef.current = [];
+        writePhrase();
+      }
       return;
     }
     setLastHeard(transcript);
@@ -254,11 +283,17 @@ export function useVoiceCommands(onCommand) {
       handled[i] = command.key;
       fire(command);
     });
-    if (event.isFinal) segmentRef.current = [];
+    if (event.isFinal) {
+      segmentRef.current = [];
+      writePhrase();
+    }
   });
 
   useSpeechRecognitionEvent('error', (event) => {
     const code = event?.error;
+    if (logOnRef.current && !BENIGN_ERRORS.has(code)) {
+      appendVoiceLog(errorLine(new Date(), code, event?.message));
+    }
     if (BENIGN_ERRORS.has(code)) {
       errorStreakRef.current = 0; // the recognizer works, it just heard nothing
       return; // the "end" handler will restart
@@ -328,6 +363,16 @@ export function useVoiceCommands(onCommand) {
     const useOnDevice = await prepareOnDevice();
     if (!shouldListenRef.current) return; // stopped while we were preparing
     onDeviceRef.current = useOnDevice;
+    if (logOnRef.current) {
+      const { Manufacturer, Model } = Platform.constants ?? {};
+      appendVoiceLog(micOnLine(new Date(), {
+        onDevice: useOnDevice,
+        service: onDeviceServiceRef.current,
+        platform: Platform.OS,
+        os: Platform.Version,
+        device: [Manufacturer, Model].filter(Boolean).join(' '),
+      }));
+    }
     errorStreakRef.current = 0;
     lastFiredRef.current = { key: null, at: 0 };
     startRecognition();

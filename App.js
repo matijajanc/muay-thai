@@ -219,7 +219,7 @@ function App() {
         return null;
     }
   }, [navigationRef, onTimerCommand]);
-  const voice = useVoiceCommands(onCommand);
+  const voice = useVoiceCommands(onCommand, { log: prefs.prefs.logVoice });
 
   // Round timer: cues feed the recognizer's echo guard so bells and our own
   // TTS never trigger commands.

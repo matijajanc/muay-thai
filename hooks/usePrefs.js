@@ -11,6 +11,7 @@ export const DEFAULT_PREFS = {
   weeklyGoal: 3, // training days per week for the streak (1–7)
   sessionSize: 10, // combos per generated session (SESSION_SIZES)
   comboHoldSec: 60, // COMBO_HOLD_SECONDS
+  logVoice: false, // log every phrase heard, for tuning recognition (voice/voiceLog.js)
 };
 
 const sanitize = (saved) => {
@@ -20,11 +21,12 @@ const sanitize = (saved) => {
   }
   if (SESSION_SIZES.includes(saved?.sessionSize)) prefs.sessionSize = saved.sessionSize;
   if (COMBO_HOLD_SECONDS.includes(saved?.comboHoldSec)) prefs.comboHoldSec = saved.comboHoldSec;
+  if (typeof saved?.logVoice === 'boolean') prefs.logVoice = saved.logVoice;
   return prefs;
 };
 
-// App preferences outside the timer: the weekly goal, session size and how long
-// an opened combo stays open.
+// App preferences outside the timer: the weekly goal, session size, how long
+// an opened combo stays open and the voice log.
 export function usePrefs() {
   const [prefs, setPrefs] = useState(DEFAULT_PREFS);
   // Nothing is saved until the stored values have loaded; a value changed

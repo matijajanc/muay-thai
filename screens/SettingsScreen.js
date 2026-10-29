@@ -1,15 +1,20 @@
-import { useState } from 'react';
-import { View, Text, Pressable, ScrollView, Linking, StyleSheet } from 'react-native';
+import { useState, useCallback } from 'react';
+import { View, Text, Pressable, ScrollView, Linking, Alert, Share, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, fontSize, spacing } from '../constants/theme';
 import { PRIVACY_POLICY_URL } from '../constants/links';
 import VoiceCommandList from '../components/VoiceCommandList';
 import TimerIcon from '../components/timer/TimerIcon';
 import { OptionSheet } from '../components/timer/TimerSheets';
+import { Toggle } from '../components/timer/TimerUI';
 import { usePrefsContext } from '../contexts/AppContext';
 import { COMBO_HOLD_SECONDS } from '../hooks/usePrefs';
 import { SESSION_SIZES } from '../utils/sessionPicker';
+import {
+  readVoiceLog, clearVoiceLog, phraseCount, MAX_LOG_LINES,
+} from '../voice/voiceLog';
 
 const GETTING_STARTED = [
   'Tap the mic on the Training or Timer tab and allow the microphone the first time. Android may also prompt once to download the small offline voice model.',
@@ -30,6 +35,10 @@ const holdHint = (sec) => (sec
   ? `A combo you open, by tap or voice, collapses after ${holdLabel(sec)}.`
   : 'A combo you open stays open until you tap it again or open another one.');
 
+const LOG_HINT = 'Writes down every phrase the mic hears and what it did, as text on this phone '
+  + 'only, so you can send it to the developer to tune voice recognition. No audio is saved. '
+  + `Keeps the newest ${MAX_LOG_LINES} lines.`;
+
 // .card .r: label + value + chevron, opens a sheet.
 function PrefRow({ label, value, onPress, last = false }) {
   return (
@@ -48,6 +57,33 @@ export default function SettingsScreen() {
   // Which sheet is open: 'size' | 'hold'.
   const [sheet, setSheet] = useState(null);
   const close = () => setSheet(null);
+
+  // Voice log: recounted whenever the tab shows, since the mic logs from the
+  // other tabs.
+  const [logged, setLogged] = useState(0);
+  const refreshLogged = useCallback(() => {
+    readVoiceLog().then(log => setLogged(phraseCount(log)));
+  }, []);
+  useFocusEffect(refreshLogged);
+
+  const sendLog = async () => {
+    const log = await readVoiceLog();
+    Share.share({ title: 'Glove Mode voice log', message: log.join('\n') })
+      .catch(e => Alert.alert('Could not share the log', String(e?.message ?? e)));
+  };
+
+  const confirmClear = () => Alert.alert(
+    'Clear the voice log?',
+    `${logged} ${logged === 1 ? 'phrase' : 'phrases'} on this phone.`,
+    [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Clear',
+        style: 'destructive',
+        onPress: () => clearVoiceLog().then(refreshLogged),
+      },
+    ],
+  );
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -105,6 +141,43 @@ export default function SettingsScreen() {
             onPress={() => setSheet('hold')}
             last
           />
+        </View>
+
+        {/* Voice log for tuning recognition */}
+        <Text style={[styles.sectionLabel, styles.sectionLabelSpaced]}>VOICE DEBUGGING</Text>
+        <View style={styles.card}>
+          <Pressable
+            style={[styles.prefRow, styles.prefRowPlain]}
+            onPress={() => update({ logVoice: !prefs.logVoice })}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: prefs.logVoice }}
+          >
+            <Text style={styles.prefLabel}>Log voice commands</Text>
+            <Toggle on={prefs.logVoice} />
+          </Pressable>
+          <Text style={[styles.rowHint, !(prefs.logVoice || logged) && styles.rowHintLast]}>
+            {LOG_HINT}
+          </Text>
+          {(prefs.logVoice || logged > 0) && (
+            <>
+              <View style={styles.prefRow}>
+                <Text style={styles.prefLabel}>Logged phrases</Text>
+                <Text style={styles.prefValue}>{logged || 'None'}</Text>
+              </View>
+              <Pressable style={styles.prefRow} onPress={sendLog} disabled={!logged}>
+                <Text style={[styles.prefLabel, !logged && styles.disabled]}>Send log</Text>
+                <Ionicons name="share-outline" size={fontSize.md} color={colors.textMuted} />
+              </Pressable>
+              <Pressable
+                style={[styles.prefRow, styles.prefRowLast]}
+                onPress={confirmClear}
+                disabled={!logged}
+              >
+                <Text style={[styles.deleteLabel, !logged && styles.disabled]}>Clear log</Text>
+                <Ionicons name="trash-outline" size={fontSize.md} color={colors.textMuted} />
+              </Pressable>
+            </>
+          )}
         </View>
 
         {/* Safety + privacy */}
@@ -228,7 +301,19 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   prefRowLast: { borderBottomWidth: 0 },
+  prefRowPlain: { borderBottomWidth: 0, paddingBottom: spacing.xs },
   prefLabel: { color: colors.textSecondary, fontSize: fontSize.base },
+  deleteLabel: { color: colors.advText, fontSize: fontSize.base },
+  disabled: { opacity: 0.4 },
+  rowHint: {
+    color: colors.textMuted,
+    fontSize: fontSize.sm,
+    lineHeight: fontSize.sm * 1.5,
+    paddingBottom: spacing.md,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.border,
+  },
+  rowHintLast: { borderBottomWidth: 0 },
   prefValueWrap: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   prefValue: { color: colors.textPrimary, fontSize: fontSize.base, fontWeight: '500' },
   aboutText: {

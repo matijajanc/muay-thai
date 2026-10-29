@@ -4,7 +4,7 @@ title: Privacy Policy
 
 # Privacy Policy — Glove Mode: Muay Thai
 
-_Effective 14 October 2026_
+_Effective 29 October 2026_
 
 Glove Mode: Muay Thai ("the app") is a personal training app: combos, a round timer, voice
 commands and a training log. This policy explains what happens to your data. In short: it stays
@@ -13,8 +13,8 @@ on your phone, except anonymous crash reports.
 ## What the app stores
 
 Your favorites, your current training session, timer settings and saved presets, your training
-log (finished timer runs and combo sessions) and your settings. All of it is stored **only on
-your device**. Uninstalling the app, or clearing its data, deletes it.
+log (finished timer runs and combo sessions), your settings and, only if you switch it on, a
+voice log (see below). All of it is stored **only on your device**. Uninstalling the app, or clearing its data, deletes it.
 
 There are no accounts, no ads, no analytics and no tracking. The app has no servers of its own,
 and apart from the crash reports below, nothing you do in the app is sent to the developer or
@@ -40,8 +40,14 @@ you switch it off or leave the app.
 The audio goes to your phone's built-in speech recognition service (for example Google's, or
 Samsung's), which turns it into text. When your phone supports it, this happens **on the
 device**. Otherwise your phone's speech service may process the audio online, under its
-provider's privacy policy. The app itself never records, stores or sends audio, and it doesn't
+provider's privacy policy. The app itself doesn't record, store or send audio, and it doesn't
 keep the recognized text: it only checks it for commands.
+
+The one exception is **Log voice commands** in Settings (Voice debugging), which is off unless you
+switch it on. While it is on, the app keeps a text log on your phone of what the speech service
+recognized and which commands ran (no audio), up to the newest 500 lines. Nothing is sent
+anywhere: the log only leaves your phone if you tap **Send log** and choose where to send it
+yourself. **Clear log**, uninstalling the app or clearing its data deletes it.
 
 ## Notifications
 
