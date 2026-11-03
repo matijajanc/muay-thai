@@ -5,7 +5,7 @@ import {
   useSpeechRecognitionEvent,
 } from 'expo-speech-recognition';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
-import { parseCommands } from '../voice/parseCommands';
+import { parseAlternatives } from '../voice/parseCommands';
 import { reportVoiceError } from '../utils/errorReporting';
 import { appendVoiceLog, micOnLine, phraseLine, errorLine } from '../voice/voiceLog';
 
@@ -20,19 +20,6 @@ const NOTICE_MS = 8000;
 const MAX_ERROR_STREAK = 6;
 const MAX_BACKOFF_MS = 4000;
 const KEEP_AWAKE_TAG = 'voice-commands';
-
-// Scan every alternative the recognizer offers, not just the top guess — the
-// correct "combo N" is frequently the 2nd or 3rd alternative. Prefer the one
-// that contains the most commands (earliest alternative wins ties).
-function parseFromAlternatives(results) {
-  if (!Array.isArray(results)) return [];
-  let best = [];
-  for (const alt of results) {
-    const commands = parseCommands(alt?.transcript);
-    if (commands.length > best.length) best = commands;
-  }
-  return best;
-}
 
 const START_OPTIONS = {
   lang: 'en-US',
@@ -80,8 +67,9 @@ const GOOGLE_ON_DEVICE = 'com.google.android.as';
 // onCommand(command) is called for every recognized command and may return a
 // short confirmation string to flash under the mic button. With log on
 // (Settings → "Log voice commands"), every phrase heard and what it did is
-// written to the voice log (voice/voiceLog.js).
-export function useVoiceCommands(onCommand, { log = false } = {}) {
+// written to the voice log (voice/voiceLog.js). isTimerIdle() lets a misheard
+// "stop timer" become the "start timer" it most likely was (parseAlternatives).
+export function useVoiceCommands(onCommand, { log = false, isTimerIdle } = {}) {
   const [listening, setListening] = useState(false); // user wants the mic on
   const [lastHeard, setLastHeard] = useState('');
   const [error, setError] = useState(null);
@@ -108,6 +96,8 @@ export function useVoiceCommands(onCommand, { log = false } = {}) {
   const downloadAskedRef = useRef(false); // offline model download asked for this run
   const onCommandRef = useRef(onCommand);
   onCommandRef.current = onCommand;
+  const isTimerIdleRef = useRef(isTimerIdle);
+  isTimerIdleRef.current = isTimerIdle;
   const logOnRef = useRef(log);
   logOnRef.current = log;
   const phraseRef = useRef(null); // phrase being heard, for the log: { alts, did, note }
@@ -276,7 +266,9 @@ export function useVoiceCommands(onCommand, { log = false } = {}) {
     setLastHeard(transcript);
 
     const handled = segmentRef.current;
-    parseFromAlternatives(event.results).forEach((command, i) => {
+    const transcripts = (event.results ?? []).map(r => r?.transcript);
+    const timerIdle = isTimerIdleRef.current?.() ?? false;
+    parseAlternatives(transcripts, { timerIdle }).forEach((command, i) => {
       if ((command.tentative || command.final) && !event.isFinal) return;
       const prev = handled[i];
       if (prev !== undefined && (prev === command.key || command.type !== 'slot')) return;

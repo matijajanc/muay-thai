@@ -1,5 +1,5 @@
 import { parseTimerCommands } from '../timerGrammar';
-import { parseCommands } from '../parseCommands';
+import { parseCommands, parseAlternatives } from '../parseCommands';
 import { parseDuration, parseNumber, words } from '../numbers';
 
 // Just the parts that matter for routing.
@@ -212,5 +212,34 @@ describe('merged parsing', () => {
     expect(parseCommands('combo next')).toEqual([
       { type: 'next', key: 'next', pos: 0, domain: 'combo' },
     ]);
+  });
+});
+
+describe('alternatives', () => {
+  const pick = (alts, opts) => parseAlternatives(alts, opts).map(c => c.key);
+  // Voice log, 2026-11-02 17:39:12: "start timer" heard as "stop timer" first.
+  const heardStop = [' stop timer', ' last timer', ' timer', ' start timer'];
+
+  it('takes the alternative with the most commands, earliest on ties', () => {
+    expect(pick([' Come before', ' Combo four', ' Combo for'])).toEqual(['slot:4']);
+    expect(pick([' start timer', ' stop timer'], { timerIdle: true })).toEqual(['timer:start']);
+  });
+
+  it('turns a stop on an idle timer into a start from another alternative', () => {
+    expect(pick(heardStop, { timerIdle: true })).toEqual(['timer:start']);
+    expect(pick([' next combo stop timer', ' next combo start timer'], { timerIdle: true }))
+      .toEqual(['next', 'timer:start']);
+  });
+
+  it('never lets a lower guess stop a running timer', () => {
+    expect(pick(heardStop, { timerIdle: false })).toEqual(['timer:stop']);
+    expect(pick([' start timer', ' stop timer'], { timerIdle: false })).toEqual(['timer:start']);
+  });
+
+  it('holds a stop on an idle timer for the final result', () => {
+    expect(parseAlternatives([' stop timer'], { timerIdle: true })).toEqual([
+      expect.objectContaining({ key: 'timer:stop', tentative: true }),
+    ]);
+    expect(parseAlternatives([' stop timer'])[0].tentative).toBeUndefined();
   });
 });
