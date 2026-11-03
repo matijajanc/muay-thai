@@ -170,7 +170,9 @@ export function useVoiceCommands(onCommand, { log = false, isTimerIdle } = {}) {
     if (!logOnRef.current) return;
     const phrase = phraseRef.current ?? { did: [] };
     phrase.alts = (event.results ?? []).map(r => r?.transcript);
-    phrase.note = note;
+    // Our own voice often runs on into the phrase that started it ("start
+    // timer" + "get ready"): the command still ran, so it isn't "ignored".
+    phrase.note = phrase.did.length ? undefined : note;
     phraseRef.current = phrase;
   };
 
