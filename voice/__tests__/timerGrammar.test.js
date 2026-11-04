@@ -65,6 +65,17 @@ describe('timer grammar', () => {
     ['set 2:30 countdown', { type: 'countdown', sec: 150 }],
     ['set 5 rounds of 3 minutes', { type: 'workout', rounds: 5, roundSec: 180 }],
     ['five rounds of three minutes', { type: 'workout', rounds: 5, roundSec: 180 }],
+    // Duration first (voice log 2026-11-04): a 2-round workout, not a 2:00
+    // countdown that ends after one round plus a changed Rounds setting.
+    ['set 2 minute timer 2 rounds', { type: 'workout', rounds: 2, roundSec: 120 }],
+    [' Set two minute timer two rounds', { type: 'workout', rounds: 2, roundSec: 120 }],
+    [' Set 2-minute timer two rounds', { type: 'workout', rounds: 2, roundSec: 120 }],
+    [' Set two minute counter two rounds', { type: 'workout', rounds: 2, roundSec: 120 }],
+    ['set a 3 minute countdown for 5 rounds', { type: 'workout', rounds: 5, roundSec: 180 }],
+    ['2 minute timer and 3 rounds', { type: 'workout', rounds: 3, roundSec: 120 }],
+    ['timer 2 minutes 4 rounds', { type: 'workout', rounds: 4, roundSec: 120 }],
+    ['set 2 minutes 2 rounds', { type: 'workout', rounds: 2, roundSec: 120 }],
+    ['set 3 rounds 2 minute timer', { type: 'workout', rounds: 3, roundSec: 120 }],
     ['set rest 30 seconds', { type: 'set', field: 'restSec', value: 30 }],
     ['set rest to 30 seconds', { type: 'set', field: 'restSec', value: 30 }],
     ['rest a minute', { type: 'set', field: 'restSec', value: 60 }],
@@ -234,6 +245,22 @@ describe('alternatives', () => {
   it('never lets a lower guess stop a running timer', () => {
     expect(pick(heardStop, { timerIdle: false })).toEqual(['timer:stop']);
     expect(pick([' start timer', ' stop timer'], { timerIdle: false })).toEqual(['timer:start']);
+  });
+
+  // Voice log 2026-11-04 17:30:28, on the done screen after a workout.
+  it('reads "start time" in another alternative as the start', () => {
+    const heard = [' Stop timer', ' Start time', ' Start time on it'];
+    expect(pick(heard, { timerIdle: true })).toEqual(['timer:start']);
+    expect(pick(heard, { timerIdle: false })).toEqual(['timer:stop']);
+    expect(pick([' start time'], { timerIdle: true })).toEqual([]);
+  });
+
+  // Voice log 2026-11-04 17:46:32: only the 4th alternative heard "rounds".
+  it('prefers the alternative that heard the whole workout', () => {
+    expect(pick([
+      ' Set two minute counter two routes', ' Set two minute counter tour routes',
+      ' Set 2 minute counter two routes', ' Set two minute counter two rounds',
+    ])).toEqual(['timer:workout:2:120']);
   });
 
   it('holds a stop on an idle timer for the final result', () => {

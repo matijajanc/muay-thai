@@ -96,6 +96,22 @@ describe('combo grammar (regression)', () => {
     expect(parseCommands(transcript).map(c => c.type)).toEqual(types);
   });
 
+  // Voice log 2026-11-04, gym speakers on: "combo five" and "combo nine" took
+  // three and five tries.
+  it.each([
+    [' Como fight', 5], [' Como fights', 5], [' Combo fives', 5], [' Combo Fife', 5],
+    [' Anyone combo fives', 5], [' Combo line', 9], [' Comb online', 9], [' Combine line', 9],
+    [' Common online', 9], [' Comment online', 9], [' Become online', 9], ['comboline', 9],
+  ])('hears the gym mis-hearing %j', (transcript, slot) => {
+    expect(parseCommands(transcript).map(c => c.slot)).toEqual([slot]);
+  });
+
+  it.each([
+    'fight', 'online', 'line up', 'come on fight', 'come on line', 'common line', 'go online',
+  ])('ignores %j without a trigger right before it', (transcript) => {
+    expect(parseCommands(transcript)).toEqual([]);
+  });
+
   it('reports where each command starts', () => {
     expect(parseCommands('hey combo 2 and combo next').map(c => c.pos)).toEqual([1, 4]);
     expect(parseCommands('ok next combo').map(c => c.pos)).toEqual([1]);

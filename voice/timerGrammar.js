@@ -3,7 +3,8 @@
 //   "set 2 minutes countdown" / "countdown 90 seconds" / "set a 2 minute 30 timer"
 //       → { type: 'countdown', sec }                          (final result only)
 //       ("counter" / "count" work like "countdown": "set the 2 minutes counter")
-//   "set 5 rounds of 3 minutes"  → { type: 'workout', rounds, roundSec }   (final)
+//   "set 5 rounds of 3 minutes" / "set 2 minute timer 2 rounds"
+//       → { type: 'workout', rounds, roundSec }                            (final)
 //   "set rest 30 seconds" / "set rounds 6" / "set round 2 minutes" / "set delay 5 seconds"
 //       → { type: 'set', field, value }                                    (final)
 //   "preset muay thai"           → { type: 'preset', query }               (final)
@@ -89,6 +90,18 @@ function tokens(transcript) {
   return out;
 }
 
+// "start (the) timer", or "start (the) time", which is how a misheard "start
+// timer" often comes back. Too loose for a command of its own ("start time is
+// 6"); parseAlternatives uses it to rescue a "stop timer" on an idle timer.
+export function saysStartTimer(transcript) {
+  const ws = words(transcript);
+  return ws.some((w, i) => {
+    if (CONTROL_WORDS[w] !== 'start') return false;
+    const t = ARTICLES.has(ws[i + 1]) ? i + 2 : i + 1;
+    return TIMER_WORDS.has(ws[t]) || ws[t] === 'time';
+  });
+}
+
 export function parseTimerCommands(transcript) {
   const toks = tokens(transcript);
   const ws = toks.map(t => t.w);
@@ -118,6 +131,21 @@ export function parseTimerCommands(transcript) {
     return num;
   };
 
+  // A round count after a duration: "2 minute timer 2 rounds", "… and 2
+  // rounds", "… for 2 rounds". → { rounds, end } or null.
+  const roundsAfter = (i) => {
+    const k = ws[i] === 'and' || ws[i] === 'with' ? i + 1 : i;
+    const num = parseNumber(ws, skip(k));
+    return num && ROUNDS_WORDS.has(ws[num.end]) ? { rounds: num.value, end: num.end + 1 } : null;
+  };
+  // A countdown, or a workout when a round count follows the duration.
+  const timed = (sec, end) => {
+    const r = roundsAfter(end);
+    return r
+      ? { cmd: { type: 'workout', rounds: r.rounds, roundSec: sec }, end: r.end }
+      : { cmd: { type: 'countdown', sec }, end };
+  };
+
   // The command that starts at word i → { cmd, end } or null.
   function matchAt(i) {
     const w = ws[i];
@@ -140,7 +168,7 @@ export function parseTimerCommands(transcript) {
     // "countdown 90 seconds" / "timer for 2 minutes"
     if (COUNTDOWN_WORDS.has(w) || TIMER_WORDS.has(w)) {
       const d = durationAt(i + 1);
-      if (d) return { cmd: { type: 'countdown', sec: d.sec }, end: d.end };
+      if (d) return timed(d.sec, d.end);
     }
 
     // "rest 30 seconds" / "rest time 30 seconds"
@@ -182,13 +210,13 @@ export function parseTimerCommands(transcript) {
       return { cmd: { type: 'set', field: 'rounds', value: num.value }, end: num.end + 1 };
     }
 
-    // "2 minutes countdown" / "a 2 minute 30 timer"
+    // "2 minutes countdown" / "a 2 minute 30 timer" / "2 minute timer 2 rounds" /
+    // "2 minutes 2 rounds"
     const d = parseDuration(ws, i);
     if (d) {
       const j = skip(d.end);
-      if (COUNTDOWN_WORDS.has(ws[j]) || TIMER_WORDS.has(ws[j])) {
-        return { cmd: { type: 'countdown', sec: d.sec }, end: j + 1 };
-      }
+      if (COUNTDOWN_WORDS.has(ws[j]) || TIMER_WORDS.has(ws[j])) return timed(d.sec, j + 1);
+      if (roundsAfter(d.end)) return timed(d.sec, d.end);
     }
     return null;
   }

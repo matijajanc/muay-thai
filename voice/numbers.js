@@ -9,7 +9,7 @@ export const WORD_TO_NUM = {
   two: 2, to: 2, too: 2,
   three: 3, tree: 3, free: 3,
   four: 4, for: 4, fore: 4, faux: 4, foe: 4, far: 4,
-  five: 5, hive: 5,
+  five: 5, hive: 5, fives: 5, fife: 5,
   six: 6, sex: 6, sicks: 6,
   seven: 7,
   eight: 8, ate: 8, ait: 8,
@@ -95,10 +95,11 @@ export function parseDuration(ws, i) {
   // "... and a half"
   const halfAfter = andAHalf(ws, j);
   if (halfAfter > 0) return { sec: sec + 30, end: halfAfter };
-  // "... (and) 30 (seconds)"; a bare everyday word ("to") only with "seconds".
+  // "... (and) 30 (seconds)"; a bare everyday word ("to") only with "seconds",
+  // and never a round count ("2 minutes 4 rounds").
   const k = ws[j] === 'and' ? j + 1 : j;
   const extra = parseNumber(ws, k);
-  if (extra && extra.value < 60) {
+  if (extra && extra.value < 60 && ws[extra.end] !== 'rounds') {
     if (isSecondWord(ws[extra.end])) return { sec: sec + extra.value, end: extra.end + 1 };
     if (!AMBIGUOUS_NUMBER_WORDS.has(ws[k])) return { sec: sec + extra.value, end: extra.end };
   }

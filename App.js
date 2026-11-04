@@ -221,7 +221,8 @@ function App() {
   }, [navigationRef, onTimerCommand]);
   const voice = useVoiceCommands(onCommand, {
     log: prefs.prefs.logVoice,
-    isTimerIdle: () => timerRef.current?.status === 'idle',
+    // Nothing running: idle, or the done screen after a workout.
+    isTimerIdle: () => ['idle', 'done'].includes(timerRef.current?.status),
   });
 
   // Round timer: cues feed the recognizer's echo guard so bells and our own

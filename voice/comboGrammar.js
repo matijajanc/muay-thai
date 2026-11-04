@@ -11,6 +11,11 @@ const ACTION_WORDS = {
   finish: 'finish', finished: 'finish', finnish: 'finish',
 };
 
+// Mis-hearings that only count as a number right after the trigger, since
+// they're everyday words anywhere else ("combo five" → "como fight", "combo
+// nine" → "combo line" / "comb online"; voice log 2026-11-04, gym speakers on).
+const SLOT_WORDS = { fight: 5, fights: 5, line: 9, lines: 9, online: 9 };
+
 const slotCommand = (n) =>
   n >= 1 && n <= MAX_SESSION_SIZE ? { type: 'slot', slot: n, key: `slot:${n}` } : null;
 const actionCommand = (type) => ({ type, key: type });
@@ -20,6 +25,7 @@ function wordToCommand(word) {
   if (!word) return null;
   if (/^\d{1,2}$/.test(word)) return slotCommand(parseInt(word, 10));
   if (WORD_TO_NUM[word]) return slotCommand(WORD_TO_NUM[word]);
+  if (SLOT_WORDS[word]) return slotCommand(SLOT_WORDS[word]);
   if (ACTION_WORDS[word]) return actionCommand(ACTION_WORDS[word]);
   return null;
 }
@@ -32,7 +38,7 @@ const MERGED_WORDS = {
   comba: slotCommand(8), // "combo eight" -> "comba(te)"
 };
 // "combo" + a command word (3+ chars) → the same command, e.g. "comboten", "combonext".
-for (const word of [...Object.keys(WORD_TO_NUM), ...Object.keys(ACTION_WORDS)]) {
+for (const word of [...Object.keys(WORD_TO_NUM), ...Object.keys(SLOT_WORDS), ...Object.keys(ACTION_WORDS)]) {
   if (word.length >= 3) MERGED_WORDS['combo' + word] = wordToCommand(word);
 }
 
@@ -55,6 +61,11 @@ const NOT_TRIGGERS = new Set([
 // everyday word. ("number" only works after it: "combo number 3".)
 const isTrigger = (word) => /^(com|kom)/.test(word) && !NOT_TRIGGERS.has(word);
 
+// "combo nine" said fast comes back as "come online" / "common online" /
+// "comment online" / "become online": these everyday words count as the
+// trigger only right before "online".
+const ONLINE_LEADS = new Set(['come', 'comes', 'common', 'comment', 'become']);
+
 // Words that also work before the trigger: "next combo", "previous combo".
 // ("back combo" isn't said, and "back" + a com- word is everyday speech.)
 const LEAD_WORDS = new Set(['next', 'nexts', 'necks', 'neck', 'nest', 'text', 'previous', 'prev']);
@@ -73,6 +84,11 @@ export function parseCommands(transcript) {
     const merged = mergedCommand(ws[i]);
     if (merged) {
       commands.push({ ...merged, pos: i });
+      continue;
+    }
+    if (ONLINE_LEADS.has(ws[i]) && ws[i + 1] === 'online') {
+      commands.push({ ...slotCommand(SLOT_WORDS.online), pos: i });
+      i += 1;
       continue;
     }
     // "next combo", unless the trigger has its own command ("next, combo 3").
