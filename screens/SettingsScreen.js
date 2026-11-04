@@ -5,6 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, fontSize, spacing } from '../constants/theme';
 import { PRIVACY_POLICY_URL } from '../constants/links';
+import { appVersionLabel } from '../utils/appVersion';
 import VoiceCommandList from '../components/VoiceCommandList';
 import TimerIcon from '../components/timer/TimerIcon';
 import { OptionSheet } from '../components/timer/TimerSheets';
@@ -190,12 +191,16 @@ export default function SettingsScreen() {
             coach.
           </Text>
           <Pressable
-            style={[styles.prefRow, styles.prefRowLast]}
+            style={styles.prefRow}
             onPress={() => Linking.openURL(PRIVACY_POLICY_URL).catch(() => {})}
           >
             <Text style={styles.prefLabel}>Privacy policy</Text>
             <Ionicons name="open-outline" size={fontSize.md} color={colors.textMuted} />
           </Pressable>
+          <View style={[styles.prefRow, styles.prefRowLast]}>
+            <Text style={styles.prefLabel}>Version</Text>
+            <Text style={styles.prefValue}>{appVersionLabel() ?? '—'}</Text>
+          </View>
         </View>
       </ScrollView>
 

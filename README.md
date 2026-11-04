@@ -62,7 +62,11 @@ Local release builds without it: `SENTRY_DISABLE_AUTO_UPLOAD=true`.
 ```bash
 npm test                          # engine, log, stats + voice grammar tests (jest-expo)
 node scripts/generate-sounds.js   # regenerate the timer sounds in assets/sounds/
+npm run set-version -- patch      # bump the version name (see RELEASING.md)
 ```
+
+Versioning and the Google Play release steps: [RELEASING.md](RELEASING.md). What changed in each
+version: [CHANGELOG.md](CHANGELOG.md).
 
 ## Project structure
 
@@ -90,11 +94,12 @@ utils/statsLabels.js   All Stats copy
 utils/sessionPicker.js Filtering and picking a session (pure, tested)
 utils/storage.js       AsyncStorage JSON helpers that never throw
 utils/errorReporting.js Sentry crash/error reports (release builds only) + voice error reports
+utils/appVersion.js    "1.0.1 (6)": version name + build number for Settings and the voice log
 voice/                 numbers, comboGrammar, timerGrammar, commandHelp (+ tests)
 components/            ComboCard, FilterChips, TimerBar, MicButton, FinishCelebration, CrashScreen
 components/timer/      TimerRing, TimerDial, TrainingClock, sheets, run/done views, icons
 screens/               TrainingScreen, TimerScreen, FavoritesScreen, StatsScreen, SettingsScreen
-scripts/               generate-sounds.js (writes assets/sounds/*.wav, no dependencies)
+scripts/               generate-sounds.js (writes assets/sounds/*.wav, no dependencies), set-version.js
 docs/privacy.md        Privacy policy (GitHub Pages)
 promo/                 FB/IG promo video: index.html animation, render.mjs (Chrome → ffmpeg,
                        no dependencies), videos/*.mp4 — see promo/README.md

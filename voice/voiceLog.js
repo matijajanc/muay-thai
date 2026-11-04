@@ -14,10 +14,14 @@ const pad = (n) => String(n).padStart(2, '0');
 const clock = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 const day = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
-// "--- 2026-10-29 15:21 mic on · offline (com.google.android.as) · android 36 · samsung SM-S938B"
-export function micOnLine(date, { onDevice, service, platform, os, device }) {
+// "--- 2026-10-29 15:21 mic on · offline (com.google.android.as) · android 36 · samsung SM-S938B · app 1.0.1 (6)"
+// The app version says which grammar heard the phrases below it.
+export function micOnLine(date, { onDevice, service, platform, os, device, app }) {
   const recognizer = onDevice ? `offline${service ? ` (${service})` : ''}` : 'online';
-  return [`--- ${day(date)} ${clock(date).slice(0, 5)} mic on`, recognizer, `${platform} ${os}`, device]
+  return [
+    `--- ${day(date)} ${clock(date).slice(0, 5)} mic on`, recognizer, `${platform} ${os}`, device,
+    app && `app ${app}`,
+  ]
     .filter(Boolean)
     .join(' · ');
 }

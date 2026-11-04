@@ -7,6 +7,7 @@ import {
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { parseAlternatives } from '../voice/parseCommands';
 import { reportVoiceError } from '../utils/errorReporting';
+import { appVersionLabel } from '../utils/appVersion';
 import { appendVoiceLog, micOnLine, phraseLine, errorLine } from '../voice/voiceLog';
 
 // Safety net against the recognizer delivering the same phrase twice (e.g. once
@@ -365,6 +366,7 @@ export function useVoiceCommands(onCommand, { log = false, isTimerIdle } = {}) {
         platform: Platform.OS,
         os: Platform.Version,
         device: [Manufacturer, Model].filter(Boolean).join(' '),
+        app: appVersionLabel(),
       }));
     }
     errorStreakRef.current = 0;

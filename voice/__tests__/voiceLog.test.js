@@ -17,6 +17,11 @@ describe('micOnLine', () => {
     })).toBe('--- 2026-10-29 15:21 mic on · offline (com.google.android.as) · android 36 · samsung SM-S938B');
   });
 
+  it('ends with the app version when known', () => {
+    expect(micOnLine(AT, { onDevice: false, platform: 'android', os: 37, app: '1.0.1 (6)' }))
+      .toBe('--- 2026-10-29 15:21 mic on · online · android 37 · app 1.0.1 (6)');
+  });
+
   it('says online and skips a missing device', () => {
     expect(micOnLine(AT, { onDevice: false, platform: 'ios', os: '18.1', device: '' }))
       .toBe('--- 2026-10-29 15:21 mic on · online · ios 18.1');
