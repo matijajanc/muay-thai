@@ -4,6 +4,13 @@ What changed for people using Glove Mode, newest first. Each version's bullets a
 "What's new" text in Google Play (en-US, 500 characters at most; `npm test` checks the newest),
 so write them for testers. Version numbers and the release steps: [RELEASING.md](RELEASING.md).
 
+## 1.0.1 — 2026-11-04
+
+- "Set 2 minute timer 2 rounds" now runs both rounds instead of stopping after the first.
+- Voice commands hear "combo 5" and "combo 9" better with loud gym speakers.
+- "Start timer" said right after a workout ends starts the timer instead of closing it.
+- Settings shows the app version, and the voice log records it.
+
 ## 1.0.0 — 2026-11-03
 
 The first closed-testing builds, 2026-10-13 to 2026-11-03. All four were named 1.0.0; their build
